@@ -253,6 +253,9 @@ class ScheduleController extends Controller
         $subject = Subject::findOrFail($validated['subject_id']);
         $schoolGrade = SchoolGrade::findOrFail($validated['school_grade_id']);
 
+        // Add teacher_id from subject
+        $validated['teacher_id'] = $subject->teacher_id;
+
         $teacherConflict = $this->checkTeacherConflict(
             $subject->teacher_id,
             $schoolGrade->school_year_id,
