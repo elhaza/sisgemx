@@ -682,21 +682,25 @@
             }
 
             try {
-                const response = await fetch(`{{ route('admin.schedules.get-group-students') }}?school_grade_id=${selectedSchoolGradeId}`, {
+                const url = `{{ route('admin.schedules.get-group-students') }}?school_grade_id=${selectedSchoolGradeId}`;
+                const response = await fetch(url, {
                     credentials: 'include'
                 });
-                const data = await response.json();
 
                 if (!response.ok) {
+                    console.error('API Error:', response.status, response.statusText);
                     showNotification('Error al cargar los alumnos', 'error');
                     return;
                 }
+
+                const data = await response.json();
+                console.log('Students data:', data);
 
                 const studentsList = document.getElementById('students-list');
                 const gradeSelect = document.getElementById('school_grade_id');
                 const gradeName = gradeSelect.options[gradeSelect.selectedIndex].text;
 
-                if (data.students && data.students.length > 0) {
+                if (data && data.students && data.students.length > 0) {
                     studentsList.innerHTML = `
                         <div class="mb-3">
                             <p class="text-sm text-gray-600 font-semibold mb-3">Grupo: ${gradeName}</p>
@@ -731,7 +735,7 @@
 
                 document.getElementById('students-modal').classList.remove('hidden');
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error loading students:', error);
                 showNotification('Error al cargar los alumnos', 'error');
             }
         }

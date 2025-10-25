@@ -526,7 +526,7 @@ class ScheduleController extends Controller
 
     public function getGroupStudents(Request $request): \Illuminate\Http\JsonResponse
     {
-        $schoolGradeId = $request->query('school_grade_id');
+        $schoolGradeId = (int) $request->query('school_grade_id');
 
         $students = Student::with('user')
             ->where('school_grade_id', $schoolGradeId)
@@ -539,7 +539,8 @@ class ScheduleController extends Controller
                     'email' => $student->user->email,
                     'status' => $student->status->value,
                 ];
-            });
+            })
+            ->toArray();
 
         return response()->json(['students' => $students]);
     }
