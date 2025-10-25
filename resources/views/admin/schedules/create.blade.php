@@ -13,6 +13,22 @@
                         @csrf
 
                         <div class="mb-4">
+                            <label for="school_grade_id" class="block text-sm font-medium text-gray-700">Grado Escolar</label>
+                            <select name="school_grade_id" id="school_grade_id" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Seleccionar grado escolar</option>
+                                @foreach($schoolGrades as $grade)
+                                    <option value="{{ $grade->id }}" {{ old('school_grade_id') == $grade->id ? 'selected' : '' }}>
+                                        {{ $grade->name }} - {{ $grade->section }} ({{ $grade->schoolYear->name }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('school_grade_id')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="mb-4">
                             <label for="subject_id" class="block text-sm font-medium text-gray-700">Materia</label>
                             <select name="subject_id" id="subject_id" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
@@ -24,26 +40,6 @@
                                 @endforeach
                             </select>
                             @error('subject_id')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="grade_level" class="block text-sm font-medium text-gray-700">Grado</label>
-                            <input type="text" name="grade_level" id="grade_level" value="{{ old('grade_level') }}" required
-                                placeholder="Ej: Primero, Segundo, Tercero"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            @error('grade_level')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="group" class="block text-sm font-medium text-gray-700">Grupo/Sección</label>
-                            <input type="text" name="group" id="group" value="{{ old('group') }}" required
-                                placeholder="Ej: A, B, C"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            @error('group')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>

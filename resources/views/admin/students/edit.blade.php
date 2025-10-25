@@ -9,15 +9,52 @@
         <div class="mx-auto max-w-3xl sm:px-6 lg:px-8">
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <form action="{{ route('admin.students.update', $student) }}" method="POST">
+                    <form action="{{ route('admin.students.update', $student) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700">Usuario</label>
-                            <input type="text" value="{{ $student->user->name }} ({{ $student->user->email }})" disabled
+                            <input type="text" value="{{ $student->user->full_name }} ({{ $student->user->email }})" disabled
                                 class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm">
                             <p class="mt-1 text-xs text-gray-500">El usuario asociado no puede ser modificado.</p>
+                        </div>
+
+                        <!-- Tutores Section -->
+                        <div class="mb-6 border-t pt-6">
+                            <h3 class="mb-4 text-lg font-semibold text-gray-900">Tutores</h3>
+
+                            <div class="mb-4">
+                                <label for="tutor_1_id" class="block text-sm font-medium text-gray-700">Tutor 1 *</label>
+                                <select name="tutor_1_id" id="tutor_1_id" required
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="">Seleccionar tutor</option>
+                                    @foreach($parents as $parent)
+                                        <option value="{{ $parent->id }}" {{ old('tutor_1_id', $student->tutor_1_id) == $parent->id ? 'selected' : '' }}>
+                                            {{ $parent->name }} ({{ $parent->email }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('tutor_1_id')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="tutor_2_id" class="block text-sm font-medium text-gray-700">Tutor 2 (Opcional)</label>
+                                <select name="tutor_2_id" id="tutor_2_id"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="">Seleccionar tutor</option>
+                                    @foreach($parents as $parent)
+                                        <option value="{{ $parent->id }}" {{ old('tutor_2_id', $student->tutor_2_id) == $parent->id ? 'selected' : '' }}>
+                                            {{ $parent->name }} ({{ $parent->email }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('tutor_2_id')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
 
                         <div class="mb-4">
@@ -155,6 +192,127 @@
                                 @error('parent_email')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
+                            </div>
+                        </div>
+
+                        <!-- Discount Section -->
+                        <div class="mb-6 border-t pt-6">
+                            <h3 class="mb-4 text-lg font-semibold text-gray-900">Descuento en Colegiatura</h3>
+
+                            <div class="mb-4">
+                                <label for="discount_percentage" class="block text-sm font-medium text-gray-700">Porcentaje de Descuento (%)</label>
+                                <input type="number" name="discount_percentage" id="discount_percentage"
+                                    value="{{ old('discount_percentage', $student->tuitions()->where('school_year_id', $student->school_year_id)->first()->discount_percentage ?? 0) }}"
+                                    min="0" max="100" step="0.01"
+                                    placeholder="0.00"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <p class="mt-1 text-xs text-gray-500">Este descuento se aplicará a las colegiaturas mensuales del ciclo escolar seleccionado.</p>
+                                @error('discount_percentage')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <!-- Billing Section -->
+                        <div class="mb-6 border-t pt-6">
+                            <h3 class="mb-4 text-lg font-semibold text-gray-900">Facturación</h3>
+
+                            <div class="mb-4">
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="requires_invoice" id="requires_invoice" value="1" {{ old('requires_invoice', $student->requires_invoice) ? 'checked' : '' }}
+                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        onchange="document.getElementById('billing_fields').style.display = this.checked ? 'block' : 'none'">
+                                    <span class="ml-2 text-sm text-gray-700">¿Requiere factura?</span>
+                                </label>
+                            </div>
+
+                            <div id="billing_fields" style="display: {{ old('requires_invoice', $student->requires_invoice) ? 'block' : 'none' }}">
+                                <div class="mb-4">
+                                    <label for="billing_name" class="block text-sm font-medium text-gray-700">Nombre, Denominación o Razón Social</label>
+                                    <input type="text" name="billing_name" id="billing_name" value="{{ old('billing_name', $student->billing_name) }}"
+                                        placeholder="Ej: Juan Pérez García"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    @error('billing_name')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-4 grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="billing_zip_code" class="block text-sm font-medium text-gray-700">Código Postal</label>
+                                        <input type="text" name="billing_zip_code" id="billing_zip_code" value="{{ old('billing_zip_code', $student->billing_zip_code) }}" maxlength="10"
+                                            placeholder="Ej: 44100"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                        @error('billing_zip_code')
+                                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div>
+                                        <label for="billing_rfc" class="block text-sm font-medium text-gray-700">RFC</label>
+                                        <input type="text" name="billing_rfc" id="billing_rfc" value="{{ old('billing_rfc', $student->billing_rfc) }}" maxlength="13"
+                                            placeholder="Ej: XAXX010101000"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                        @error('billing_rfc')
+                                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="billing_tax_regime" class="block text-sm font-medium text-gray-700">Régimen Fiscal</label>
+                                    <select name="billing_tax_regime" id="billing_tax_regime"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <option value="">Seleccionar régimen</option>
+                                        @foreach(\App\RegimenFiscal::cases() as $regimen)
+                                            <option value="{{ $regimen->value }}" {{ old('billing_tax_regime', $student->billing_tax_regime) == $regimen->value ? 'selected' : '' }}>
+                                                {{ $regimen->label() }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('billing_tax_regime')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="billing_cfdi_use" class="block text-sm font-medium text-gray-700">Uso CFDI</label>
+                                    <select name="billing_cfdi_use" id="billing_cfdi_use"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <option value="">Seleccionar uso</option>
+                                        @foreach(\App\UsoCFDI::cases() as $uso)
+                                            <option value="{{ $uso->value }}" {{ old('billing_cfdi_use', $student->billing_cfdi_use) == $uso->value ? 'selected' : '' }}>
+                                                {{ $uso->label() }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('billing_cfdi_use')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                @if($student->tax_certificate_file)
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700">Constancia de Situación Fiscal Actual</label>
+                                        <a href="{{ Storage::url($student->tax_certificate_file) }}" target="_blank" class="mt-1 inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
+                                            <svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                            Ver archivo actual
+                                        </a>
+                                    </div>
+                                @endif
+
+                                <div class="mb-4">
+                                    <label for="tax_certificate_file" class="block text-sm font-medium text-gray-700">Actualizar Constancia de Situación Fiscal (Opcional)</label>
+                                    <input type="file" name="tax_certificate_file" id="tax_certificate_file" accept="image/*,.pdf"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <p class="mt-1 text-xs text-gray-500">Formatos permitidos: JPG, PNG, PDF. Tamaño máximo: 2MB. Dejar vacío para mantener el archivo actual.</p>
+                                    @error('tax_certificate_file')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
                             </div>
                         </div>
 

@@ -112,7 +112,7 @@
                             @forelse($grades as $grade)
                                 <tr>
                                     <td class="whitespace-nowrap px-6 py-4">
-                                        <div class="text-sm font-medium text-gray-900">{{ $grade->student->user->name }}</div>
+                                        <div class="text-sm font-medium text-gray-900">{{ $grade->student->user->full_name }}</div>
                                         <div class="text-sm text-gray-500">{{ $grade->student->enrollment_number }}</div>
                                     </td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $grade->subject->name }}</td>

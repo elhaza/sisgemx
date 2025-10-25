@@ -11,12 +11,36 @@
                 <div class="p-6">
                     <form action="{{ route('admin.users.store') }}" method="POST">
                         @csrf
+                        @if(request('return_to'))
+                            <input type="hidden" name="return_to" value="{{ request('return_to') }}">
+                        @endif
+                        @if(request('field'))
+                            <input type="hidden" name="field" value="{{ request('field') }}">
+                        @endif
 
                         <div class="mb-4">
-                            <label for="name" class="block text-sm font-medium text-gray-700">Nombre</label>
+                            <label for="name" class="block text-sm font-medium text-gray-700">Nombre(s)</label>
                             <input type="text" name="name" id="name" value="{{ old('name') }}" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             @error('name')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="apellido_paterno" class="block text-sm font-medium text-gray-700">Apellido Paterno</label>
+                            <input type="text" name="apellido_paterno" id="apellido_paterno" value="{{ old('apellido_paterno') }}"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            @error('apellido_paterno')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="apellido_materno" class="block text-sm font-medium text-gray-700">Apellido Materno</label>
+                            <input type="text" name="apellido_materno" id="apellido_materno" value="{{ old('apellido_materno') }}"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            @error('apellido_materno')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
@@ -36,7 +60,7 @@
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="">Seleccionar rol</option>
                                 @foreach($roles as $role)
-                                    <option value="{{ $role->value }}" {{ old('role') === $role->value ? 'selected' : '' }}>
+                                    <option value="{{ $role->value }}" {{ (old('role') ?: request('role')) === $role->value ? 'selected' : '' }}>
                                         {{ ucfirst(str_replace('_', ' ', $role->value)) }}
                                     </option>
                                 @endforeach
