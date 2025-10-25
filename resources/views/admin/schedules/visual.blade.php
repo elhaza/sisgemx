@@ -394,7 +394,8 @@
 
                     let durationSelect = '<select id="duration-select" class="w-full p-2 border rounded">';
                     for (let [minutes, label] of Object.entries(durationOptions)) {
-                        durationSelect += `<option value="${minutes}">${label}</option>`;
+                        const isSelected = parseInt(minutes) === timeInterval ? 'selected' : '';
+                        durationSelect += `<option value="${minutes}" ${isSelected}>${label}</option>`;
                     }
                     durationSelect += '</select>';
 
