@@ -102,7 +102,7 @@
                                 @forelse($students as $student)
                                     <tr>
                                         <td class="whitespace-nowrap px-6 py-4 font-medium">{{ $student->enrollment_number }}</td>
-                                        <td class="whitespace-nowrap px-6 py-4">{{ $student->user->name }}</td>
+                                        <td class="whitespace-nowrap px-6 py-4">{{ $student->user->apellido_paterno }} {{ $student->user->apellido_materno }} {{ $student->user->name }}</td>
                                         <td class="whitespace-nowrap px-6 py-4">
                                             @if($student->gender)
                                                 @if($student->gender->value === 'male')
@@ -116,8 +116,8 @@
                                                 <span class="text-gray-400">-</span>
                                             @endif
                                         </td>
-                                        <td class="whitespace-nowrap px-6 py-4">{{ $student->grade_level }}</td>
-                                        <td class="whitespace-nowrap px-6 py-4">{{ $student->group }}</td>
+                                        <td class="whitespace-nowrap px-6 py-4">{{ $student->schoolGrade->level }}</td>
+                                        <td class="whitespace-nowrap px-6 py-4">{{ $student->schoolGrade->section }}</td>
                                         <td class="whitespace-nowrap px-6 py-4">{{ $student->schoolYear->name }}</td>
                                         <td class="whitespace-nowrap px-6 py-4">
                                             @php
