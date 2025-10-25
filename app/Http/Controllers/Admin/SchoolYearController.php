@@ -167,8 +167,8 @@ class SchoolYearController extends Controller
         }
 
         // Get active students from previous school year
-        $students = Student::where('school_year_id', $previousSchoolYear->id)
-            ->where('status', 'active')
+        $students = Student::where('students.school_year_id', $previousSchoolYear->id)
+            ->where('students.status', 'active')
             ->with(['user', 'schoolGrade'])
             ->join('school_grades', 'students.school_grade_id', '=', 'school_grades.id')
             ->orderBy('school_grades.level')
