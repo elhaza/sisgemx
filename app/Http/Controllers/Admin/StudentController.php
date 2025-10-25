@@ -88,7 +88,11 @@ class StudentController extends Controller
         $schoolYears = SchoolYear::orderBy('start_date', 'desc')->get();
         $activeSchoolYear = SchoolYear::where('is_active', true)->first();
 
-        return view('admin.students.index', compact('students', 'schoolYears', 'activeSchoolYear'));
+        // Get unique grade levels and groups for filters
+        $gradeLevels = SchoolGrade::distinct('level')->orderBy('level')->pluck('level');
+        $groups = SchoolGrade::distinct('section')->orderBy('section')->pluck('section');
+
+        return view('admin.students.index', compact('students', 'schoolYears', 'activeSchoolYear', 'gradeLevels', 'groups'));
     }
 
     public function create()
