@@ -126,4 +126,139 @@ class User extends Authenticatable
 
         return implode(' ', $parts);
     }
+
+    // ==================== Métodos de Segmentación para Mensajes ====================
+
+    /**
+     * Obtener todos los usuarios de un rol específico
+     */
+    public static function getByRole(UserRole $role, ?User $excludeUser = null): \Illuminate\Database\Eloquent\Collection
+    {
+        $query = self::where('role', $role);
+        if ($excludeUser) {
+            $query->where('id', '!=', $excludeUser->id);
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Obtener maestros por nivel
+     */
+    public static function getTeachersByLevel(int $level): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::whereHas('subjects', function ($q) use ($level) {
+            $q->where('grade_level', $level);
+        })
+            ->where('role', UserRole::Teacher)
+            ->distinct()
+            ->get();
+    }
+
+    /**
+     * Obtener maestros por materia
+     */
+    public static function getTeachersBySubject(int $subjectId): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::whereHas('subjects', function ($q) use ($subjectId) {
+            $q->where('id', $subjectId);
+        })
+            ->where('role', UserRole::Teacher)
+            ->get();
+    }
+
+    /**
+     * Obtener maestros por grupo/grado escolar
+     */
+    public static function getTeachersBySchoolGrade(int $schoolGradeId): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::whereHas('subjects', function ($q) use ($schoolGradeId) {
+            $q->whereHas('schedules', function ($sq) use ($schoolGradeId) {
+                $sq->where('school_grade_id', $schoolGradeId);
+            });
+        })
+            ->where('role', UserRole::Teacher)
+            ->distinct()
+            ->get();
+    }
+
+    /**
+     * Obtener padres por grado escolar (sus hijos están en ese grado)
+     */
+    public static function getParentsBySchoolGrade(int $schoolGradeId): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::whereHas('children', function ($q) use ($schoolGradeId) {
+            $q->where('school_grade_id', $schoolGradeId);
+        })
+            ->where('role', UserRole::Parent)
+            ->distinct()
+            ->get();
+    }
+
+    /**
+     * Obtener padres por grupo (sus hijos están en ese grupo)
+     */
+    public static function getParentsBySchoolGradeGroup(int $schoolGradeId): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::whereHas('children', function ($q) use ($schoolGradeId) {
+            $q->where('school_grade_id', $schoolGradeId);
+        })
+            ->where('role', UserRole::Parent)
+            ->distinct()
+            ->get();
+    }
+
+    /**
+     * Obtener estudiantes por grado escolar
+     */
+    public static function getStudentsBySchoolGrade(int $schoolGradeId): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::whereHas('student', function ($q) use ($schoolGradeId) {
+            $q->where('school_grade_id', $schoolGradeId);
+        })
+            ->where('role', UserRole::Student)
+            ->get();
+    }
+
+    /**
+     * Obtener estudiantes por grupo (escuela/sección)
+     */
+    public static function getStudentsBySchoolGradeGroup(int $schoolGradeId): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::whereHas('student', function ($q) use ($schoolGradeId) {
+            $q->where('school_grade_id', $schoolGradeId);
+        })
+            ->where('role', UserRole::Student)
+            ->get();
+    }
+
+    /**
+     * Obtener padre por estudiante
+     */
+    public static function getParentByStudent(int $studentId): ?self
+    {
+        return self::whereHas('children', function ($q) use ($studentId) {
+            $q->where('id', $studentId);
+        })
+            ->where('role', UserRole::Parent)
+            ->first();
+    }
+
+    /**
+     * Obtener niveles disponibles (para filtrado)
+     */
+    public static function getAvailableLevels(): \Illuminate\Support\Collection
+    {
+        return SchoolGrade::distinct('level')
+            ->orderBy('level')
+            ->pluck('level');
+    }
+
+    /**
+     * Obtener grupos disponibles (para filtrado)
+     */
+    public static function getAvailableSchoolGrades(): \Illuminate\Database\Eloquent\Collection
+    {
+        return SchoolGrade::orderBy('level')->orderBy('section')->get();
+    }
 }
