@@ -5,15 +5,8 @@
             <div class="flex">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        @php
-                            $logoPath = \App\Models\Settings::getLogo();
-                        @endphp
-                        @if ($logoPath)
-                            <img src="{{ asset('storage/' . $logoPath) }}" class="block h-10 w-auto" alt="Logo">
-                        @else
-                            <img src="/img/logo.png" class="block h-10 w-auto" alt="Logo">
-                        @endif
+                    <a href="{{ route('dashboard') }}" class="block">
+                        <x-app-logo fallback-image="/img/logo.png" />
                     </a>
                 </div>
 
