@@ -3,7 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\MonthlyTuition;
+use App\Models\Schedule;
+use App\Models\SchoolGrade;
 use App\Models\SchoolYear;
+use App\Models\Student;
+use App\Models\StudentTuition;
+use App\Models\Subject;
 use Illuminate\Http\Request;
 
 class SchoolYearController extends Controller
@@ -27,15 +33,301 @@ class SchoolYearController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
             'is_active' => 'boolean',
+            'monthly_tuitions' => 'required|array',
+            'monthly_tuitions.*.year' => 'required|integer',
+            'monthly_tuitions.*.month' => 'required|integer|min:1|max:12',
+            'monthly_tuitions.*.amount' => 'required|numeric|min:0',
+            'copy_groups' => 'boolean',
+            'copy_subjects' => 'boolean',
+            'copy_schedules' => 'boolean',
+            'copy_students' => 'boolean',
         ]);
 
         if ($request->boolean('is_active')) {
             SchoolYear::where('is_active', true)->update(['is_active' => false]);
         }
 
-        SchoolYear::create($validated);
+        $schoolYear = SchoolYear::create([
+            'name' => $validated['name'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'is_active' => $validated['is_active'] ?? false,
+        ]);
+
+        // Get previous school year
+        $previousSchoolYear = SchoolYear::where('id', '!=', $schoolYear->id)
+            ->orderBy('start_date', 'desc')
+            ->first();
+
+        // Copy groups if requested
+        if ($request->boolean('copy_groups') && $previousSchoolYear) {
+            $this->copyGroups($previousSchoolYear, $schoolYear);
+        }
+
+        // Copy subjects if requested
+        if ($request->boolean('copy_subjects') && $previousSchoolYear) {
+            $this->copySubjects($previousSchoolYear, $schoolYear);
+        }
+
+        // Copy schedules if requested
+        if ($request->boolean('copy_schedules') && $previousSchoolYear) {
+            $this->copySchedules($previousSchoolYear, $schoolYear);
+        }
+
+        // Create monthly tuitions
+        foreach ($validated['monthly_tuitions'] as $monthlyData) {
+            MonthlyTuition::create([
+                'school_year_id' => $schoolYear->id,
+                'year' => $monthlyData['year'],
+                'month' => $monthlyData['month'],
+                'amount' => $monthlyData['amount'],
+            ]);
+        }
+
+        // If copy_students is checked, redirect to student assignment page
+        if ($request->boolean('copy_students') && $previousSchoolYear) {
+            session()->flash('success', 'Ciclo escolar creado exitosamente. Ahora asigne los estudiantes.');
+
+            return redirect()->route('admin.school-years.assign-students', $schoolYear);
+        }
 
         return redirect()->route('admin.school-years.index')->with('success', 'Ciclo escolar creado exitosamente.');
+    }
+
+    protected function copyGroups(SchoolYear $source, SchoolYear $target): void
+    {
+        $sourceGrades = SchoolGrade::where('school_year_id', $source->id)->get();
+
+        foreach ($sourceGrades as $grade) {
+            SchoolGrade::create([
+                'school_year_id' => $target->id,
+                'level' => $grade->level,
+                'name' => $grade->name,
+                'section' => $grade->section,
+            ]);
+        }
+    }
+
+    protected function copySubjects(SchoolYear $source, SchoolYear $target): void
+    {
+        $sourceSubjects = Subject::where('school_year_id', $source->id)->get();
+
+        foreach ($sourceSubjects as $subject) {
+            Subject::create([
+                'school_year_id' => $target->id,
+                'name' => $subject->name,
+                'description' => $subject->description,
+                'teacher_id' => $subject->teacher_id,
+                'grade_level' => $subject->grade_level,
+            ]);
+        }
+    }
+
+    protected function copySchedules(SchoolYear $source, SchoolYear $target): void
+    {
+        $sourceSchedules = Schedule::whereHas('schoolGrade', function ($query) use ($source) {
+            $query->where('school_year_id', $source->id);
+        })->get();
+
+        foreach ($sourceSchedules as $schedule) {
+            // Find corresponding school grade in target year
+            $targetGrade = SchoolGrade::where('school_year_id', $target->id)
+                ->where('level', $schedule->schoolGrade->level)
+                ->where('section', $schedule->schoolGrade->section)
+                ->first();
+
+            // Find corresponding subject in target year
+            $targetSubject = Subject::where('school_year_id', $target->id)
+                ->where('name', $schedule->subject->name)
+                ->where('teacher_id', $schedule->subject->teacher_id)
+                ->first();
+
+            if ($targetGrade && $targetSubject) {
+                Schedule::create([
+                    'school_grade_id' => $targetGrade->id,
+                    'subject_id' => $targetSubject->id,
+                    'day_of_week' => $schedule->day_of_week,
+                    'start_time' => $schedule->start_time,
+                    'end_time' => $schedule->end_time,
+                ]);
+            }
+        }
+    }
+
+    public function assignStudents(SchoolYear $schoolYear)
+    {
+        // Get previous school year
+        $previousSchoolYear = SchoolYear::where('id', '!=', $schoolYear->id)
+            ->orderBy('start_date', 'desc')
+            ->first();
+
+        if (! $previousSchoolYear) {
+            return redirect()->route('admin.school-years.index')
+                ->with('error', 'No hay ciclo escolar anterior para copiar estudiantes.');
+        }
+
+        // Get active students from previous school year
+        $students = Student::where('school_year_id', $previousSchoolYear->id)
+            ->where('status', 'active')
+            ->with(['user', 'schoolGrade'])
+            ->join('school_grades', 'students.school_grade_id', '=', 'school_grades.id')
+            ->orderBy('school_grades.level')
+            ->orderBy('school_grades.section')
+            ->select('students.*')
+            ->get();
+
+        // Get target grades for the new school year
+        $targetGrades = SchoolGrade::where('school_year_id', $schoolYear->id)
+            ->orderBy('level')
+            ->orderBy('section')
+            ->get();
+
+        // Get maximum level available in target grades
+        $maxLevelAvailable = $targetGrades->max('level') ?? 0;
+
+        // Separate students into those who can advance and those who completed
+        $studentsToAdvance = collect();
+        $studentsCompleted = collect();
+
+        foreach ($students as $student) {
+            $currentLevel = $student->schoolGrade->level ?? 0;
+            $nextLevel = $currentLevel + 1;
+
+            if ($nextLevel > $maxLevelAvailable) {
+                // Student is at max level and has no next level
+                $studentsCompleted->push($student);
+            } else {
+                $studentsToAdvance->push($student);
+            }
+        }
+
+        // Distribute students evenly among groups of same level
+        $studentAssignments = $this->distributeStudentsEvenly($studentsToAdvance, $targetGrades);
+
+        return view('admin.school-years.assign-students', compact(
+            'schoolYear',
+            'previousSchoolYear',
+            'studentsToAdvance',
+            'studentsCompleted',
+            'targetGrades',
+            'studentAssignments'
+        ));
+    }
+
+    protected function distributeStudentsEvenly($students, $targetGrades)
+    {
+        $assignments = [];
+        $levelGroups = [];
+
+        // Group target grades by level
+        foreach ($targetGrades as $grade) {
+            $levelGroups[$grade->level][] = $grade;
+        }
+
+        // Group students by their current level
+        $studentsByLevel = [];
+        foreach ($students as $student) {
+            $currentLevel = $student->schoolGrade->level ?? 0;
+            $studentsByLevel[$currentLevel][] = $student;
+        }
+
+        // Assign students evenly to next level groups
+        foreach ($studentsByLevel as $currentLevel => $levelStudents) {
+            $nextLevel = $currentLevel + 1;
+
+            if (! isset($levelGroups[$nextLevel])) {
+                continue;
+            }
+
+            $nextLevelGrades = $levelGroups[$nextLevel];
+            $studentsPerGroup = ceil(count($levelStudents) / count($nextLevelGrades));
+            $gradeIndex = 0;
+            $countInCurrentGrade = 0;
+
+            foreach ($levelStudents as $student) {
+                if ($countInCurrentGrade >= $studentsPerGroup && $gradeIndex < count($nextLevelGrades) - 1) {
+                    $gradeIndex++;
+                    $countInCurrentGrade = 0;
+                }
+
+                $assignments[$student->id] = $nextLevelGrades[$gradeIndex]->id;
+                $countInCurrentGrade++;
+            }
+        }
+
+        return $assignments;
+    }
+
+    public function storeStudentAssignments(Request $request, SchoolYear $schoolYear)
+    {
+        $validated = $request->validate([
+            'students' => 'array',
+            'students.*' => 'exists:students,id',
+            'assignments' => 'array',
+            'assignments.*' => 'exists:school_grades,id',
+            'graduated_students' => 'array',
+            'graduated_students.*' => 'exists:students,id',
+        ]);
+
+        $assignedCount = 0;
+        $graduatedCount = 0;
+
+        // Handle students to advance
+        if (! empty($validated['students'])) {
+            $monthlyTuitions = MonthlyTuition::where('school_year_id', $schoolYear->id)->get();
+
+            foreach ($validated['students'] as $studentId) {
+                $gradeId = $validated['assignments'][$studentId];
+                $grade = SchoolGrade::find($gradeId);
+
+                // Update student school year and grade
+                $student = Student::find($studentId);
+                $student->update([
+                    'school_year_id' => $schoolYear->id,
+                    'school_grade_id' => $gradeId,
+                    'status' => 'active',
+                ]);
+
+                // Create student tuitions for all months (without discount)
+                foreach ($monthlyTuitions as $monthlyTuition) {
+                    StudentTuition::create([
+                        'student_id' => $studentId,
+                        'school_year_id' => $schoolYear->id,
+                        'monthly_tuition_id' => $monthlyTuition->id,
+                        'year' => $monthlyTuition->year,
+                        'month' => $monthlyTuition->month,
+                        'monthly_amount' => $monthlyTuition->amount,
+                        'discount_percentage' => 0,
+                        'final_amount' => $monthlyTuition->amount,
+                    ]);
+                }
+
+                $assignedCount++;
+            }
+        }
+
+        // Handle students to graduate
+        if (! empty($validated['graduated_students'])) {
+            foreach ($validated['graduated_students'] as $studentId) {
+                $student = Student::find($studentId);
+                $student->update([
+                    'status' => 'graduated',
+                ]);
+
+                $graduatedCount++;
+            }
+        }
+
+        $message = [];
+        if ($assignedCount > 0) {
+            $message[] = "$assignedCount estudiante(s) asignado(s) al nuevo ciclo escolar";
+        }
+        if ($graduatedCount > 0) {
+            $message[] = "$graduatedCount estudiante(s) marcado(s) como graduado(s)";
+        }
+
+        return redirect()->route('admin.school-years.index')
+            ->with('success', implode(' y ', $message).'.');
     }
 
     public function edit(SchoolYear $schoolYear)
@@ -52,7 +344,10 @@ class SchoolYearController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        if ($request->boolean('is_active') && ! $schoolYear->is_active) {
+        // Ensure is_active is set even when checkbox is unchecked
+        $validated['is_active'] = $request->boolean('is_active');
+
+        if ($validated['is_active'] && ! $schoolYear->is_active) {
             SchoolYear::where('is_active', true)->update(['is_active' => false]);
         }
 
@@ -61,8 +356,19 @@ class SchoolYearController extends Controller
         return redirect()->route('admin.school-years.index')->with('success', 'Ciclo escolar actualizado exitosamente.');
     }
 
-    public function destroy(SchoolYear $schoolYear)
+    public function destroy(Request $request, SchoolYear $schoolYear)
     {
+        // Validate the special token
+        $request->validate([
+            'confirmation_token' => 'required|string',
+        ]);
+
+        $expectedToken = env('TOKEN_SPECIAL_COMMANDS', 'DELETE2025');
+
+        if ($request->confirmation_token !== $expectedToken) {
+            return redirect()->route('admin.school-years.index')->with('error', 'Token de confirmación incorrecto. No se puede eliminar el ciclo escolar.');
+        }
+
         if ($schoolYear->is_active) {
             return redirect()->route('admin.school-years.index')->with('error', 'No puedes eliminar el ciclo escolar activo.');
         }
@@ -70,5 +376,15 @@ class SchoolYearController extends Controller
         $schoolYear->delete();
 
         return redirect()->route('admin.school-years.index')->with('success', 'Ciclo escolar eliminado exitosamente.');
+    }
+
+    public function getSchoolGrades(SchoolYear $schoolYear)
+    {
+        $schoolGrades = $schoolYear->schoolGrades()
+            ->orderBy('level')
+            ->orderBy('section')
+            ->get(['id', 'level', 'name', 'section', 'school_year_id']);
+
+        return response()->json($schoolGrades);
     }
 }
