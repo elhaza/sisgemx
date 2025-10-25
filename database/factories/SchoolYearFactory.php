@@ -16,8 +16,13 @@ class SchoolYearFactory extends Factory
      */
     public function definition(): array
     {
+        $startDate = fake()->dateTimeBetween('-2 years', 'now');
+
         return [
-            //
+            'name' => $startDate->format('Y'),
+            'start_date' => $startDate,
+            'end_date' => $startDate->modify('+1 year'),
+            'is_active' => false,
         ];
     }
 }

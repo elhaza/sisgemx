@@ -2,10 +2,15 @@
 
 namespace App\Models;
 
+use Database\Factories\SchoolGradeFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SchoolGrade extends Model
 {
+    /** @use HasFactory<SchoolGradeFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'level',
         'name',
