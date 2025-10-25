@@ -9,51 +9,163 @@
         <div class="mx-auto max-w-2xl sm:px-6 lg:px-8">
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg dark:bg-gray-800">
                 <div class="p-6">
-                    <form action="{{ route('messages.store') }}" method="POST" id="messageForm">
+                    <form action="{{ route('messages.store') }}" method="POST" id="messageForm" x-data="messageForm()" @submit="handleSubmit">
                         @csrf
 
-                        <!-- Para (Destinatarios) -->
-                        <div class="mb-6">
-                            <label for="recipients" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Para *
-                            </label>
-                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                Busca por nombre, email o apellido. También puedes escribir:
-                                <br>
-                                • <code class="bg-gray-100 dark:bg-gray-700 px-1 rounded text-gray-600 dark:text-gray-300">all:teachers</code> para todos los maestros
-                                <br>
-                                • <code class="bg-gray-100 dark:bg-gray-700 px-1 rounded text-gray-600 dark:text-gray-300">all:parents</code> para todos los padres
-                                <br>
-                                • <code class="bg-gray-100 dark:bg-gray-700 px-1 rounded text-gray-600 dark:text-gray-300">group:</code> para ver grupos disponibles
-                            </p>
-                            <div id="recipientsContainer" class="relative mt-3">
-                                <input
-                                    type="text"
-                                    id="recipientSearch"
-                                    placeholder="Buscar destinatarios..."
-                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
-                                    autocomplete="off"
-                                >
-                                <div id="recipientSuggestions" class="hidden absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-96 overflow-y-auto"></div>
+                        <!-- Role Selection -->
+                        @if(auth()->user()->isAdmin())
+                            <div class="mb-6">
+                                <label for="recipientRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Enviar a (Rol) *
+                                </label>
+                                <select
+                                    id="recipientRole"
+                                    x-model="selectedRole"
+                                    @change="onRoleChange()"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
+                                    <option value="">Selecciona un rol</option>
+                                    <option value="admin">Administradores</option>
+                                    <option value="finance_admin">Finanzas</option>
+                                    <option value="teacher">Maestros</option>
+                                    <option value="parent">Padres</option>
+                                    <option value="student">Estudiantes</option>
+                                </select>
+                                @error('recipient_ids')
+                                    <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
                             </div>
-                            <div id="selectedRecipients" class="mt-3 flex flex-wrap gap-2"></div>
-                            <input type="hidden" name="recipient_ids" id="recipientIds" value="">
 
-                            @if($errors->has('recipient_ids'))
-                                <p class="mt-2 text-sm text-red-600 dark:text-red-400">
-                                    @foreach($errors->get('recipient_ids') as $message)
-                                        {{ $message }}<br>
-                                    @endforeach
+                            <!-- Filter Selection -->
+                            <div class="mb-6" x-show="selectedRole">
+                                <label for="filterType" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Filtrar por *
+                                </label>
+                                <select
+                                    id="filterType"
+                                    x-model="selectedFilter"
+                                    @change="onFilterChange()"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
+                                    <option value="">Selecciona una opción</option>
+                                    <template x-for="filter in availableFilters" :key="filter.type">
+                                        <option :value="filter.type" x-text="filter.label"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <!-- Secondary Filter (Level, Subject, Group, etc.) -->
+                            <div class="mb-6" x-show="needsSecondaryFilter">
+                                <label for="secondaryFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300" x-text="secondaryFilterLabel">
+                                </label>
+                                <select
+                                    id="secondaryFilter"
+                                    x-model="selectedSecondaryFilter"
+                                    @change="onSecondaryFilterChange()"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
+                                    <option value="">Selecciona una opción</option>
+                                    <template x-for="item in secondaryFilterOptions" :key="item.id">
+                                        <option :value="item.id" x-text="item.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <!-- Individual Search (for individual selections) -->
+                            <div class="mb-6" x-show="selectedFilter === 'individual'">
+                                <label for="individualSearch" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Buscar <span x-text="getRoleName()"></span>
+                                </label>
+                                <div class="relative mt-3">
+                                    <input
+                                        type="text"
+                                        id="individualSearch"
+                                        x-model="searchQuery"
+                                        @input="onSearchInput()"
+                                        @focus="showSearchResults = true"
+                                        @blur="setTimeout(() => showSearchResults = false, 200)"
+                                        placeholder="Busca por nombre..."
+                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                                        autocomplete="off"
+                                    >
+                                    <div
+                                        x-show="showSearchResults && searchResults.length > 0"
+                                        class="absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-96 overflow-y-auto">
+                                        <template x-for="result in searchResults" :key="result.id">
+                                            <div
+                                                @click="selectUser(result)"
+                                                class="px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0 transition">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100" x-text="result.name"></p>
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400" x-text="result.email"></p>
+                                                    </div>
+                                                    <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300 whitespace-nowrap" x-text="result.role"></span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Load All for Non-Individual -->
+                            <div class="mb-6" x-show="selectedFilter && selectedFilter !== 'individual'">
+                                <button
+                                    type="button"
+                                    @click="loadRecipients()"
+                                    class="inline-flex items-center rounded-md bg-blue-100 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40">
+                                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Agregar todos
+                                </button>
+                            </div>
+                        @else
+                            <!-- Non-admin users use the original search -->
+                            <div class="mb-6">
+                                <label for="recipients" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Para *
+                                </label>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    Busca por nombre, email o apellido
                                 </p>
-                            @endif
-                        </div>
+                                <div id="recipientsContainer" class="relative mt-3">
+                                    <input
+                                        type="text"
+                                        id="recipientSearch"
+                                        placeholder="Buscar destinatarios..."
+                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                                        autocomplete="off"
+                                    >
+                                    <div id="recipientSuggestions" class="hidden absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-96 overflow-y-auto"></div>
+                                </div>
+                                <div id="selectedRecipients" class="mt-3 flex flex-wrap gap-2"></div>
+                                <input type="hidden" name="recipient_ids" id="recipientIds" value="">
+                            </div>
+                        @endif
 
-                        <!-- Toggle para mostrar destinatarios seleccionados -->
-                        <div class="mb-6 flex items-center gap-2 rounded-md bg-blue-50 p-3 dark:bg-blue-900/20">
-                            <input type="checkbox" id="showRecipients" checked class="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-gray-600">
-                            <label for="showRecipients" class="text-sm font-medium text-blue-900 dark:text-blue-300">
-                                Mostrar destinatarios
-                            </label>
+                        <!-- Selected Recipients Display -->
+                        <div class="mb-6" x-show="selectedRecipients.length > 0">
+                            <div class="flex items-center gap-2 rounded-md bg-blue-50 p-3 dark:bg-blue-900/20">
+                                <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span class="text-sm font-medium text-blue-900 dark:text-blue-300">
+                                    <span x-text="selectedRecipients.length"></span> destinatario(s) seleccionado(s)
+                                </span>
+                            </div>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <template x-for="recipient in selectedRecipients" :key="recipient.id">
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-sm font-medium dark:bg-blue-900/30 dark:text-blue-300">
+                                        <span x-text="recipient.name"></span>
+                                        <button
+                                            type="button"
+                                            @click="removeRecipient(recipient.id)"
+                                            class="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </span>
+                                </template>
+                            </div>
                         </div>
 
                         <!-- Asunto -->
@@ -117,30 +229,195 @@
 
     @push('scripts')
     <script>
+        function messageForm() {
+            return {
+                selectedRole: '',
+                selectedFilter: '',
+                selectedSecondaryFilter: '',
+                searchQuery: '',
+                availableFilters: [],
+                secondaryFilterOptions: [],
+                searchResults: [],
+                showSearchResults: false,
+                selectedRecipients: [],
+                needsSecondaryFilter: false,
+                secondaryFilterLabel: '',
+                loadingRecipients: false,
+
+                onRoleChange() {
+                    this.selectedFilter = '';
+                    this.selectedSecondaryFilter = '';
+                    this.searchQuery = '';
+                    this.searchResults = [];
+                    this.selectedRecipients = [];
+                    this.updateRecipientInput();
+                    this.fetchFilterOptions();
+                },
+
+                async fetchFilterOptions() {
+                    if (!this.selectedRole) return;
+
+                    try {
+                        const response = await fetch(`/api/messages/filter-options?role=${this.selectedRole}`);
+                        const data = await response.json();
+                        this.availableFilters = data.filters || [];
+                    } catch (error) {
+                        console.error('Error fetching filter options:', error);
+                    }
+                },
+
+                onFilterChange() {
+                    this.selectedSecondaryFilter = '';
+                    this.searchQuery = '';
+                    this.searchResults = [];
+
+                    if (this.needsSecondaryFilter) {
+                        this.fetchSecondaryFilterData();
+                    }
+
+                    if (this.selectedFilter === 'all') {
+                        this.loadRecipients();
+                    }
+                },
+
+                async fetchSecondaryFilterData() {
+                    if (!this.selectedRole || !this.selectedFilter) return;
+
+                    const filters = {
+                        'teacher': { 'by_level': 'Por nivel', 'by_subject': 'Por materia', 'by_school_grade': 'Por grupo' },
+                        'parent': { 'by_school_grade': 'Por grado', 'by_school_grade_group': 'Por grupo' },
+                        'student': { 'by_school_grade': 'Por grado', 'by_school_grade_group': 'Por grupo' }
+                    };
+
+                    this.needsSecondaryFilter = !['all', 'individual'].includes(this.selectedFilter);
+
+                    if (!this.needsSecondaryFilter) return;
+
+                    const labels = filters[this.selectedRole] || {};
+                    this.secondaryFilterLabel = labels[this.selectedFilter] || 'Selecciona una opción';
+
+                    try {
+                        const response = await fetch(`/api/messages/filter-data?role=${this.selectedRole}&filter_type=${this.selectedFilter}`);
+                        const data = await response.json();
+                        this.secondaryFilterOptions = data.items || [];
+                    } catch (error) {
+                        console.error('Error fetching secondary filter data:', error);
+                    }
+                },
+
+                onSecondaryFilterChange() {
+                    if (this.selectedSecondaryFilter) {
+                        this.loadRecipients();
+                    }
+                },
+
+                async onSearchInput() {
+                    if (this.searchQuery.length < 2) {
+                        this.searchResults = [];
+                        return;
+                    }
+
+                    try {
+                        const params = new URLSearchParams({
+                            role: this.selectedRole,
+                            filter_type: this.selectedFilter,
+                            search: this.searchQuery
+                        });
+
+                        const response = await fetch(`/api/messages/users?${params}`);
+                        const data = await response.json();
+                        this.searchResults = data || [];
+                    } catch (error) {
+                        console.error('Error searching users:', error);
+                        this.searchResults = [];
+                    }
+                },
+
+                async loadRecipients() {
+                    this.loadingRecipients = true;
+
+                    try {
+                        const params = new URLSearchParams({
+                            role: this.selectedRole,
+                            filter_type: this.selectedFilter
+                        });
+
+                        if (this.selectedSecondaryFilter) {
+                            params.append('filter_id', this.selectedSecondaryFilter);
+                        }
+
+                        const response = await fetch(`/api/messages/users?${params}`);
+                        const users = await response.json();
+
+                        users.forEach(user => {
+                            if (!this.selectedRecipients.find(r => r.id === user.id)) {
+                                this.selectedRecipients.push(user);
+                            }
+                        });
+
+                        this.updateRecipientInput();
+                    } catch (error) {
+                        console.error('Error loading recipients:', error);
+                    } finally {
+                        this.loadingRecipients = false;
+                    }
+                },
+
+                selectUser(user) {
+                    if (!this.selectedRecipients.find(r => r.id === user.id)) {
+                        this.selectedRecipients.push(user);
+                        this.updateRecipientInput();
+                    }
+                    this.searchQuery = '';
+                    this.searchResults = [];
+                    this.showSearchResults = false;
+                },
+
+                removeRecipient(id) {
+                    this.selectedRecipients = this.selectedRecipients.filter(r => r.id !== id);
+                    this.updateRecipientInput();
+                },
+
+                updateRecipientInput() {
+                    const recipientIds = this.selectedRecipients.map(r => r.id).join(',');
+                    document.getElementById('recipientIds').value = recipientIds;
+                },
+
+                getRoleName() {
+                    const roleNames = {
+                        'admin': 'Administrador',
+                        'finance_admin': 'Usuario de Finanzas',
+                        'teacher': 'Maestro',
+                        'parent': 'Padre',
+                        'student': 'Estudiante'
+                    };
+                    return roleNames[this.selectedRole] || '';
+                },
+
+                handleSubmit(e) {
+                    if (this.selectedRecipients.length === 0) {
+                        e.preventDefault();
+                        alert('Debes seleccionar al menos un destinatario');
+                    }
+                }
+            };
+        }
+
+        // For non-admin users, keep the original search functionality
+        @if(!auth()->user()->isAdmin())
         document.addEventListener('DOMContentLoaded', function() {
             let selectedRecipients = new Map();
             const recipientSearch = document.getElementById('recipientSearch');
             const recipientSuggestions = document.getElementById('recipientSuggestions');
             const selectedRecipientsContainer = document.getElementById('selectedRecipients');
             const recipientIds = document.getElementById('recipientIds');
-            const showRecipientsCheckbox = document.getElementById('showRecipients');
 
-            // Verify elements exist
-            if (!recipientSearch || !recipientSuggestions) {
-                console.error('Required elements not found');
-                return;
-            }
-
-            // Render selected recipients function
             function renderSelectedRecipients() {
                 selectedRecipientsContainer.innerHTML = Array.from(selectedRecipients.entries()).map(([id, name]) => {
-                    const isGroup = typeof id === 'string';
-                    const badgeColor = isGroup ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
-
                     return `
-                        <span class="inline-flex items-center gap-1 rounded-full ${badgeColor} px-3 py-1 text-sm font-medium">
-                            ${isGroup ? '📋 ' : ''}${name}
-                            <button type="button" onclick="removeRecipient('${id}')" class="${isGroup ? 'text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-green-100' : 'text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100'}">
+                        <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-sm font-medium dark:bg-blue-900/30 dark:text-blue-300">
+                            ${name}
+                            <button type="button" onclick="removeRecipient('${id}')" class="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -149,14 +426,10 @@
                     `;
                 }).join('');
 
-                recipientIds.value = Array.from(selectedRecipients.keys())
-                    .map(id => typeof id === 'string' ? id : id.toString())
-                    .join(',');
+                recipientIds.value = Array.from(selectedRecipients.keys()).map(id => id.toString()).join(',');
             }
 
-            // Add individual recipient
             window.addRecipient = function(id, name) {
-                console.log('Adding recipient:', id, name);
                 if (!selectedRecipients.has(id)) {
                     selectedRecipients.set(id, name);
                     renderSelectedRecipients();
@@ -165,28 +438,13 @@
                 }
             };
 
-            // Add group of recipients
-            window.addRecipientGroup = function(groupId, groupName) {
-                console.log('Adding group:', groupId, groupName);
-                if (!selectedRecipients.has(groupId)) {
-                    selectedRecipients.set(groupId, groupName);
-                    renderSelectedRecipients();
-                    recipientSearch.value = '';
-                    recipientSuggestions.classList.add('hidden');
-                }
-            };
-
-            // Remove recipient or group
             window.removeRecipient = function(id) {
-                console.log('Removing:', id);
                 selectedRecipients.delete(id);
                 renderSelectedRecipients();
             };
 
-            // Search for recipients
             recipientSearch.addEventListener('input', async (e) => {
                 const query = e.target.value.trim();
-                console.log('Searching for:', query);
 
                 if (query.length < 2) {
                     recipientSuggestions.classList.add('hidden');
@@ -195,21 +453,16 @@
 
                 try {
                     const url = `{{ route('api.messages.search') }}?q=${encodeURIComponent(query)}`;
-                    console.log('Fetching from:', url);
-
                     const response = await fetch(url);
 
                     if (!response.ok) {
-                        console.error('API returned status:', response.status);
                         recipientSuggestions.classList.add('hidden');
                         return;
                     }
 
                     const results = await response.json();
-                    console.log('Search results:', results);
 
                     if (!results || results.length === 0) {
-                        console.log('No results found');
                         recipientSuggestions.classList.add('hidden');
                         return;
                     }
@@ -218,48 +471,22 @@
                         const fullName = item.full_name || item.name;
                         const encodedFullName = encodeURIComponent(JSON.stringify(fullName));
 
-                        if (item.type === 'group') {
-                            // Group item styling
-                            return `
-                                <div class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition bg-blue-50/50 dark:bg-blue-900/10" data-group-id="${item.id}" data-group-name="${encodedFullName}">
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${fullName}</p>
-                                    </div>
-                                    <span class="ml-2 inline-flex items-center rounded-full bg-blue-200 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-700 dark:text-blue-200 whitespace-nowrap">
-                                        ${item.role}
-                                    </span>
+                        return `
+                            <div class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition" data-user-id="${item.id}" data-user-name="${encodedFullName}">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${fullName}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">${item.email || ''}</p>
                                 </div>
-                            `;
-                        } else {
-                            // Regular user item styling
-                            return `
-                                <div class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition" data-user-id="${item.id}" data-user-name="${encodedFullName}">
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${fullName}</p>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">${item.email || ''}</p>
-                                    </div>
-                                    <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300 whitespace-nowrap">
-                                        ${item.role}
-                                    </span>
-                                </div>
-                            `;
-                        }
+                                <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300 whitespace-nowrap">${item.role}</span>
+                            </div>
+                        `;
                     }).join('');
 
-                    // Add event listeners to suggestion items
                     recipientSuggestions.querySelectorAll('[data-user-id]').forEach(el => {
                         el.addEventListener('click', function() {
                             const id = parseInt(this.dataset.userId);
                             const name = JSON.parse(decodeURIComponent(this.dataset.userName));
                             addRecipient(id, name);
-                        });
-                    });
-
-                    recipientSuggestions.querySelectorAll('[data-group-id]').forEach(el => {
-                        el.addEventListener('click', function() {
-                            const id = this.dataset.groupId;
-                            const name = JSON.parse(decodeURIComponent(this.dataset.groupName));
-                            addRecipientGroup(id, name);
                         });
                     });
 
@@ -270,22 +497,13 @@
                 }
             });
 
-            // Close suggestions when clicking outside
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('#recipientsContainer')) {
                     recipientSuggestions.classList.add('hidden');
                 }
             });
-
-            // Toggle show recipients
-            if (showRecipientsCheckbox) {
-                showRecipientsCheckbox.addEventListener('change', (e) => {
-                    selectedRecipientsContainer.classList.toggle('hidden', !e.target.checked);
-                });
-            }
-
-            console.log('Recipient search initialized');
         });
+        @endif
     </script>
     @endpush
 </x-app-layout>
