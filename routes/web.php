@@ -140,6 +140,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // API routes for schedules
     Route::get('api/school-years/{schoolYear}/school-grades', [SchoolYearController::class, 'getSchoolGrades']);
+
+    // API routes for message filters
+    Route::get('api/messages/filter-options', [\App\Http\Controllers\Api\MessageFilterController::class, 'getFilterOptions']);
+    Route::get('api/messages/filter-data', [\App\Http\Controllers\Api\MessageFilterController::class, 'getFilterData']);
+    Route::get('api/messages/users', [\App\Http\Controllers\Api\MessageFilterController::class, 'getUsers']);
 });
 
 require __DIR__.'/auth.php';
