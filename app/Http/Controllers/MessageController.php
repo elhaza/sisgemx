@@ -112,7 +112,7 @@ class MessageController extends Controller
         foreach ($parts as $part) {
             $part = trim($part);
 
-            // Handle group searches
+            // Handle group searches (legacy support)
             if (str_starts_with($part, 'all:')) {
                 $roleQuery = str_replace('all:', '', $part);
                 $groupIds = User::where('role', $roleQuery)
@@ -130,7 +130,7 @@ class MessageController extends Controller
                     ->toArray();
                 $recipientIds = array_merge($recipientIds, $groupIds);
             } else {
-                // Handle individual user ID
+                // Handle individual user ID (numeric)
                 if (is_numeric($part)) {
                     $recipientIds[] = (int) $part;
                 }
