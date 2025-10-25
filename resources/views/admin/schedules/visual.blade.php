@@ -239,6 +239,9 @@
         }
 
         function setupSelectors() {
+            // Setup show students button listener (only once)
+            document.getElementById('show-students-btn').addEventListener('click', showStudentsModal);
+
             document.getElementById('school_grade_id').addEventListener('change', function() {
                 selectedSchoolGradeId = this.value;
                 loadSchedule();
@@ -247,7 +250,6 @@
                 const showStudentsBtn = document.getElementById('show-students-btn');
                 if (selectedSchoolGradeId) {
                     showStudentsBtn.disabled = false;
-                    showStudentsBtn.addEventListener('click', showStudentsModal);
                 } else {
                     showStudentsBtn.disabled = true;
                 }
