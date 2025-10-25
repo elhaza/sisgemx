@@ -43,4 +43,23 @@ class Schedule extends Model
     {
         return $this->belongsTo(User::class, 'teacher_id');
     }
+
+    /**
+     * Calculate duration in minutes from start and end times
+     */
+    public function getDurationMinutes(): int
+    {
+        $start = strtotime($this->start_time);
+        $end = strtotime($this->end_time);
+
+        return ($end - $start) / 60;
+    }
+
+    /**
+     * Calculate duration in hours from start and end times
+     */
+    public function getDurationHours(): float
+    {
+        return round($this->getDurationMinutes() / 60, 1);
+    }
 }

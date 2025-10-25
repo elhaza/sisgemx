@@ -79,18 +79,41 @@
                                     ['bg' => 'bg-amber-100', 'border' => 'border-amber-400', 'hover' => 'hover:bg-amber-200', 'text' => 'text-amber-900', 'schedule' => 'bg-amber-500'],
                                 ];
                             @endphp
-                            @foreach($subjects as $index => $subject)
+                            @foreach($groupedSubjects as $groupIndex => $group)
                                 @php
-                                    $color = $colors[$index % count($colors)];
+                                    $color = $colors[$groupIndex % count($colors)];
                                 @endphp
-                                <div class="subject-item cursor-move rounded-lg border-2 border-dashed {{ $color['border'] }} {{ $color['bg'] }} p-3 {{ $color['hover'] }}"
-                                     draggable="true"
-                                     data-subject-id="{{ $subject->id }}"
-                                     data-subject-name="{{ $subject->name }}"
-                                     data-teacher-name="{{ $subject->teacher->name ?? 'Sin maestro' }}"
-                                     data-subject-color="{{ $color['schedule'] }}">
-                                    <div class="font-semibold {{ $color['text'] }}">{{ $subject->name }}</div>
-                                    <div class="text-xs {{ $color['text'] }} opacity-75">{{ $subject->teacher->name ?? 'Sin maestro' }}</div>
+                                <div class="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                    <!-- Materia (Header) -->
+                                    <button type="button" class="toggle-subject w-full text-left" data-subject-name="{{ $group['name'] }}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <h4 class="font-semibold text-gray-900">{{ $group['name'] }}</h4>
+                                                <p class="text-xs text-gray-500">{{ count($group['teachers']) }} maestro(s)</p>
+                                            </div>
+                                            <svg class="toggle-icon h-5 w-5 transform transition-transform text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                            </svg>
+                                        </div>
+                                    </button>
+
+                                    <!-- Maestros (Expandible) -->
+                                    <div class="teachers-list mt-3 hidden space-y-2">
+                                        @foreach($group['teachers'] as $teacher)
+                                            <div class="teacher-item cursor-move rounded-lg border-2 border-dashed {{ $color['border'] }} {{ $color['bg'] }} p-2 {{ $color['hover'] }} transition"
+                                                 draggable="true"
+                                                 data-subject-id="{{ $teacher['subject_id'] }}"
+                                                 data-subject-name="{{ $group['name'] }}"
+                                                 data-teacher-id="{{ $teacher['id'] }}"
+                                                 data-teacher-name="{{ $teacher['name'] }}"
+                                                 data-subject-color="{{ $color['schedule'] }}">
+                                                <div class="font-medium {{ $color['text'] }} text-sm">{{ $teacher['name'] }}</div>
+                                                <div class="text-xs {{ $color['text'] }} opacity-75">
+                                                    📚 {{ $teacher['hours_assigned'] }} hora(s)
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
@@ -128,7 +151,38 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Show Students Button -->
+                        <div class="mt-6 flex justify-center">
+                            <button
+                                id="show-students-btn"
+                                type="button"
+                                disabled
+                                class="inline-flex items-center rounded-md bg-indigo-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM15 20H9m6 0h6M9 20H3" />
+                                </svg>
+                                Mostrar alumnos de este grupo
+                            </button>
+                        </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Alumnos -->
+        <div id="students-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-2xl mx-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Alumnos del Grupo</h3>
+                    <button type="button" onclick="closeStudentsModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div id="students-list" class="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
+                    <!-- Students will be loaded here -->
                 </div>
             </div>
         </div>
@@ -140,18 +194,63 @@
         let draggedScheduleItem = null;
         let selectedSchoolGradeId = '';
         let timeInterval = 60; // Default 60 minutes
+        let subjectColorMap = {}; // Map subject_id to color class
 
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize
             generateScheduleGrid();
             setupSelectors();
             setupSaveButton();
+            setupToggleSubjects();
+            setupDragAndDrop();
+            buildSubjectColorMap();
         });
+
+        function buildSubjectColorMap() {
+            // Get all teacher items and map their subject_id to color
+            document.querySelectorAll('.teacher-item').forEach(item => {
+                const subjectId = item.dataset.subjectId;
+                const color = item.dataset.subjectColor;
+                if (subjectId && color) {
+                    subjectColorMap[subjectId] = color;
+                }
+            });
+        }
+
+        function setupToggleSubjects() {
+            document.querySelectorAll('.toggle-subject').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const container = this.closest('div');
+                    const teachersList = container.querySelector('.teachers-list');
+                    const icon = this.querySelector('.toggle-icon');
+
+                    if (!teachersList) return;
+
+                    if (teachersList.classList.contains('hidden')) {
+                        teachersList.classList.remove('hidden');
+                        icon.style.transform = 'rotate(180deg)';
+                    } else {
+                        teachersList.classList.add('hidden');
+                        icon.style.transform = 'rotate(0deg)';
+                    }
+                });
+            });
+        }
 
         function setupSelectors() {
             document.getElementById('school_grade_id').addEventListener('change', function() {
                 selectedSchoolGradeId = this.value;
                 loadSchedule();
+
+                // Enable/disable students button
+                const showStudentsBtn = document.getElementById('show-students-btn');
+                if (selectedSchoolGradeId) {
+                    showStudentsBtn.disabled = false;
+                    showStudentsBtn.addEventListener('click', showStudentsModal);
+                } else {
+                    showStudentsBtn.disabled = true;
+                }
             });
 
             document.getElementById('time_interval').addEventListener('change', function() {
@@ -226,6 +325,8 @@
                 .then(schedules => {
                     currentSchedules = schedules;
                     renderSchedules(schedules);
+                    setupDragAndDrop();
+                    buildSubjectColorMap();
                 })
                 .catch(error => {
                     console.error('Error loading schedule:', error);
@@ -263,9 +364,8 @@
 
             if (!cell) return;
 
-            // Get color from subject item
-            const subjectItem = document.querySelector(`.subject-item[data-subject-id="${schedule.subject_id}"]`);
-            const subjectColor = subjectItem ? subjectItem.dataset.subjectColor : 'bg-blue-500';
+            // Get color from color map, or use default
+            const subjectColor = subjectColorMap[schedule.subject_id] || 'bg-blue-500';
 
             const scheduleDiv = document.createElement('div');
             scheduleDiv.className = `schedule-item absolute inset-x-1 top-1 rounded ${subjectColor} p-2 text-white shadow-lg cursor-move hover:opacity-90 transition overflow-hidden border-2 border-white`;
@@ -320,13 +420,14 @@
         };
 
         function setupDragAndDrop() {
-            // Subject items dragging
-            const subjectItems = document.querySelectorAll('.subject-item');
-            subjectItems.forEach(item => {
+            // Teacher items dragging
+            const teacherItems = document.querySelectorAll('.teacher-item');
+            teacherItems.forEach(item => {
                 item.ondragstart = function(e) {
                     draggedSubject = {
                         id: this.dataset.subjectId,
                         name: this.dataset.subjectName,
+                        teacherId: this.dataset.teacherId,
                         teacherName: this.dataset.teacherName,
                         color: this.dataset.subjectColor
                     };
@@ -435,7 +536,7 @@
                         const endTime = calculateEndTimeFromDuration(time, durationMinutes);
 
                         document.getElementById('schedule-modal').remove();
-                        createSchedule(draggedSubject.id, day, time, endTime, classroom);
+                        createSchedule(draggedSubject.id, day, time, endTime, classroom, draggedSubject.teacherId || null);
                     };
 
                     return false;
@@ -459,7 +560,7 @@
             return `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
         }
 
-        function createSchedule(subjectId, day, startTime, endTime, classroom) {
+        function createSchedule(subjectId, day, startTime, endTime, classroom, teacherId = null) {
             const data = {
                 school_grade_id: selectedSchoolGradeId,
                 subject_id: subjectId,
@@ -469,6 +570,11 @@
                 classroom: classroom,
                 _token: '{{ csrf_token() }}'
             };
+
+            // If teacherId is provided, override with that teacher
+            if (teacherId) {
+                data.teacher_id = teacherId;
+            }
 
             fetch('{{ route("admin.schedules.store-visual") }}', {
                 method: 'POST',
@@ -481,6 +587,10 @@
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
+                    // Add color to map if we have it from draggedSubject
+                    if (draggedSubject && draggedSubject.color) {
+                        subjectColorMap[subjectId] = draggedSubject.color;
+                    }
                     loadSchedule();
                     showNotification('Horario creado exitosamente', 'success');
                 } else {
@@ -557,5 +667,76 @@
                 notification.remove();
             }, 3000);
         }
+
+        async function showStudentsModal() {
+            if (!selectedSchoolGradeId) {
+                showNotification('Por favor selecciona un grado escolar', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`{{ route('admin.schedules.get-group-students') }}?school_grade_id=${selectedSchoolGradeId}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showNotification('Error al cargar los alumnos', 'error');
+                    return;
+                }
+
+                const studentsList = document.getElementById('students-list');
+                const gradeSelect = document.getElementById('school_grade_id');
+                const gradeName = gradeSelect.options[gradeSelect.selectedIndex].text;
+
+                if (data.students && data.students.length > 0) {
+                    studentsList.innerHTML = `
+                        <div class="mb-3">
+                            <p class="text-sm text-gray-600 font-semibold mb-3">Grupo: ${gradeName}</p>
+                            <div class="space-y-2">
+                                ${data.students.map(student => `
+                                    <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 hover:bg-blue-50 transition">
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-gray-900">${student.full_name}</p>
+                                            <p class="text-xs text-gray-500">${student.email}</p>
+                                        </div>
+                                        <span class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                                            Activo
+                                        </span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="mt-4 text-sm text-gray-600">
+                            Total: <strong>${data.students.length}</strong> alumno(s)
+                        </div>
+                    `;
+                } else {
+                    studentsList.innerHTML = `
+                        <div class="text-center py-8">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM15 20H9m6 0h6M9 20H3" />
+                            </svg>
+                            <p class="mt-2 text-gray-600">No hay alumnos en este grupo</p>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('students-modal').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error al cargar los alumnos', 'error');
+            }
+        }
+
+        function closeStudentsModal() {
+            document.getElementById('students-modal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('students-modal');
+            if (modal && event.target === modal) {
+                closeStudentsModal();
+            }
+        });
     </script>
 </x-app-layout>

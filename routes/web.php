@@ -45,7 +45,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
     Route::get('/messages/{message}', [MessageController::class, 'show'])->name('messages.show');
     Route::post('/messages/{message}/reply', [MessageController::class, 'reply'])->name('messages.reply');
+    Route::post('/messages/{message}/mark-as-read', [MessageController::class, 'markAsRead'])->name('messages.mark-as-read');
+    Route::post('/messages/{message}/mark-as-unread', [MessageController::class, 'markAsUnread'])->name('messages.mark-as-unread');
+    Route::delete('/messages/{message}', [MessageController::class, 'delete'])->name('messages.delete');
     Route::get('/api/messages/search', [MessageController::class, 'search'])->name('api.messages.search');
+    Route::get('/api/messages/student-teachers', [MessageController::class, 'getStudentTeachers'])->name('api.messages.student-teachers');
 
     // Rutas para Padres de Familia
     Route::middleware(['role:parent'])->prefix('parent')->name('parent.')->group(function () {
@@ -126,6 +130,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('schedules', ScheduleController::class);
         Route::get('schedules-visual', [ScheduleController::class, 'visual'])->name('schedules.visual');
         Route::get('schedules-visual/get-group-schedule', [ScheduleController::class, 'getGroupSchedule'])->name('schedules.get-group-schedule');
+        Route::get('schedules-visual/get-available-teachers', [ScheduleController::class, 'getAvailableTeachers'])->name('schedules.get-available-teachers');
+        Route::get('schedules-visual/get-group-students', [ScheduleController::class, 'getGroupStudents'])->name('schedules.get-group-students');
         Route::post('schedules-visual', [ScheduleController::class, 'storeVisual'])->name('schedules.store-visual');
         Route::put('schedules-visual/{schedule}', [ScheduleController::class, 'updateVisual'])->name('schedules.update-visual');
         Route::delete('schedules-visual/{schedule}', [ScheduleController::class, 'destroyVisual'])->name('schedules.destroy-visual');

@@ -261,4 +261,28 @@ class User extends Authenticatable
     {
         return SchoolGrade::orderBy('level')->orderBy('section')->get();
     }
+
+    /**
+     * Get teachers for a student with their subjects
+     */
+    public function getStudentTeachers(): \Illuminate\Support\Collection
+    {
+        if (! $this->isStudent() || ! $this->student) {
+            return collect();
+        }
+
+        return Schedule::where('school_grade_id', $this->student->school_grade_id)
+            ->with(['teacher', 'subject'])
+            ->distinct('teacher_id')
+            ->get()
+            ->map(function ($schedule) {
+                return [
+                    'id' => $schedule->teacher->id,
+                    'name' => $schedule->teacher->full_name,
+                    'email' => $schedule->teacher->email,
+                    'subject' => $schedule->subject?->name,
+                ];
+            })
+            ->values();
+    }
 }

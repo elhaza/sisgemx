@@ -355,26 +355,71 @@
                                 </button>
                             </div>
                         @else
-                            <!-- Non-admin users use the original search -->
-                            <div class="mb-6">
-                                <label for="recipients" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Para *
-                                </label>
-                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    Busca por nombre, email o apellido
-                                </p>
-                                <div id="recipientsContainer" class="relative mt-3">
-                                    <input
-                                        type="text"
-                                        id="recipientSearch"
-                                        placeholder="Buscar destinatarios..."
-                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
-                                        autocomplete="off"
-                                    >
-                                    <div id="recipientSuggestions" class="hidden absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-96 overflow-y-auto"></div>
+                            <!-- Students have special UI for selecting teachers -->
+                            @if(auth()->user()->isStudent())
+                                <div class="mb-6">
+                                    <label for="teacherSelection" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Maestros *
+                                    </label>
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        Selecciona todos tus maestros o busca individuales
+                                    </p>
+
+                                    <!-- All Teachers Button -->
+                                    <div class="mt-3">
+                                        <button
+                                            type="button"
+                                            id="allTeachersBtn"
+                                            class="inline-flex items-center rounded-md bg-blue-100 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40">
+                                            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            Todos mis maestros
+                                        </button>
+                                    </div>
+
+                                    <!-- Individual Teacher Search -->
+                                    <div class="mt-6">
+                                        <label for="teacherSearch" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            O busca maestros individuales
+                                        </label>
+                                        <div id="teacherContainer" class="relative">
+                                            <input
+                                                type="text"
+                                                id="teacherSearch"
+                                                placeholder="Buscar maestro por nombre..."
+                                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                                                autocomplete="off"
+                                            >
+                                            <div id="teacherSuggestions" class="hidden absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-96 overflow-y-auto"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Selected Recipients Display -->
+                                    <div id="studentSelectedRecipients" class="mt-4 flex flex-wrap gap-2"></div>
                                 </div>
-                                <div id="selectedRecipients" class="mt-3 flex flex-wrap gap-2"></div>
-                            </div>
+                            @else
+                                <!-- Non-admin, non-student users use the original search -->
+                                <div class="mb-6">
+                                    <label for="recipients" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Para *
+                                    </label>
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        Busca por nombre, email o apellido
+                                    </p>
+                                    <div id="recipientsContainer" class="relative mt-3">
+                                        <input
+                                            type="text"
+                                            id="recipientSearch"
+                                            placeholder="Buscar destinatarios..."
+                                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                                            autocomplete="off"
+                                        >
+                                        <div id="recipientSuggestions" class="hidden absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-96 overflow-y-auto"></div>
+                                    </div>
+                                    <div id="selectedRecipients" class="mt-3 flex flex-wrap gap-2"></div>
+                                </div>
+                            @endif
                         @endif
 
                         <!-- Hidden recipient IDs input - Used by both admin and non-admin users -->
@@ -470,8 +515,140 @@
 
     @push('scripts')
     <script>
-        // For non-admin users, keep the original search functionality
-        @if(!auth()->user()->isAdmin())
+        // For students, handle teacher selection
+        @if(auth()->user()->isStudent())
+        let selectedTeachers = new Map();
+        let teacherSearch = null;
+        let teacherSuggestions = null;
+        let selectedTeachersContainer = null;
+        let recipientIds = null;
+
+        // Load all student teachers
+        window.addAllStudentTeachers = async function() {
+            try {
+                const response = await fetch('{{ route("api.messages.student-teachers") }}');
+                const teachers = await response.json();
+
+                teachers.forEach(teacher => {
+                    selectedTeachers.set(teacher.id, `${teacher.name} (${teacher.subject})`);
+                });
+
+                renderSelectedTeachers();
+            } catch (error) {
+                console.error('Error loading teachers:', error);
+                alert('Error al cargar los maestros');
+            }
+        };
+
+        function renderSelectedTeachers() {
+            selectedTeachersContainer.innerHTML = Array.from(selectedTeachers.entries()).map(([id, name]) => {
+                return `
+                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-sm font-medium dark:bg-blue-900/30 dark:text-blue-300">
+                        ${name}
+                        <button type="button" onclick="removeTeacher('${id}')" class="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </span>
+                `;
+            }).join('');
+
+            recipientIds.value = Array.from(selectedTeachers.keys()).map(id => id.toString()).join(',');
+        }
+
+        window.addTeacher = function(id, name, subject) {
+            const displayName = `${name} (${subject})`;
+            if (!selectedTeachers.has(id)) {
+                selectedTeachers.set(id, displayName);
+                renderSelectedTeachers();
+                teacherSearch.value = '';
+                teacherSuggestions.classList.add('hidden');
+            }
+        };
+
+        window.removeTeacher = function(id) {
+            selectedTeachers.delete(id);
+            renderSelectedTeachers();
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            teacherSearch = document.getElementById('teacherSearch');
+            teacherSuggestions = document.getElementById('teacherSuggestions');
+            selectedTeachersContainer = document.getElementById('studentSelectedRecipients');
+            recipientIds = document.getElementById('recipientIds');
+
+            // Attach event listener to the "All Teachers" button
+            const allTeachersBtn = document.getElementById('allTeachersBtn');
+            if (allTeachersBtn) {
+                allTeachersBtn.addEventListener('click', addAllStudentTeachers);
+            }
+
+            teacherSearch.addEventListener('input', async (e) => {
+                const query = e.target.value.trim();
+
+                if (query.length < 2) {
+                    teacherSuggestions.classList.add('hidden');
+                    return;
+                }
+
+                try {
+                    const url = `{{ route('api.messages.search') }}?q=${encodeURIComponent(query)}`;
+                    const response = await fetch(url);
+
+                    if (!response.ok) {
+                        teacherSuggestions.classList.add('hidden');
+                        return;
+                    }
+
+                    const results = await response.json();
+
+                    if (!results || results.length === 0) {
+                        teacherSuggestions.classList.add('hidden');
+                        return;
+                    }
+
+                    teacherSuggestions.innerHTML = results.map(item => {
+                        const fullName = item.full_name || item.name;
+                        const subject = item.subject || '(sin materia)';
+                        const encodedFullName = encodeURIComponent(JSON.stringify(fullName));
+                        const encodedSubject = encodeURIComponent(JSON.stringify(subject));
+
+                        return `
+                            <div class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition" data-user-id="${item.id}" data-user-name="${encodedFullName}" data-user-subject="${encodedSubject}">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${fullName}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">${subject}</p>
+                                </div>
+                                <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300 whitespace-nowrap">${item.role}</span>
+                            </div>
+                        `;
+                    }).join('');
+
+                    teacherSuggestions.querySelectorAll('[data-user-id]').forEach(el => {
+                        el.addEventListener('click', function() {
+                            const id = parseInt(this.dataset.userId);
+                            const name = JSON.parse(decodeURIComponent(this.dataset.userName));
+                            const subject = JSON.parse(decodeURIComponent(this.dataset.userSubject));
+                            addTeacher(id, name, subject);
+                        });
+                    });
+
+                    teacherSuggestions.classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error searching teachers:', error);
+                    teacherSuggestions.classList.add('hidden');
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#teacherContainer')) {
+                    teacherSuggestions.classList.add('hidden');
+                }
+            });
+        });
+        @else
+        // For non-admin, non-student users, keep the original search functionality
         document.addEventListener('DOMContentLoaded', function() {
             let selectedRecipients = new Map();
             const recipientSearch = document.getElementById('recipientSearch');

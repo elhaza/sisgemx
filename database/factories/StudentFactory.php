@@ -17,7 +17,8 @@ class StudentFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'enrollment_number' => $this->faker->unique()->numerify('###-###'),
+            'status' => 'active',
         ];
     }
 }

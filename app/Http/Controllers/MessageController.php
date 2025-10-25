@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
+use App\Models\MessageRecipient;
+use App\Models\Student;
 use App\Models\User;
 use App\Policies\MessagePolicy;
 use Illuminate\Http\JsonResponse;
@@ -12,9 +14,10 @@ use Illuminate\View\View;
 
 class MessageController extends Controller
 {
-    public function inbox(): View
+    public function inbox(Request $request): View
     {
         $user = auth()->user();
+        $searchQuery = $request->query('search', '');
 
         // Get conversations (latest message from each unique sender/recipient pair)
         $conversations = Message::where(function ($q) use ($user) {
@@ -25,9 +28,21 @@ class MessageController extends Controller
         })
             ->with(['sender', 'recipients' => function ($q) use ($user) {
                 $q->where('recipient_id', $user->id);
-            }])
-            ->latest()
-            ->paginate(20);
+            }]);
+
+        // Apply search filter if provided
+        if ($searchQuery) {
+            $conversations->where(function ($q) use ($searchQuery) {
+                $q->where('subject', 'like', "%{$searchQuery}%")
+                    ->orWhere('body', 'like', "%{$searchQuery}%")
+                    ->orWhereHas('sender', function ($q) use ($searchQuery) {
+                        $q->where('name', 'like', "%{$searchQuery}%")
+                            ->orWhere('email', 'like', "%{$searchQuery}%");
+                    });
+            });
+        }
+
+        $conversations = $conversations->latest()->paginate(20);
 
         // Count unread messages
         $unreadCount = Message::whereHas('recipients', function ($q) use ($user) {
@@ -35,7 +50,7 @@ class MessageController extends Controller
                 ->whereNull('read_at');
         })->count();
 
-        return view('messages.inbox', compact('conversations', 'unreadCount'));
+        return view('messages.inbox', compact('conversations', 'unreadCount', 'searchQuery'));
     }
 
     public function show(Message $message): View
@@ -184,6 +199,17 @@ class MessageController extends Controller
         return redirect()->route('messages.show', $rootMessage)->with('success', 'Respuesta enviada correctamente.');
     }
 
+    public function getStudentTeachers(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (! $user->isStudent()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        return response()->json($user->getStudentTeachers());
+    }
+
     public function search(Request $request): JsonResponse
     {
         $query = $request->query('q');
@@ -223,15 +249,26 @@ class MessageController extends Controller
         $results = $recipients->limit(10)
             ->select('id', 'name', 'apellido_paterno', 'apellido_materno', 'email', 'role')
             ->get()
-            ->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'full_name' => $user->full_name,
-                    'email' => $user->email,
-                    'role' => ucfirst(str_replace('_', ' ', $user->role->value)),
+            ->map(function ($resultUser) {
+                $data = [
+                    'id' => $resultUser->id,
+                    'name' => $resultUser->name,
+                    'full_name' => $resultUser->full_name,
+                    'email' => $resultUser->email,
+                    'role' => ucfirst(str_replace('_', ' ', $resultUser->role->value)),
                     'type' => 'user',
                 ];
+
+                // If the current user is a student and searching for teachers, add subject info
+                if (auth()->user()->isStudent() && $resultUser->isTeacher()) {
+                    $studentTeachers = auth()->user()->getStudentTeachers();
+                    $teacherData = $studentTeachers->firstWhere('id', $resultUser->id);
+                    if ($teacherData) {
+                        $data['subject'] = $teacherData['subject'];
+                    }
+                }
+
+                return $data;
             });
 
         return response()->json($results);
@@ -316,5 +353,46 @@ class MessageController extends Controller
             });
 
         return response()->json($results);
+    }
+
+    public function markAsRead(Message $message): RedirectResponse
+    {
+        $this->authorize('view', $message);
+
+        $user = auth()->user();
+        $message->markAsRead($user);
+
+        return redirect()->back()->with('success', 'Mensaje marcado como leído.');
+    }
+
+    public function markAsUnread(Message $message): RedirectResponse
+    {
+        $this->authorize('view', $message);
+
+        $user = auth()->user();
+        MessageRecipient::where('message_id', $message->id)
+            ->where('recipient_id', $user->id)
+            ->update(['read_at' => null]);
+
+        return redirect()->back()->with('success', 'Mensaje marcado como no leído.');
+    }
+
+    public function delete(Message $message): RedirectResponse
+    {
+        $this->authorize('delete', $message);
+
+        $user = auth()->user();
+
+        // If user is a recipient, remove them from recipients
+        if ($message->sender_id !== $user->id) {
+            MessageRecipient::where('message_id', $message->id)
+                ->where('recipient_id', $user->id)
+                ->delete();
+        } else {
+            // If user is the sender, delete the message entirely
+            $message->delete();
+        }
+
+        return redirect()->route('messages.inbox')->with('success', 'Mensaje eliminado.');
     }
 }

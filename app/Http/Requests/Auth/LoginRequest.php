@@ -2,6 +2,10 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\Student;
+use App\Models\User;
+use App\StudentStatus;
+use App\UserRole;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -49,7 +53,47 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // Validate active status for students and parents
+        $user = Auth::user();
+        if (! $this->isUserActive($user)) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'Tu cuenta no está activa. Por favor, contacta al administrador.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
+    }
+
+    /**
+     * Check if the user is active based on their role.
+     */
+    private function isUserActive(User $user): bool
+    {
+        // Students: check if their student record is active
+        if ($user->role === UserRole::Student) {
+            $student = $user->student;
+            if (! $student || $student->status !== StudentStatus::Active) {
+                return false;
+            }
+        }
+
+        // Parents: check if they have at least one active student child
+        if ($user->role === UserRole::Parent) {
+            $hasActiveChild = Student::whereHas('user', function ($q) use ($user) {
+                $q->where('parent_id', $user->id);
+            })
+                ->where('status', StudentStatus::Active)
+                ->exists();
+
+            if (! $hasActiveChild) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

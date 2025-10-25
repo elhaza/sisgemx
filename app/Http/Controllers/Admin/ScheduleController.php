@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Schedule;
 use App\Models\SchoolGrade;
 use App\Models\SchoolYear;
+use App\Models\Student;
 use App\Models\Subject;
 use Illuminate\Http\Request;
 
@@ -90,7 +91,115 @@ class ScheduleController extends Controller
         $subjects = Subject::with('teacher')->where('school_year_id', $activeSchoolYear?->id)->get();
         $schoolGrades = SchoolGrade::with('schoolYear')->get();
 
-        return view('admin.schedules.visual', compact('schoolYears', 'activeSchoolYear', 'subjects', 'schoolGrades'));
+        // Group subjects by name and calculate teacher hours
+        $groupedSubjects = $this->groupSubjectsByNameWithTeacherHours($subjects, $activeSchoolYear?->id);
+
+        return view('admin.schedules.visual', compact('schoolYears', 'activeSchoolYear', 'subjects', 'groupedSubjects', 'schoolGrades'));
+    }
+
+    /**
+     * Group subjects by name and calculate hours assigned to each teacher
+     */
+    private function groupSubjectsByNameWithTeacherHours($subjects, $schoolYearId)
+    {
+        $grouped = [];
+
+        foreach ($subjects as $subject) {
+            $subjectName = $subject->name;
+
+            if (! isset($grouped[$subjectName])) {
+                $grouped[$subjectName] = [
+                    'name' => $subjectName,
+                    'teachers' => [],
+                ];
+            }
+
+            // Calculate hours assigned to this teacher for this subject
+            $hoursAssigned = Schedule::whereHas('subject', function ($q) use ($subjectName, $schoolYearId) {
+                $q->where('name', $subjectName)->where('school_year_id', $schoolYearId);
+            })
+                ->where('teacher_id', $subject->teacher_id)
+                ->get()
+                ->sum(function ($schedule) {
+                    return $schedule->getDurationHours();
+                });
+
+            $grouped[$subjectName]['teachers'][] = [
+                'id' => $subject->teacher_id,
+                'name' => $subject->teacher->full_name,
+                'email' => $subject->teacher->email,
+                'subject_id' => $subject->id,
+                'hours_assigned' => round($hoursAssigned, 1),
+            ];
+        }
+
+        // Sort teachers within each subject by name
+        foreach ($grouped as &$group) {
+            usort($group['teachers'], function ($a, $b) {
+                return strcmp($a['name'], $b['name']);
+            });
+        }
+
+        // Return as array of groups, sorted by subject name
+        ksort($grouped);
+
+        return array_values($grouped);
+    }
+
+    /**
+     * Get available teachers for a subject at a specific time slot
+     */
+    public function getAvailableTeachers(Request $request)
+    {
+        $subjectName = $request->query('subject_name');
+        $dayOfWeek = $request->query('day_of_week');
+        $startTime = $request->query('start_time');
+        $endTime = $request->query('end_time');
+
+        // Get all subjects with this name
+        $subjects = Subject::with('teacher')
+            ->where('name', $subjectName)
+            ->get();
+
+        $availableTeachers = [];
+
+        foreach ($subjects as $subject) {
+            // Check if teacher has conflict at this time
+            $hasConflict = Schedule::where('teacher_id', $subject->teacher_id)
+                ->where('day_of_week', $dayOfWeek)
+                ->where(function ($q) use ($startTime, $endTime) {
+                    $q->whereBetween('start_time', [$startTime, $endTime])
+                        ->orWhereBetween('end_time', [$startTime, $endTime])
+                        ->orWhere(function ($q2) use ($startTime, $endTime) {
+                            $q2->where('start_time', '<', $startTime)
+                                ->where('end_time', '>', $endTime);
+                        });
+                })
+                ->exists();
+
+            if (! $hasConflict) {
+                // Calculate hours assigned to this teacher for this subject
+                $hoursAssigned = Schedule::whereHas('subject', function ($q) use ($subjectName) {
+                    $q->where('name', $subjectName);
+                })
+                    ->where('teacher_id', $subject->teacher_id)
+                    ->get()
+                    ->sum(function ($schedule) {
+                        return $schedule->getDurationHours();
+                    });
+
+                $availableTeachers[] = [
+                    'id' => $subject->teacher_id,
+                    'name' => $subject->teacher->full_name,
+                    'email' => $subject->teacher->email,
+                    'subject_id' => $subject->id,
+                    'hours_assigned' => round($hoursAssigned, 1),
+                    'available' => true,
+                ];
+            }
+        }
+
+        return response()->json($availableTeachers);
     }
 
     public function copyForm()
@@ -243,6 +352,7 @@ class ScheduleController extends Controller
         $validated = $request->validate([
             'school_grade_id' => 'required|exists:school_grades,id',
             'subject_id' => 'required|exists:subjects,id',
+            'teacher_id' => 'nullable|exists:users,id',
             'day_of_week' => 'required|string',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
@@ -253,11 +363,13 @@ class ScheduleController extends Controller
         $subject = Subject::findOrFail($validated['subject_id']);
         $schoolGrade = SchoolGrade::findOrFail($validated['school_grade_id']);
 
-        // Add teacher_id from subject
-        $validated['teacher_id'] = $subject->teacher_id;
+        // Use provided teacher_id or default to subject's teacher
+        if (! $validated['teacher_id']) {
+            $validated['teacher_id'] = $subject->teacher_id;
+        }
 
         $teacherConflict = $this->checkTeacherConflict(
-            $subject->teacher_id,
+            $validated['teacher_id'],
             $schoolGrade->school_year_id,
             $validated['day_of_week'],
             $validated['start_time'],
@@ -410,5 +522,25 @@ class ScheduleController extends Controller
         }
 
         return $query->exists();
+    }
+
+    public function getGroupStudents(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $schoolGradeId = $request->query('school_grade_id');
+
+        $students = Student::with('user')
+            ->where('school_grade_id', $schoolGradeId)
+            ->where('status', 'active')
+            ->get()
+            ->map(function (Student $student) {
+                return [
+                    'id' => $student->id,
+                    'full_name' => $student->user->full_name,
+                    'email' => $student->user->email,
+                    'status' => $student->status->value,
+                ];
+            });
+
+        return response()->json(['students' => $students]);
     }
 }

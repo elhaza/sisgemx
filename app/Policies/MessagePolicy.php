@@ -19,7 +19,7 @@ class MessagePolicy
 
     public function delete(User $user, Message $message): bool
     {
-        return $this->isSender($user, $message);
+        return $this->isSender($user, $message) || $this->isRecipient($user, $message);
     }
 
     public function sendTo(User $sender, User $recipient): bool
