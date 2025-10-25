@@ -322,7 +322,9 @@
                 return;
             }
 
-            fetch(`{{ route('admin.schedules.get-group-schedule') }}?school_grade_id=${selectedSchoolGradeId}`)
+            fetch(`{{ route('admin.schedules.get-group-schedule') }}?school_grade_id=${selectedSchoolGradeId}`, {
+                credentials: 'include'
+            })
                 .then(response => response.json())
                 .then(schedules => {
                     currentSchedules = schedules;
@@ -584,6 +586,7 @@
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
+                credentials: 'include',
                 body: JSON.stringify(data)
             })
             .then(response => response.json())
@@ -620,6 +623,7 @@
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
+                credentials: 'include',
                 body: JSON.stringify(data)
             })
             .then(response => response.json())
@@ -642,7 +646,8 @@
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
+                },
+                credentials: 'include'
             })
             .then(response => response.json())
             .then(result => {
