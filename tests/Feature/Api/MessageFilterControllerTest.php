@@ -56,6 +56,32 @@ it('returns filter data for teacher by level', function () {
     $response->assertJsonStructure(['items' => [['id', 'name']]]);
 });
 
+it('returns filter data for teacher by subject without duplicates', function () {
+    $admin = User::factory()->create(['role' => UserRole::Admin]);
+    $teacher1 = User::factory()->create(['role' => UserRole::Teacher]);
+    $teacher2 = User::factory()->create(['role' => UserRole::Teacher]);
+
+    // Create the same subject multiple times (e.g., for different teachers or years)
+    \App\Models\Subject::factory()->create(['name' => 'Artes', 'teacher_id' => $teacher1->id]);
+    \App\Models\Subject::factory()->create(['name' => 'Artes', 'teacher_id' => $teacher2->id]);
+    \App\Models\Subject::factory()->create(['name' => 'Artes', 'teacher_id' => $teacher1->id]);
+    \App\Models\Subject::factory()->create(['name' => 'Matemáticas', 'teacher_id' => $teacher1->id]);
+    \App\Models\Subject::factory()->create(['name' => 'Matemáticas', 'teacher_id' => $teacher2->id]);
+
+    $response = $this->actingAs($admin)
+        ->get('/api/messages/filter-data?role=teacher&filter_type=by_subject');
+
+    $response->assertSuccessful();
+    $items = $response->json('items');
+
+    // Check that each subject name appears only once
+    $names = array_column($items, 'name');
+    $uniqueNames = array_unique($names);
+
+    expect(count($names))->toBe(count($uniqueNames));
+    expect($names)->toContain('Artes', 'Matemáticas');
+});
+
 it('returns users when fetching with all filter', function () {
     $admin = User::factory()->create(['role' => UserRole::Admin]);
     User::factory()->count(3)->create(['role' => UserRole::Teacher]);

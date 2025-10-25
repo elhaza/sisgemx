@@ -145,10 +145,10 @@ class MessageFilterController extends Controller
                 ])->values()->all(),
             ],
             'by_subject' => [
-                'items' => Subject::orderBy('name')->get()->map(fn ($subject) => [
+                'items' => Subject::orderBy('name')->get()->unique('name')->map(fn ($subject) => [
                     'id' => $subject->id,
                     'name' => $subject->name,
-                ])->all(),
+                ])->values()->all(),
             ],
             'by_school_grade' => [
                 'items' => SchoolGrade::orderBy('level')->orderBy('section')->get()->map(fn ($grade) => [
