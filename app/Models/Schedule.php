@@ -13,9 +13,8 @@ class Schedule extends Model
     use HasFactory;
 
     protected $fillable = [
+        'school_grade_id',
         'subject_id',
-        'grade_level',
-        'group',
         'day_of_week',
         'start_time',
         'end_time',
@@ -32,5 +31,10 @@ class Schedule extends Model
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
+    }
+
+    public function schoolGrade(): BelongsTo
+    {
+        return $this->belongsTo(SchoolGrade::class);
     }
 }

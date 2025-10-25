@@ -9,9 +9,27 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('student')->latest()->paginate(15);
+        $query = User::with('student')->latest();
+
+        // Filter by name, email, or apellidos
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('apellido_paterno', 'like', "%{$search}%")
+                    ->orWhere('apellido_materno', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by role if provided
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
+        $users = $query->paginate(15)->withQueryString();
 
         return view('admin.users.index', compact('users'));
     }
@@ -27,6 +45,8 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'apellido_paterno' => 'nullable|string|max:255',
+            'apellido_materno' => 'nullable|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:admin,finance_admin,teacher,parent,student',
@@ -34,7 +54,19 @@ class UserController extends Controller
 
         $validated['password'] = bcrypt($validated['password']);
 
-        User::create($validated);
+        $user = User::create($validated);
+
+        // Check if we should return to a specific URL with the created user
+        if ($request->has('return_to') && $request->has('field')) {
+            $returnUrl = $request->input('return_to');
+            $field = $request->input('field');
+
+            return redirect($returnUrl)->with([
+                'success' => 'Usuario creado exitosamente.',
+                'selected_user_id' => $user->id,
+                'selected_field' => $field,
+            ]);
+        }
 
         return redirect()->route('admin.users.index')->with('success', 'Usuario creado exitosamente.');
     }
@@ -50,6 +82,8 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'apellido_paterno' => 'nullable|string|max:255',
+            'apellido_materno' => 'nullable|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'role' => 'required|in:admin,finance_admin,teacher,parent,student',
         ]);

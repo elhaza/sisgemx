@@ -19,6 +19,8 @@ class PaymentReceipt extends Model
         'registered_by_id',
         'payment_date',
         'amount_paid',
+        'payment_year',
+        'payment_month',
         'reference',
         'account_holder_name',
         'issuing_bank',

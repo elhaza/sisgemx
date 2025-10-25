@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Atwell'),
 
     /*
     |--------------------------------------------------------------------------
@@ -65,7 +65,19 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'America/Phoenix',
+
+    /*
+    |--------------------------------------------------------------------------
+    | People Pickup Limit
+    |--------------------------------------------------------------------------
+    |
+    | This value determines the maximum number of people that can be
+    | authorized to pick up a student from school.
+    |
+    */
+
+    'people_pickup_limit' => env('PEOPLE_PICKUP_LIMIT', 3),
 
     /*
     |--------------------------------------------------------------------------

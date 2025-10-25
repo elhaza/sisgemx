@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('discounts', function (Blueprint $table) {
+        Schema::create('pickup_people', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('school_year_id')->constrained()->cascadeOnDelete();
-            $table->decimal('discount_percentage', 5, 2);
-            $table->text('reason');
-            $table->foreignId('created_by')->constrained('users');
+            $table->string('name');
+            $table->string('relationship');
+            $table->string('face_photo')->nullable();
+            $table->string('id_photo')->nullable();
+            $table->text('notes')->nullable();
             $table->timestamps();
         });
     }
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('discounts');
+        Schema::dropIfExists('pickup_people');
     }
 };

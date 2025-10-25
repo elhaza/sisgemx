@@ -2,14 +2,22 @@
 
 namespace App\Models;
 
+use App\Helpers\PaymentHelper;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StudentTuition extends Model
 {
     protected $fillable = [
         'student_id',
         'school_year_id',
+        'monthly_tuition_id',
+        'year',
+        'month',
         'monthly_amount',
+        'discount_percentage',
+        'final_amount',
+        'due_date',
         'notes',
     ];
 
@@ -17,16 +25,91 @@ class StudentTuition extends Model
     {
         return [
             'monthly_amount' => 'decimal:2',
+            'discount_percentage' => 'decimal:2',
+            'final_amount' => 'decimal:2',
+            'due_date' => 'date',
         ];
     }
 
-    public function student()
+    public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
     }
 
-    public function schoolYear()
+    public function schoolYear(): BelongsTo
     {
         return $this->belongsTo(SchoolYear::class);
+    }
+
+    public function monthlyTuition(): BelongsTo
+    {
+        return $this->belongsTo(MonthlyTuition::class);
+    }
+
+    public function getMonthNameAttribute(): string
+    {
+        $months = [
+            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
+            5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
+            9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre',
+        ];
+
+        return $months[$this->month] ?? '';
+    }
+
+    /**
+     * Get the number of days late for this tuition
+     */
+    public function getDaysLateAttribute(): int
+    {
+        if (! $this->due_date) {
+            return 0;
+        }
+
+        return PaymentHelper::calculateDaysLate($this->due_date->format('Y-m-d'));
+    }
+
+    /**
+     * Get the late fee for this tuition
+     */
+    public function getLateFeeAttribute(): float
+    {
+        if (! $this->due_date) {
+            return 0.0;
+        }
+
+        $daysLate = $this->days_late;
+
+        return PaymentHelper::calculateLateFee($this->final_amount, $daysLate);
+    }
+
+    /**
+     * Get the total amount including late fees
+     */
+    public function getTotalAmountAttribute(): float
+    {
+        return $this->final_amount + $this->late_fee;
+    }
+
+    /**
+     * Check if this tuition is overdue
+     */
+    public function getIsOverdueAttribute(): bool
+    {
+        return $this->days_late > config('payment.grace_period_days', 0);
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (StudentTuition $tuition) {
+            // Calculate final amount based on discount percentage
+            $discount = ($tuition->monthly_amount * $tuition->discount_percentage) / 100;
+            $tuition->final_amount = $tuition->monthly_amount - $discount;
+
+            // Set due date if not already set
+            if (! $tuition->due_date && $tuition->year && $tuition->month) {
+                $tuition->due_date = PaymentHelper::calculateDueDate($tuition->year, $tuition->month);
+            }
+        });
     }
 }

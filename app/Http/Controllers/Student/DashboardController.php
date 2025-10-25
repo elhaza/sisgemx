@@ -12,7 +12,9 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $student = auth()->user()->student;
+        $user = auth()->user();
+        $student = $user->student;
+        $unreadMessageCount = $user->unread_message_count;
 
         if (! $student) {
             abort(404, 'Estudiante no encontrado');
@@ -21,27 +23,27 @@ class DashboardController extends Controller
         $totalGrades = Grade::where('student_id', $student->id)->count();
 
         $pendingAssignments = Assignment::where('due_date', '>=', now())
-            ->whereHas('subject.students', function ($query) use ($student) {
-                $query->where('students.id', $student->id);
+            ->whereHas('subject', function ($query) use ($student) {
+                $query->where('grade_level', $student->grade_level);
             })->count();
 
         $overdueAssignments = Assignment::where('due_date', '<', now())
-            ->whereHas('subject.students', function ($query) use ($student) {
-                $query->where('students.id', $student->id);
+            ->whereHas('subject', function ($query) use ($student) {
+                $query->where('grade_level', $student->grade_level);
             })->count();
 
-        $recentAnnouncements = Announcement::whereHas('teacher.subjects.students', function ($query) use ($student) {
-            $query->where('students.id', $student->id);
+        $recentAnnouncements = Announcement::whereHas('teacher.subjects', function ($query) use ($student) {
+            $query->where('grade_level', $student->grade_level);
         })->latest()->take(5)->get();
 
-        $schedules = Schedule::where('grade_level', $student->grade_level)
-            ->where('group', $student->group)
+        $schedules = Schedule::where('school_grade_id', $student->school_grade_id)
             ->with('subject')
             ->orderBy('day_of_week')
             ->orderBy('start_time')
             ->get();
 
         return view('student.dashboard', compact(
+            'unreadMessageCount',
             'student',
             'totalGrades',
             'pendingAssignments',
@@ -49,5 +51,56 @@ class DashboardController extends Controller
             'recentAnnouncements',
             'schedules'
         ));
+    }
+
+    public function schedule()
+    {
+        $student = auth()->user()->student;
+
+        if (! $student) {
+            abort(404, 'Estudiante no encontrado');
+        }
+
+        $schedules = Schedule::where('school_grade_id', $student->school_grade_id)
+            ->with(['subject.teacher.user'])
+            ->orderBy('day_of_week')
+            ->orderBy('start_time')
+            ->get();
+
+        return view('student.schedule', compact('student', 'schedules'));
+    }
+
+    public function grades()
+    {
+        $student = auth()->user()->student;
+
+        if (! $student) {
+            abort(404, 'Estudiante no encontrado');
+        }
+
+        $grades = Grade::where('student_id', $student->id)
+            ->with(['subject'])
+            ->latest()
+            ->paginate(15);
+
+        return view('student.grades', compact('student', 'grades'));
+    }
+
+    public function assignments()
+    {
+        $student = auth()->user()->student;
+
+        if (! $student) {
+            abort(404, 'Estudiante no encontrado');
+        }
+
+        $assignments = Assignment::whereHas('subject.schedules', function ($query) use ($student) {
+            $query->where('school_grade_id', $student->school_grade_id);
+        })
+            ->with(['subject'])
+            ->orderBy('due_date', 'desc')
+            ->paginate(15);
+
+        return view('student.assignments', compact('student', 'assignments'));
     }
 }

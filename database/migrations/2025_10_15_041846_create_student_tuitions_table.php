@@ -18,8 +18,6 @@ return new class extends Migration
             $table->decimal('monthly_amount', 10, 2);
             $table->text('notes')->nullable();
             $table->timestamps();
-
-            $table->unique(['student_id', 'school_year_id']);
         });
     }
 

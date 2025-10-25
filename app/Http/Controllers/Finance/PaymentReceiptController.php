@@ -15,6 +15,8 @@ class PaymentReceiptController extends Controller
     public function index(Request $request)
     {
         $status = $request->get('status');
+        $month = $request->get('month');
+        $year = $request->get('year');
 
         $query = PaymentReceipt::query()
             ->with(['student.user', 'parent', 'registeredBy']);
@@ -23,15 +25,51 @@ class PaymentReceiptController extends Controller
             $query->where('status', $status);
         }
 
-        $receipts = $query->latest()->paginate(15);
+        if ($month) {
+            $query->whereMonth('payment_date', $month);
+        }
+
+        if ($year) {
+            $query->whereYear('payment_date', $year);
+        }
+
+        $receipts = $query->latest()->paginate(15)->withQueryString();
 
         $pendingReceiptsCount = PaymentReceipt::where('status', ReceiptStatus::Pending)->count();
         $validatedReceiptsCount = PaymentReceipt::where('status', ReceiptStatus::Validated)->count();
 
-        $monthlyIncome = PaymentReceipt::where('status', ReceiptStatus::Validated)
-            ->whereMonth('payment_date', now()->month)
-            ->whereYear('payment_date', now()->year)
-            ->sum('amount_paid');
+        // Calculate income based on filters or default to current month
+        $incomeQuery = PaymentReceipt::where('status', ReceiptStatus::Validated);
+
+        if ($month) {
+            $incomeQuery->whereMonth('payment_date', $month);
+        } elseif (! $year) {
+            // Default to current month if no month/year filter
+            $incomeQuery->whereMonth('payment_date', now()->month);
+        }
+
+        if ($year) {
+            $incomeQuery->whereYear('payment_date', $year);
+        } elseif (! $month) {
+            // Default to current year if no year/month filter
+            $incomeQuery->whereYear('payment_date', now()->year);
+        }
+
+        $income = $incomeQuery->sum('amount_paid');
+
+        // Build dynamic income label
+        $incomeLabel = 'Ingresos';
+        if ($month && $year) {
+            $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            $incomeLabel = 'Ingresos de '.$monthNames[(int) $month].' '.$year;
+        } elseif ($month) {
+            $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            $incomeLabel = 'Ingresos de '.$monthNames[(int) $month];
+        } elseif ($year) {
+            $incomeLabel = 'Ingresos de '.$year;
+        } else {
+            $incomeLabel = 'Ingresos del Mes';
+        }
 
         $rejectedReceiptsCount = PaymentReceipt::where('status', ReceiptStatus::Rejected)->count();
 
@@ -39,7 +77,8 @@ class PaymentReceiptController extends Controller
             'receipts',
             'pendingReceiptsCount',
             'validatedReceiptsCount',
-            'monthlyIncome',
+            'income',
+            'incomeLabel',
             'rejectedReceiptsCount'
         ));
     }
@@ -47,9 +86,23 @@ class PaymentReceiptController extends Controller
     public function create()
     {
         $students = Student::with('user')->get();
-        $parents = User::where('role', 'parent')->get();
 
-        return view('finance.payment-receipts.create', compact('students', 'parents'));
+        return view('finance.payment-receipts.create', compact('students'));
+    }
+
+    public function getStudentParents(Student $student)
+    {
+        $parents = collect();
+
+        if ($student->tutor_1_id) {
+            $parents->push(User::find($student->tutor_1_id));
+        }
+
+        if ($student->tutor_2_id) {
+            $parents->push(User::find($student->tutor_2_id));
+        }
+
+        return response()->json($parents->filter());
     }
 
     public function store(Request $request)

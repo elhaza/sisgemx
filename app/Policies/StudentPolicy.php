@@ -20,7 +20,8 @@ class StudentPolicy
      */
     public function view(User $user, Student $student): bool
     {
-        return false;
+        // Parents can view their own children
+        return $student->tutor_1_id === $user->id || $student->tutor_2_id === $user->id;
     }
 
     /**
