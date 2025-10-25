@@ -30,14 +30,17 @@
                                 Logotipo de la Institución
                             </label>
                             <div class="mt-2">
+                                <div id="preview-container" class="mb-4 flex justify-center hidden">
+                                    <img id="preview-image" src="" alt="Preview" class="h-32 w-auto object-contain">
+                                </div>
                                 @if ($settings?->logo_path)
-                                    <div class="mb-4 flex justify-center">
+                                    <div id="current-logo" class="mb-4 flex justify-center">
                                         <img src="{{ asset('storage/' . $settings->logo_path) }}"
                                             alt="Logo"
                                             class="h-32 w-auto object-contain">
                                     </div>
                                 @endif
-                                <div class="flex justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-10">
+                                <div id="upload-area" class="flex justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-10 transition-colors hover:border-blue-400 hover:bg-blue-50">
                                     <div class="text-center">
                                         <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor"
                                             fill="none" viewBox="0 0 48 48" aria-hidden="true">
@@ -62,6 +65,53 @@
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
+
+                        <script>
+                            const logoInput = document.getElementById('logo');
+                            const uploadArea = document.getElementById('upload-area');
+                            const previewContainer = document.getElementById('preview-container');
+                            const previewImage = document.getElementById('preview-image');
+                            const currentLogo = document.getElementById('current-logo');
+
+                            // Click to select file
+                            logoInput.addEventListener('change', handleFileSelect);
+
+                            // Drag and drop
+                            uploadArea.addEventListener('dragover', (e) => {
+                                e.preventDefault();
+                                uploadArea.classList.add('border-blue-400', 'bg-blue-50');
+                            });
+
+                            uploadArea.addEventListener('dragleave', () => {
+                                uploadArea.classList.remove('border-blue-400', 'bg-blue-50');
+                            });
+
+                            uploadArea.addEventListener('drop', (e) => {
+                                e.preventDefault();
+                                uploadArea.classList.remove('border-blue-400', 'bg-blue-50');
+
+                                const files = e.dataTransfer.files;
+                                if (files.length > 0) {
+                                    logoInput.files = files;
+                                    handleFileSelect();
+                                }
+                            });
+
+                            function handleFileSelect() {
+                                const file = logoInput.files[0];
+                                if (file && file.type.startsWith('image/')) {
+                                    const reader = new FileReader();
+                                    reader.onload = (e) => {
+                                        previewImage.src = e.target.result;
+                                        previewContainer.classList.remove('hidden');
+                                        if (currentLogo) {
+                                            currentLogo.classList.add('hidden');
+                                        }
+                                    };
+                                    reader.readAsDataURL(file);
+                                }
+                            }
+                        </script>
 
                         <div class="flex justify-end gap-3">
                             <a href="{{ route('dashboard') }}"
