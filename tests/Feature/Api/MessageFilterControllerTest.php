@@ -82,6 +82,38 @@ it('returns filter data for teacher by subject without duplicates', function () 
     expect($names)->toContain('Artes', 'Matemáticas');
 });
 
+it('returns teachers when filtering by school grade', function () {
+    $admin = User::factory()->create(['role' => UserRole::Admin]);
+    $teacher1 = User::factory()->create(['role' => UserRole::Teacher]);
+    $teacher2 = User::factory()->create(['role' => UserRole::Teacher]);
+    $schoolGrade = SchoolGrade::factory()->create(['level' => 1, 'section' => 'A']);
+
+    // Create subjects for teachers
+    $subject1 = \App\Models\Subject::factory()->create(['teacher_id' => $teacher1->id]);
+    $subject2 = \App\Models\Subject::factory()->create(['teacher_id' => $teacher2->id]);
+
+    // Create schedules that link subjects to the school grade
+    \App\Models\Schedule::factory()->create([
+        'subject_id' => $subject1->id,
+        'school_grade_id' => $schoolGrade->id,
+    ]);
+    \App\Models\Schedule::factory()->create([
+        'subject_id' => $subject2->id,
+        'school_grade_id' => $schoolGrade->id,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get('/api/messages/users?role=teacher&filter_type=by_school_grade&filter_id='.$schoolGrade->id);
+
+    $response->assertSuccessful();
+    $users = $response->json();
+
+    // Should return both teachers
+    expect(count($users))->toBe(2);
+    $userIds = array_column($users, 'id');
+    expect($userIds)->toContain($teacher1->id, $teacher2->id);
+});
+
 it('returns users when fetching with all filter', function () {
     $admin = User::factory()->create(['role' => UserRole::Admin]);
     User::factory()->count(3)->create(['role' => UserRole::Teacher]);
