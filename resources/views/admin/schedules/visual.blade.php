@@ -677,7 +677,9 @@
             }
 
             try {
-                const response = await fetch(`{{ route('admin.schedules.get-group-students') }}?school_grade_id=${selectedSchoolGradeId}`);
+                const response = await fetch(`{{ route('admin.schedules.get-group-students') }}?school_grade_id=${selectedSchoolGradeId}`, {
+                    credentials: 'include'
+                });
                 const data = await response.json();
 
                 if (!response.ok) {
