@@ -22,6 +22,8 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'apellido_paterno',
+        'apellido_materno',
         'email',
         'password',
         'role',
@@ -100,5 +102,28 @@ class User extends Authenticatable
     public function isStudent(): bool
     {
         return $this->role === UserRole::Student;
+    }
+
+    public function messageRecipients(): HasMany
+    {
+        return $this->hasMany(MessageRecipient::class, 'recipient_id');
+    }
+
+    public function getUnreadMessageCountAttribute(): int
+    {
+        return $this->messageRecipients()
+            ->whereNull('read_at')
+            ->count();
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        $parts = array_filter([
+            $this->apellido_paterno,
+            $this->apellido_materno,
+            $this->name,
+        ]);
+
+        return implode(' ', $parts);
     }
 }
