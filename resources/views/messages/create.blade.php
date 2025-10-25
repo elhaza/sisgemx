@@ -52,9 +52,10 @@
                                 </select>
                             </div>
 
-                            <!-- Secondary Filter (Level, Subject, Group, etc.) -->
-                            <div class="mb-6" x-show="needsSecondaryFilter">
-                                <label for="secondaryFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300" x-text="secondaryFilterLabel">
+                            <!-- Secondary Filter (Level, Subject, Group, etc.) - Always in DOM but hidden by default -->
+                            <div class="mb-6" id="secondaryFilterContainer" style="display: none;">
+                                <label for="secondaryFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <span x-text="secondaryFilterLabel"></span>
                                 </label>
                                 <select
                                     id="secondaryFilter"
@@ -106,7 +107,7 @@
                             </div>
 
                             <!-- Load All for Non-Individual -->
-                            <div class="mb-6" x-show="selectedFilter && selectedFilter !== 'individual'">
+                            <div class="mb-6" x-show="selectedFilter && selectedFilter !== 'individual'" style="display: none;">
                                 <button
                                     type="button"
                                     @click="loadRecipients()"
@@ -244,6 +245,14 @@
                 secondaryFilterLabel: '',
                 loadingRecipients: false,
 
+                init() {
+                    // Usar $watch para monitorear cambios en selectedFilter
+                    this.$watch('selectedFilter', () => {
+                        console.log('selectedFilter cambió a:', this.selectedFilter);
+                        console.log('needsSecondaryFilter será:', !['all', 'individual'].includes(this.selectedFilter));
+                    });
+                },
+
                 onRoleChange() {
                     this.selectedFilter = '';
                     this.selectedSecondaryFilter = '';
@@ -267,31 +276,41 @@
                 },
 
                 onFilterChange() {
+                    console.log('onFilterChange llamado con selectedFilter:', this.selectedFilter);
                     this.selectedSecondaryFilter = '';
                     this.searchQuery = '';
                     this.searchResults = [];
                     this.secondaryFilterOptions = [];
 
+                    const secondaryContainer = document.getElementById('secondaryFilterContainer');
+
                     // No hacer nada si no hay filtro seleccionado
                     if (!this.selectedFilter) {
+                        console.log('Filtro vacío, estableciendo needsSecondaryFilter a false');
                         this.needsSecondaryFilter = false;
+                        if (secondaryContainer) secondaryContainer.style.display = 'none';
                         return;
                     }
 
                     // Si es "all", cargar todos los destinatarios
                     if (this.selectedFilter === 'all') {
+                        console.log('Filtro es "all", estableciendo needsSecondaryFilter a false');
                         this.needsSecondaryFilter = false;
+                        if (secondaryContainer) secondaryContainer.style.display = 'none';
                         this.loadRecipients();
                         return;
                     }
 
                     // Si es "individual", mostrar búsqueda
                     if (this.selectedFilter === 'individual') {
+                        console.log('Filtro es "individual", estableciendo needsSecondaryFilter a false');
                         this.needsSecondaryFilter = false;
+                        if (secondaryContainer) secondaryContainer.style.display = 'none';
                         return;
                     }
 
                     // Para todos los demás filtros, necesita un filtro secundario
+                    console.log('Filtro requiere secundario, estableciendo needsSecondaryFilter a true');
                     this.needsSecondaryFilter = true;
 
                     // Mapeo de labels
@@ -313,27 +332,39 @@
 
                     const labels = filterLabels[this.selectedRole] || {};
                     this.secondaryFilterLabel = labels[this.selectedFilter] || 'Selecciona una opción';
+                    console.log('secondaryFilterLabel:', this.secondaryFilterLabel);
+
+                    // Mostrar el contenedor del filtro secundario
+                    if (secondaryContainer) {
+                        secondaryContainer.style.display = 'block';
+                    }
 
                     // Cargar datos del filtro secundario
                     this.fetchSecondaryFilterData();
                 },
 
                 async fetchSecondaryFilterData() {
+                    console.log('fetchSecondaryFilterData llamado');
                     if (!this.selectedRole || !this.selectedFilter) {
+                        console.log('Falta rol o filtro');
                         this.secondaryFilterOptions = [];
                         return;
                     }
 
                     try {
-                        const response = await fetch(`/api/messages/filter-data?role=${this.selectedRole}&filter_type=${this.selectedFilter}`);
+                        const url = `/api/messages/filter-data?role=${this.selectedRole}&filter_type=${this.selectedFilter}`;
+                        console.log('Fetching desde:', url);
+                        const response = await fetch(url);
                         if (!response.ok) {
                             console.error('API error:', response.status);
                             this.secondaryFilterOptions = [];
                             return;
                         }
                         const data = await response.json();
+                        console.log('Datos recibidos:', data);
                         // Forzar actualización reactiva con nuevo array
                         this.secondaryFilterOptions = Array.isArray(data.items) ? data.items : [];
+                        console.log('secondaryFilterOptions actualizado:', this.secondaryFilterOptions);
                     } catch (error) {
                         console.error('Error fetching secondary filter data:', error);
                         this.secondaryFilterOptions = [];
