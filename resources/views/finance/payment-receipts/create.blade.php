@@ -19,7 +19,7 @@
                                 <option value="">Seleccionar estudiante</option>
                                 @foreach($students as $student)
                                     <option value="{{ $student->id }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
-                                        {{ $student->user->name }} - {{ $student->enrollment_number }}
+                                        {{ $student->user->full_name }} - {{ $student->enrollment_number }}
                                     </option>
                                 @endforeach
                             </select>
@@ -30,14 +30,9 @@
 
                         <div class="mb-4">
                             <label for="parent_id" class="block text-sm font-medium text-gray-700">Padre/Tutor</label>
-                            <select name="parent_id" id="parent_id" required
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">Seleccionar padre/tutor</option>
-                                @foreach($parents as $parent)
-                                    <option value="{{ $parent->id }}" {{ old('parent_id') == $parent->id ? 'selected' : '' }}>
-                                        {{ $parent->name }} - {{ $parent->email }}
-                                    </option>
-                                @endforeach
+                            <select name="parent_id" id="parent_id" required disabled
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                                <option value="">Primero selecciona un estudiante</option>
                             </select>
                             @error('parent_id')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -63,7 +58,7 @@
                         </div>
 
                         <div class="mb-4">
-                            <label for="reference" class="block text-sm font-medium text-gray-700">Referencia / No. de TransacciÛn</label>
+                            <label for="reference" class="block text-sm font-medium text-gray-700">Referencia / No. de Transacci√≥n</label>
                             <input type="text" name="reference" id="reference" value="{{ old('reference') }}" required
                                 placeholder="Ej: TRANSF-20240903-1234"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
@@ -75,7 +70,7 @@
                         <div class="mb-4">
                             <label for="account_holder_name" class="block text-sm font-medium text-gray-700">Nombre del Titular</label>
                             <input type="text" name="account_holder_name" id="account_holder_name" value="{{ old('account_holder_name') }}" required
-                                placeholder="Nombre completo de quien realizÛ el pago"
+                                placeholder="Nombre completo de quien realiz√≥ el pago"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             @error('account_holder_name')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -93,7 +88,7 @@
                         </div>
 
                         <div class="mb-4">
-                            <label for="payment_method" class="block text-sm font-medium text-gray-700">MÈtodo de Pago</label>
+                            <label for="payment_method" class="block text-sm font-medium text-gray-700">M√©todo de Pago</label>
                             <select name="payment_method" id="payment_method" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="transfer" {{ old('payment_method') == 'transfer' ? 'selected' : '' }}>Transferencia</option>
@@ -110,7 +105,7 @@
                             <label for="receipt_image" class="block text-sm font-medium text-gray-700">Comprobante (Imagen)</label>
                             <input type="file" name="receipt_image" id="receipt_image" accept="image/*" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <p class="mt-1 text-xs text-gray-500">Formatos permitidos: JPG, PNG. TamaÒo m·ximo: 2MB</p>
+                            <p class="mt-1 text-xs text-gray-500">Formatos permitidos: JPG, PNG. Tama√±o m√°ximo: 2MB</p>
                             @error('receipt_image')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -120,7 +115,7 @@
                             <label for="status" class="block text-sm font-medium text-gray-700">Estado Inicial</label>
                             <select name="status" id="status" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="pending" {{ old('status', 'pending') == 'pending' ? 'selected' : '' }}>Pendiente de ValidaciÛn</option>
+                                <option value="pending" {{ old('status', 'pending') == 'pending' ? 'selected' : '' }}>Pendiente de Validaci√≥n</option>
                                 <option value="validated" {{ old('status') == 'validated' ? 'selected' : '' }}>Validado</option>
                                 <option value="rejected" {{ old('status') == 'rejected' ? 'selected' : '' }}>Rechazado</option>
                             </select>
@@ -140,4 +135,54 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.getElementById('student_id').addEventListener('change', function() {
+            const studentId = this.value;
+            const parentSelect = document.getElementById('parent_id');
+
+            if (!studentId) {
+                parentSelect.disabled = true;
+                parentSelect.innerHTML = '<option value="">Primero selecciona un estudiante</option>';
+                return;
+            }
+
+            // Fetch parents for selected student
+            fetch(`{{ url('finance/payment-receipts/student') }}/${studentId}/parents`)
+                .then(response => response.json())
+                .then(parents => {
+                    parentSelect.disabled = false;
+                    parentSelect.innerHTML = '<option value="">Seleccionar padre/tutor</option>';
+
+                    if (parents.length === 0) {
+                        parentSelect.innerHTML = '<option value="">No hay tutores registrados para este estudiante</option>';
+                        parentSelect.disabled = true;
+                        return;
+                    }
+
+                    parents.forEach(parent => {
+                        const option = document.createElement('option');
+                        option.value = parent.id;
+                        option.textContent = `${parent.name} - ${parent.email}`;
+
+                        // Preserve old value if exists
+                        if ('{{ old('parent_id') }}' == parent.id) {
+                            option.selected = true;
+                        }
+
+                        parentSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching parents:', error);
+                    parentSelect.disabled = true;
+                    parentSelect.innerHTML = '<option value="">Error al cargar tutores</option>';
+                });
+        });
+
+        // Trigger change event on page load if student is selected (for validation errors)
+        if (document.getElementById('student_id').value) {
+            document.getElementById('student_id').dispatchEvent(new Event('change'));
+        }
+    </script>
 </x-app-layout>

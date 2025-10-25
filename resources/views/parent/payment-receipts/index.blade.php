@@ -294,7 +294,7 @@
                                 <tbody class="divide-y divide-gray-200 bg-white">
                                     @foreach($receipts as $receipt)
                                         <tr>
-                                            <td class="whitespace-nowrap px-6 py-4">{{ $receipt->payment->student->user->name }}</td>
+                                            <td class="whitespace-nowrap px-6 py-4">{{ $receipt->student?->user?->name ?? 'N/A' }}</td>
                                             <td class="whitespace-nowrap px-6 py-4">${{ number_format($receipt->amount_paid, 2) }}</td>
                                             <td class="whitespace-nowrap px-6 py-4">{{ $receipt->payment_date->format('d/m/Y') }}</td>
                                             <td class="whitespace-nowrap px-6 py-4">

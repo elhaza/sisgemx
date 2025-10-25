@@ -41,7 +41,7 @@
                         <tbody class="divide-y divide-gray-200 bg-white">
                             @forelse($studentsWithDiscount as $tuition)
                                 <tr>
-                                    <td class="whitespace-nowrap px-6 py-4">{{ $tuition->student->user->name }}</td>
+                                    <td class="whitespace-nowrap px-6 py-4">{{ $tuition->student->user->full_name }}</td>
                                     <td class="whitespace-nowrap px-6 py-4">${{ number_format($tuition->default_amount, 2) }}</td>
                                     <td class="whitespace-nowrap px-6 py-4">${{ number_format($tuition->monthly_amount, 2) }}</td>
                                     <td class="whitespace-nowrap px-6 py-4 text-green-600 font-semibold">${{ number_format($tuition->discount_amount, 2) }}</td>

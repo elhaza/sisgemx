@@ -17,10 +17,10 @@
             @endif
 
             <div class="grid gap-6 md:grid-cols-2">
-                <!-- Información del Comprobante -->
+                <!-- InformaciÃ³n del Comprobante -->
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Información del Pago</h3>
+                        <h3 class="text-lg font-semibold text-gray-900">InformaciÃ³n del Pago</h3>
                     </div>
                     <div class="p-6">
                         <dl class="space-y-4">
@@ -65,7 +65,7 @@
                             </div>
 
                             <div>
-                                <dt class="text-sm font-medium text-gray-500">Método de Pago</dt>
+                                <dt class="text-sm font-medium text-gray-500">MÃ©todo de Pago</dt>
                                 <dd class="mt-1 text-sm text-gray-900">
                                     @if($paymentReceipt->payment_method->value === 'transfer') Transferencia
                                     @elseif($paymentReceipt->payment_method->value === 'cash') Efectivo
@@ -97,14 +97,14 @@
 
                             @if($paymentReceipt->validated_at)
                             <div>
-                                <dt class="text-sm font-medium text-gray-500">Fecha de Validación</dt>
+                                <dt class="text-sm font-medium text-gray-500">Fecha de ValidaciÃ³n</dt>
                                 <dd class="mt-1 text-sm text-gray-900">{{ $paymentReceipt->validated_at->format('d/m/Y H:i') }}</dd>
                             </div>
                             @endif
 
                             @if($paymentReceipt->rejection_reason)
                             <div>
-                                <dt class="text-sm font-medium text-gray-500">Razón de Rechazo</dt>
+                                <dt class="text-sm font-medium text-gray-500">RazÃ³n de Rechazo</dt>
                                 <dd class="mt-1 text-sm text-red-600">{{ $paymentReceipt->rejection_reason }}</dd>
                             </div>
                             @endif
@@ -124,7 +124,7 @@
                         <a href="{{ asset('storage/' . $paymentReceipt->receipt_image) }}"
                            target="_blank"
                            class="mt-4 inline-block text-blue-600 hover:text-blue-800">
-                            Ver imagen en tamaño completo
+                            Ver imagen en tamaÃ±o completo
                         </a>
                     </div>
                 </div>
@@ -151,7 +151,7 @@
                         </div>
 
                         <div class="mb-4" id="rejection_reason_container" style="display: none;">
-                            <label for="rejection_reason" class="block text-sm font-medium text-gray-700">Razón de Rechazo</label>
+                            <label for="rejection_reason" class="block text-sm font-medium text-gray-700">RazÃ³n de Rechazo</label>
                             <textarea name="rejection_reason" id="rejection_reason" rows="3"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
                         </div>
@@ -184,7 +184,7 @@
                         <div class="border-l-4 border-blue-500 pl-4">
                             <p class="text-sm font-medium text-gray-900">
                                 @if($log->previous_status)
-                                    {{ ucfirst($log->previous_status) }} ’ {{ ucfirst($log->new_status) }}
+                                    {{ ucfirst($log->previous_status) }} â†’ {{ ucfirst($log->new_status) }}
                                 @else
                                     Comprobante creado ({{ ucfirst($log->new_status) }})
                                 @endif

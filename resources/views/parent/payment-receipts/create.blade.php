@@ -18,12 +18,12 @@
 
                         <div class="mb-4">
                             <label for="student_id" class="block text-sm font-medium text-gray-700">Estudiante</label>
-                            <select name="student_id" id="student_id" required
+                            <select name="student_id" id="student_id" required onchange="updatePendingTuitions()"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="">Seleccionar estudiante</option>
                                 @foreach($students as $student)
                                     <option value="{{ $student->id }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
-                                        {{ $student->user->name }} - {{ $student->enrollment_number }}
+                                        {{ $student->user->full_name }} - {{ $student->enrollment_number }}
                                     </option>
                                 @endforeach
                             </select>
@@ -32,9 +32,25 @@
                             @enderror
                         </div>
 
+                        <div class="mb-4" id="tuition_select_container" style="display: none;">
+                            <label for="tuition_id" class="block text-sm font-medium text-gray-700">Mes a Pagar *</label>
+                            <select name="tuition_id" id="tuition_id" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Seleccionar mes</option>
+                            </select>
+                            <input type="hidden" name="payment_year" id="payment_year">
+                            <input type="hidden" name="payment_month" id="payment_month">
+                            @error('payment_year')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            @error('payment_month')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <div class="mb-4">
                             <label for="payment_date" class="block text-sm font-medium text-gray-700">Fecha de Pago</label>
-                            <input type="date" name="payment_date" id="payment_date" value="{{ old('payment_date') }}" required
+                            <input type="date" name="payment_date" id="payment_date" value="{{ old('payment_date', now()->format('Y-m-d')) }}" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             @error('payment_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -122,4 +138,109 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Pending tuitions data by student
+        const pendingTuitionsByStudent = @json($pendingTuitionsByStudent);
+        const currentYear = {{ now()->year }};
+        const currentMonth = {{ now()->month }};
+
+        const monthNames = {
+            1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+            5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+            9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+        };
+
+        function updatePendingTuitions() {
+            const studentId = document.getElementById('student_id').value;
+            const tuitionSelect = document.getElementById('tuition_id');
+            const container = document.getElementById('tuition_select_container');
+            const amountField = document.getElementById('amount_paid');
+
+            // Clear existing options
+            tuitionSelect.innerHTML = '<option value="">Seleccionar mes</option>';
+
+            if (!studentId || !pendingTuitionsByStudent[studentId]) {
+                container.style.display = 'none';
+                return;
+            }
+
+            const pendingTuitions = pendingTuitionsByStudent[studentId];
+
+            if (pendingTuitions.length === 0) {
+                container.style.display = 'none';
+                alert('Este estudiante no tiene colegiaturas pendientes.');
+                return;
+            }
+
+            // Show container
+            container.style.display = 'block';
+
+            // Add options for each pending tuition
+            pendingTuitions.forEach((tuition, index) => {
+                const option = document.createElement('option');
+                option.value = tuition.id;
+                option.dataset.year = tuition.year;
+                option.dataset.month = tuition.month;
+                option.dataset.amount = tuition.total_amount;
+
+                const monthName = monthNames[tuition.month];
+                let label = `${monthName} ${tuition.year}`;
+
+                // Mark current month
+                if (tuition.year === currentYear && tuition.month === currentMonth) {
+                    label += ' (Mes actual)';
+                }
+
+                // Show amount including late fee
+                label += ` - $${parseFloat(tuition.total_amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+
+                if (tuition.late_fee > 0) {
+                    label += ` (Inc. recargo: $${parseFloat(tuition.late_fee).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')})`;
+                }
+
+                option.text = label;
+
+                // Select first option by default
+                if (index === 0) {
+                    option.selected = true;
+                }
+
+                tuitionSelect.appendChild(option);
+            });
+
+            // Trigger change to update amount
+            updateAmount();
+        }
+
+        function updateAmount() {
+            const tuitionSelect = document.getElementById('tuition_id');
+            const selectedOption = tuitionSelect.options[tuitionSelect.selectedIndex];
+            const amountField = document.getElementById('amount_paid');
+            const yearField = document.getElementById('payment_year');
+            const monthField = document.getElementById('payment_month');
+
+            if (selectedOption && selectedOption.value) {
+                const amount = selectedOption.dataset.amount;
+                const year = selectedOption.dataset.year;
+                const month = selectedOption.dataset.month;
+
+                amountField.value = parseFloat(amount).toFixed(2);
+                yearField.value = year;
+                monthField.value = month;
+            }
+        }
+
+        // Add event listener to tuition select
+        document.getElementById('tuition_id').addEventListener('change', updateAmount);
+
+        // Auto-select first student if only one
+        document.addEventListener('DOMContentLoaded', function() {
+            const studentSelect = document.getElementById('student_id');
+            if (studentSelect.options.length === 2) { // Only "Seleccionar" + 1 student
+                studentSelect.selectedIndex = 1;
+                updatePendingTuitions();
+            }
+        });
+    </script>
 </x-app-layout>

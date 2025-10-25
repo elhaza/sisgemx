@@ -60,8 +60,8 @@
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
-                                    <dt class="truncate text-sm font-medium text-gray-500">Ingresos del Mes</dt>
-                                    <dd class="text-3xl font-semibold text-gray-900">${{ number_format($monthlyIncome, 2) }}</dd>
+                                    <dt class="truncate text-sm font-medium text-gray-500">{{ $incomeLabel }}</dt>
+                                    <dd class="text-3xl font-semibold text-gray-900">${{ number_format($income, 2) }}</dd>
                                 </dl>
                             </div>
                         </div>
@@ -92,15 +92,46 @@
             @endif
 
             <!-- Filtros -->
-            <div class="mb-4">
-                <form action="{{ route('finance.payment-receipts.index') }}" method="GET" class="flex gap-4">
-                    <select name="status" class="rounded-md border-gray-300 shadow-sm" onchange="this.form.submit()">
-                        <option value="">Todos los estados</option>
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pendientes</option>
-                        <option value="validated" {{ request('status') == 'validated' ? 'selected' : '' }}>Validados</option>
-                        <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rechazados</option>
-                    </select>
-                </form>
+            <div class="mb-4 overflow-hidden rounded-lg bg-white shadow-sm" style="max-height: 200px;">
+                <div class="p-3">
+                    <form action="{{ route('finance.payment-receipts.index') }}" method="GET">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <select name="status" class="w-40 rounded-md border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Estado</option>
+                                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pendientes</option>
+                                <option value="validated" {{ request('status') == 'validated' ? 'selected' : '' }}>Validados</option>
+                                <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rechazados</option>
+                            </select>
+
+                            <select name="month" class="w-32 rounded-md border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Mes</option>
+                                <option value="1" {{ request('month') == '1' ? 'selected' : '' }}>Enero</option>
+                                <option value="2" {{ request('month') == '2' ? 'selected' : '' }}>Febrero</option>
+                                <option value="3" {{ request('month') == '3' ? 'selected' : '' }}>Marzo</option>
+                                <option value="4" {{ request('month') == '4' ? 'selected' : '' }}>Abril</option>
+                                <option value="5" {{ request('month') == '5' ? 'selected' : '' }}>Mayo</option>
+                                <option value="6" {{ request('month') == '6' ? 'selected' : '' }}>Junio</option>
+                                <option value="7" {{ request('month') == '7' ? 'selected' : '' }}>Julio</option>
+                                <option value="8" {{ request('month') == '8' ? 'selected' : '' }}>Agosto</option>
+                                <option value="9" {{ request('month') == '9' ? 'selected' : '' }}>Septiembre</option>
+                                <option value="10" {{ request('month') == '10' ? 'selected' : '' }}>Octubre</option>
+                                <option value="11" {{ request('month') == '11' ? 'selected' : '' }}>Noviembre</option>
+                                <option value="12" {{ request('month') == '12' ? 'selected' : '' }}>Diciembre</option>
+                            </select>
+
+                            <select name="year" class="w-24 rounded-md border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Año</option>
+                                @for($y = date('Y'); $y >= date('Y') - 5; $y--)
+                                    <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                                @endfor
+                            </select>
+
+                            <button type="submit" class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">Filtrar</button>
+
+                            <a href="{{ route('finance.payment-receipts.index') }}" class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Limpiar</a>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
@@ -120,7 +151,7 @@
                             @forelse($receipts as $receipt)
                                 <tr>
                                     <td class="whitespace-nowrap px-6 py-4">{{ $receipt->payment_date->format('d/m/Y') }}</td>
-                                    <td class="whitespace-nowrap px-6 py-4">{{ $receipt->student->user->name }}</td>
+                                    <td class="whitespace-nowrap px-6 py-4">{{ $receipt->student->user->full_name }}</td>
                                     <td class="whitespace-nowrap px-6 py-4">{{ $receipt->parent->name }}</td>
                                     <td class="whitespace-nowrap px-6 py-4">${{ number_format($receipt->amount_paid, 2) }}</td>
                                     <td class="whitespace-nowrap px-6 py-4">

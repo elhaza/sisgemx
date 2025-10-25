@@ -26,7 +26,7 @@
                         <dl class="space-y-4">
                             <div>
                                 <dt class="text-sm font-medium text-gray-500">Estudiante</dt>
-                                <dd class="mt-1 text-sm text-gray-900">{{ $paymentReceipt->student->user->name }}</dd>
+                                <dd class="mt-1 text-sm text-gray-900">{{ $paymentReceipt->student->user->full_name }}</dd>
                             </div>
 
                             <div>
