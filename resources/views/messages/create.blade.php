@@ -270,44 +270,70 @@
                     this.selectedSecondaryFilter = '';
                     this.searchQuery = '';
                     this.searchResults = [];
+                    this.secondaryFilterOptions = [];
 
-                    // Determinar si se necesita un filtro secundario
-                    this.updateSecondaryFilterState();
-
-                    // Si necesita filtro secundario, cargar los datos
-                    if (this.needsSecondaryFilter) {
-                        this.fetchSecondaryFilterData();
+                    // No hacer nada si no hay filtro seleccionado
+                    if (!this.selectedFilter) {
+                        this.needsSecondaryFilter = false;
+                        return;
                     }
 
-                    // Si es el filtro "all", cargar todos los destinatarios automáticamente
+                    // Si es "all", cargar todos los destinatarios
                     if (this.selectedFilter === 'all') {
+                        this.needsSecondaryFilter = false;
                         this.loadRecipients();
+                        return;
                     }
-                },
 
-                updateSecondaryFilterState() {
-                    // Los filtros "all" e "individual" no necesitan filtro secundario
-                    this.needsSecondaryFilter = !['all', 'individual'].includes(this.selectedFilter);
-
-                    if (this.needsSecondaryFilter) {
-                        const filterLabels = {
-                            'teacher': { 'by_level': 'Por nivel', 'by_subject': 'Por materia', 'by_school_grade': 'Por grupo' },
-                            'parent': { 'by_school_grade': 'Por grado', 'by_school_grade_group': 'Por grupo' },
-                            'student': { 'by_school_grade': 'Por grado', 'by_school_grade_group': 'Por grupo' }
-                        };
-
-                        const labels = filterLabels[this.selectedRole] || {};
-                        this.secondaryFilterLabel = labels[this.selectedFilter] || 'Selecciona una opción';
+                    // Si es "individual", mostrar búsqueda
+                    if (this.selectedFilter === 'individual') {
+                        this.needsSecondaryFilter = false;
+                        return;
                     }
+
+                    // Para todos los demás filtros, necesita un filtro secundario
+                    this.needsSecondaryFilter = true;
+
+                    // Mapeo de labels
+                    const filterLabels = {
+                        'teacher': {
+                            'by_level': 'Por nivel',
+                            'by_subject': 'Por materia',
+                            'by_school_grade': 'Por grupo'
+                        },
+                        'parent': {
+                            'by_school_grade': 'Por grado',
+                            'by_school_grade_group': 'Por grupo'
+                        },
+                        'student': {
+                            'by_school_grade': 'Por grado',
+                            'by_school_grade_group': 'Por grupo'
+                        }
+                    };
+
+                    const labels = filterLabels[this.selectedRole] || {};
+                    this.secondaryFilterLabel = labels[this.selectedFilter] || 'Selecciona una opción';
+
+                    // Cargar datos del filtro secundario
+                    this.fetchSecondaryFilterData();
                 },
 
                 async fetchSecondaryFilterData() {
-                    if (!this.selectedRole || !this.selectedFilter) return;
+                    if (!this.selectedRole || !this.selectedFilter) {
+                        this.secondaryFilterOptions = [];
+                        return;
+                    }
 
                     try {
                         const response = await fetch(`/api/messages/filter-data?role=${this.selectedRole}&filter_type=${this.selectedFilter}`);
+                        if (!response.ok) {
+                            console.error('API error:', response.status);
+                            this.secondaryFilterOptions = [];
+                            return;
+                        }
                         const data = await response.json();
-                        this.secondaryFilterOptions = data.items || [];
+                        // Forzar actualización reactiva con nuevo array
+                        this.secondaryFilterOptions = Array.isArray(data.items) ? data.items : [];
                     } catch (error) {
                         console.error('Error fetching secondary filter data:', error);
                         this.secondaryFilterOptions = [];
