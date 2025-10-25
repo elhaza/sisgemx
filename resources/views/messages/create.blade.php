@@ -271,30 +271,38 @@
                     this.searchQuery = '';
                     this.searchResults = [];
 
+                    // Determinar si se necesita un filtro secundario
+                    this.updateSecondaryFilterState();
+
+                    // Si necesita filtro secundario, cargar los datos
                     if (this.needsSecondaryFilter) {
                         this.fetchSecondaryFilterData();
                     }
 
+                    // Si es el filtro "all", cargar todos los destinatarios automáticamente
                     if (this.selectedFilter === 'all') {
                         this.loadRecipients();
                     }
                 },
 
-                async fetchSecondaryFilterData() {
-                    if (!this.selectedRole || !this.selectedFilter) return;
-
-                    const filters = {
-                        'teacher': { 'by_level': 'Por nivel', 'by_subject': 'Por materia', 'by_school_grade': 'Por grupo' },
-                        'parent': { 'by_school_grade': 'Por grado', 'by_school_grade_group': 'Por grupo' },
-                        'student': { 'by_school_grade': 'Por grado', 'by_school_grade_group': 'Por grupo' }
-                    };
-
+                updateSecondaryFilterState() {
+                    // Los filtros "all" e "individual" no necesitan filtro secundario
                     this.needsSecondaryFilter = !['all', 'individual'].includes(this.selectedFilter);
 
-                    if (!this.needsSecondaryFilter) return;
+                    if (this.needsSecondaryFilter) {
+                        const filterLabels = {
+                            'teacher': { 'by_level': 'Por nivel', 'by_subject': 'Por materia', 'by_school_grade': 'Por grupo' },
+                            'parent': { 'by_school_grade': 'Por grado', 'by_school_grade_group': 'Por grupo' },
+                            'student': { 'by_school_grade': 'Por grado', 'by_school_grade_group': 'Por grupo' }
+                        };
 
-                    const labels = filters[this.selectedRole] || {};
-                    this.secondaryFilterLabel = labels[this.selectedFilter] || 'Selecciona una opción';
+                        const labels = filterLabels[this.selectedRole] || {};
+                        this.secondaryFilterLabel = labels[this.selectedFilter] || 'Selecciona una opción';
+                    }
+                },
+
+                async fetchSecondaryFilterData() {
+                    if (!this.selectedRole || !this.selectedFilter) return;
 
                     try {
                         const response = await fetch(`/api/messages/filter-data?role=${this.selectedRole}&filter_type=${this.selectedFilter}`);
@@ -302,6 +310,7 @@
                         this.secondaryFilterOptions = data.items || [];
                     } catch (error) {
                         console.error('Error fetching secondary filter data:', error);
+                        this.secondaryFilterOptions = [];
                     }
                 },
 
