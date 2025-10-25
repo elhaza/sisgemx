@@ -5,6 +5,227 @@
         </h2>
     </x-slot>
 
+    <script>
+        function messageForm() {
+            return {
+                selectedRole: '',
+                selectedFilter: '',
+                selectedSecondaryFilter: '',
+                searchQuery: '',
+                availableFilters: [],
+                secondaryFilterOptions: [],
+                searchResults: [],
+                showSearchResults: false,
+                selectedRecipients: [],
+                needsSecondaryFilter: false,
+                secondaryFilterLabel: '',
+                loadingRecipients: false,
+
+                init() {
+                    this.$watch('selectedFilter', () => {
+                        console.log('selectedFilter cambió a:', this.selectedFilter);
+                    });
+                },
+
+                onRoleChange() {
+                    this.selectedFilter = '';
+                    this.selectedSecondaryFilter = '';
+                    this.searchQuery = '';
+                    this.searchResults = [];
+                    this.selectedRecipients = [];
+                    this.updateRecipientInput();
+                    this.fetchFilterOptions();
+                },
+
+                async fetchFilterOptions() {
+                    if (!this.selectedRole) return;
+
+                    try {
+                        const response = await fetch(`/api/messages/filter-options?role=${this.selectedRole}`);
+                        const data = await response.json();
+                        this.availableFilters = data.filters || [];
+                    } catch (error) {
+                        console.error('Error fetching filter options:', error);
+                    }
+                },
+
+                onFilterChange() {
+                    console.log('onFilterChange llamado con selectedFilter:', this.selectedFilter);
+                    this.selectedSecondaryFilter = '';
+                    this.searchQuery = '';
+                    this.searchResults = [];
+                    this.secondaryFilterOptions = [];
+
+                    const secondaryContainer = document.getElementById('secondaryFilterContainer');
+
+                    if (!this.selectedFilter) {
+                        this.needsSecondaryFilter = false;
+                        if (secondaryContainer) secondaryContainer.style.display = 'none';
+                        return;
+                    }
+
+                    if (this.selectedFilter === 'all') {
+                        this.needsSecondaryFilter = false;
+                        if (secondaryContainer) secondaryContainer.style.display = 'none';
+                        this.loadRecipients();
+                        return;
+                    }
+
+                    if (this.selectedFilter === 'individual') {
+                        this.needsSecondaryFilter = false;
+                        if (secondaryContainer) secondaryContainer.style.display = 'none';
+                        return;
+                    }
+
+                    this.needsSecondaryFilter = true;
+
+                    const filterLabels = {
+                        'teacher': {
+                            'by_level': 'Por nivel',
+                            'by_subject': 'Por materia',
+                            'by_school_grade': 'Por grupo'
+                        },
+                        'parent': {
+                            'by_school_grade': 'Por grado',
+                            'by_school_grade_group': 'Por grupo'
+                        },
+                        'student': {
+                            'by_school_grade': 'Por grado',
+                            'by_school_grade_group': 'Por grupo'
+                        }
+                    };
+
+                    const labels = filterLabels[this.selectedRole] || {};
+                    this.secondaryFilterLabel = labels[this.selectedFilter] || 'Selecciona una opción';
+
+                    if (secondaryContainer) {
+                        secondaryContainer.style.display = 'block';
+                    }
+
+                    this.fetchSecondaryFilterData();
+                },
+
+                async fetchSecondaryFilterData() {
+                    if (!this.selectedRole || !this.selectedFilter) {
+                        this.secondaryFilterOptions = [];
+                        return;
+                    }
+
+                    try {
+                        const url = `/api/messages/filter-data?role=${this.selectedRole}&filter_type=${this.selectedFilter}`;
+                        const response = await fetch(url);
+                        if (!response.ok) {
+                            console.error('API error:', response.status);
+                            this.secondaryFilterOptions = [];
+                            return;
+                        }
+                        const data = await response.json();
+                        this.secondaryFilterOptions = Array.isArray(data.items) ? data.items : [];
+                    } catch (error) {
+                        console.error('Error fetching secondary filter data:', error);
+                        this.secondaryFilterOptions = [];
+                    }
+                },
+
+                onSecondaryFilterChange() {
+                    if (this.selectedSecondaryFilter) {
+                        this.loadRecipients();
+                    }
+                },
+
+                async onSearchInput() {
+                    if (this.searchQuery.length < 2) {
+                        this.searchResults = [];
+                        return;
+                    }
+
+                    try {
+                        const params = new URLSearchParams({
+                            role: this.selectedRole,
+                            filter_type: this.selectedFilter,
+                            search: this.searchQuery
+                        });
+
+                        const response = await fetch(`/api/messages/users?${params}`);
+                        const data = await response.json();
+                        this.searchResults = data || [];
+                    } catch (error) {
+                        console.error('Error searching users:', error);
+                        this.searchResults = [];
+                    }
+                },
+
+                async loadRecipients() {
+                    this.loadingRecipients = true;
+
+                    try {
+                        const params = new URLSearchParams({
+                            role: this.selectedRole,
+                            filter_type: this.selectedFilter
+                        });
+
+                        if (this.selectedSecondaryFilter) {
+                            params.append('filter_id', this.selectedSecondaryFilter);
+                        }
+
+                        const response = await fetch(`/api/messages/users?${params}`);
+                        const users = await response.json();
+
+                        users.forEach(user => {
+                            if (!this.selectedRecipients.find(r => r.id === user.id)) {
+                                this.selectedRecipients.push(user);
+                            }
+                        });
+
+                        this.updateRecipientInput();
+                    } catch (error) {
+                        console.error('Error loading recipients:', error);
+                    } finally {
+                        this.loadingRecipients = false;
+                    }
+                },
+
+                selectUser(user) {
+                    if (!this.selectedRecipients.find(r => r.id === user.id)) {
+                        this.selectedRecipients.push(user);
+                        this.updateRecipientInput();
+                    }
+                    this.searchQuery = '';
+                    this.searchResults = [];
+                    this.showSearchResults = false;
+                },
+
+                removeRecipient(id) {
+                    this.selectedRecipients = this.selectedRecipients.filter(r => r.id !== id);
+                    this.updateRecipientInput();
+                },
+
+                updateRecipientInput() {
+                    const recipientIds = this.selectedRecipients.map(r => r.id).join(',');
+                    document.getElementById('recipientIds').value = recipientIds;
+                },
+
+                getRoleName() {
+                    const roleNames = {
+                        'admin': 'Administrador',
+                        'finance_admin': 'Usuario de Finanzas',
+                        'teacher': 'Maestro',
+                        'parent': 'Padre',
+                        'student': 'Estudiante'
+                    };
+                    return roleNames[this.selectedRole] || '';
+                },
+
+                handleSubmit(e) {
+                    if (this.selectedRecipients.length === 0) {
+                        e.preventDefault();
+                        alert('Debes seleccionar al menos un destinatario');
+                    }
+                }
+            };
+        }
+    </script>
+
     <div class="py-12">
         <div class="mx-auto max-w-2xl sm:px-6 lg:px-8">
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg dark:bg-gray-800">
@@ -138,36 +359,40 @@
                                     <div id="recipientSuggestions" class="hidden absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-96 overflow-y-auto"></div>
                                 </div>
                                 <div id="selectedRecipients" class="mt-3 flex flex-wrap gap-2"></div>
-                                <input type="hidden" name="recipient_ids" id="recipientIds" value="">
                             </div>
                         @endif
 
-                        <!-- Selected Recipients Display -->
-                        <div class="mb-6" x-show="selectedRecipients.length > 0">
-                            <div class="flex items-center gap-2 rounded-md bg-blue-50 p-3 dark:bg-blue-900/20">
-                                <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span class="text-sm font-medium text-blue-900 dark:text-blue-300">
-                                    <span x-text="selectedRecipients.length"></span> destinatario(s) seleccionado(s)
-                                </span>
-                            </div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <template x-for="recipient in selectedRecipients" :key="recipient.id">
-                                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-sm font-medium dark:bg-blue-900/30 dark:text-blue-300">
-                                        <span x-text="recipient.name"></span>
-                                        <button
-                                            type="button"
-                                            @click="removeRecipient(recipient.id)"
-                                            class="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
+                        <!-- Hidden recipient IDs input - Used by both admin and non-admin users -->
+                        <input type="hidden" name="recipient_ids" id="recipientIds" value="">
+
+                        <!-- Selected Recipients Display - Only for admin users -->
+                        @if(auth()->user()->isAdmin())
+                            <div class="mb-6" x-show="selectedRecipients.length > 0" style="display: none;">
+                                <div class="flex items-center gap-2 rounded-md bg-blue-50 p-3 dark:bg-blue-900/20">
+                                    <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span class="text-sm font-medium text-blue-900 dark:text-blue-300">
+                                        <span x-text="selectedRecipients.length"></span> destinatario(s) seleccionado(s)
                                     </span>
-                                </template>
+                                </div>
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    <template x-for="recipient in selectedRecipients" :key="recipient.id">
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-sm font-medium dark:bg-blue-900/30 dark:text-blue-300">
+                                            <span x-text="recipient.name"></span>
+                                            <button
+                                                type="button"
+                                                @click="removeRecipient(recipient.id)"
+                                                class="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    </template>
+                                </div>
                             </div>
-                        </div>
+                        @endif
 
                         <!-- Asunto -->
                         <div class="mb-6">
@@ -230,245 +455,6 @@
 
     @push('scripts')
     <script>
-        function messageForm() {
-            return {
-                selectedRole: '',
-                selectedFilter: '',
-                selectedSecondaryFilter: '',
-                searchQuery: '',
-                availableFilters: [],
-                secondaryFilterOptions: [],
-                searchResults: [],
-                showSearchResults: false,
-                selectedRecipients: [],
-                needsSecondaryFilter: false,
-                secondaryFilterLabel: '',
-                loadingRecipients: false,
-
-                init() {
-                    // Usar $watch para monitorear cambios en selectedFilter
-                    this.$watch('selectedFilter', () => {
-                        console.log('selectedFilter cambió a:', this.selectedFilter);
-                        console.log('needsSecondaryFilter será:', !['all', 'individual'].includes(this.selectedFilter));
-                    });
-                },
-
-                onRoleChange() {
-                    this.selectedFilter = '';
-                    this.selectedSecondaryFilter = '';
-                    this.searchQuery = '';
-                    this.searchResults = [];
-                    this.selectedRecipients = [];
-                    this.updateRecipientInput();
-                    this.fetchFilterOptions();
-                },
-
-                async fetchFilterOptions() {
-                    if (!this.selectedRole) return;
-
-                    try {
-                        const response = await fetch(`/api/messages/filter-options?role=${this.selectedRole}`);
-                        const data = await response.json();
-                        this.availableFilters = data.filters || [];
-                    } catch (error) {
-                        console.error('Error fetching filter options:', error);
-                    }
-                },
-
-                onFilterChange() {
-                    console.log('onFilterChange llamado con selectedFilter:', this.selectedFilter);
-                    this.selectedSecondaryFilter = '';
-                    this.searchQuery = '';
-                    this.searchResults = [];
-                    this.secondaryFilterOptions = [];
-
-                    const secondaryContainer = document.getElementById('secondaryFilterContainer');
-
-                    // No hacer nada si no hay filtro seleccionado
-                    if (!this.selectedFilter) {
-                        console.log('Filtro vacío, estableciendo needsSecondaryFilter a false');
-                        this.needsSecondaryFilter = false;
-                        if (secondaryContainer) secondaryContainer.style.display = 'none';
-                        return;
-                    }
-
-                    // Si es "all", cargar todos los destinatarios
-                    if (this.selectedFilter === 'all') {
-                        console.log('Filtro es "all", estableciendo needsSecondaryFilter a false');
-                        this.needsSecondaryFilter = false;
-                        if (secondaryContainer) secondaryContainer.style.display = 'none';
-                        this.loadRecipients();
-                        return;
-                    }
-
-                    // Si es "individual", mostrar búsqueda
-                    if (this.selectedFilter === 'individual') {
-                        console.log('Filtro es "individual", estableciendo needsSecondaryFilter a false');
-                        this.needsSecondaryFilter = false;
-                        if (secondaryContainer) secondaryContainer.style.display = 'none';
-                        return;
-                    }
-
-                    // Para todos los demás filtros, necesita un filtro secundario
-                    console.log('Filtro requiere secundario, estableciendo needsSecondaryFilter a true');
-                    this.needsSecondaryFilter = true;
-
-                    // Mapeo de labels
-                    const filterLabels = {
-                        'teacher': {
-                            'by_level': 'Por nivel',
-                            'by_subject': 'Por materia',
-                            'by_school_grade': 'Por grupo'
-                        },
-                        'parent': {
-                            'by_school_grade': 'Por grado',
-                            'by_school_grade_group': 'Por grupo'
-                        },
-                        'student': {
-                            'by_school_grade': 'Por grado',
-                            'by_school_grade_group': 'Por grupo'
-                        }
-                    };
-
-                    const labels = filterLabels[this.selectedRole] || {};
-                    this.secondaryFilterLabel = labels[this.selectedFilter] || 'Selecciona una opción';
-                    console.log('secondaryFilterLabel:', this.secondaryFilterLabel);
-
-                    // Mostrar el contenedor del filtro secundario
-                    if (secondaryContainer) {
-                        secondaryContainer.style.display = 'block';
-                    }
-
-                    // Cargar datos del filtro secundario
-                    this.fetchSecondaryFilterData();
-                },
-
-                async fetchSecondaryFilterData() {
-                    console.log('fetchSecondaryFilterData llamado');
-                    if (!this.selectedRole || !this.selectedFilter) {
-                        console.log('Falta rol o filtro');
-                        this.secondaryFilterOptions = [];
-                        return;
-                    }
-
-                    try {
-                        const url = `/api/messages/filter-data?role=${this.selectedRole}&filter_type=${this.selectedFilter}`;
-                        console.log('Fetching desde:', url);
-                        const response = await fetch(url);
-                        if (!response.ok) {
-                            console.error('API error:', response.status);
-                            this.secondaryFilterOptions = [];
-                            return;
-                        }
-                        const data = await response.json();
-                        console.log('Datos recibidos:', data);
-                        // Forzar actualización reactiva con nuevo array
-                        this.secondaryFilterOptions = Array.isArray(data.items) ? data.items : [];
-                        console.log('secondaryFilterOptions actualizado:', this.secondaryFilterOptions);
-                    } catch (error) {
-                        console.error('Error fetching secondary filter data:', error);
-                        this.secondaryFilterOptions = [];
-                    }
-                },
-
-                onSecondaryFilterChange() {
-                    if (this.selectedSecondaryFilter) {
-                        this.loadRecipients();
-                    }
-                },
-
-                async onSearchInput() {
-                    if (this.searchQuery.length < 2) {
-                        this.searchResults = [];
-                        return;
-                    }
-
-                    try {
-                        const params = new URLSearchParams({
-                            role: this.selectedRole,
-                            filter_type: this.selectedFilter,
-                            search: this.searchQuery
-                        });
-
-                        const response = await fetch(`/api/messages/users?${params}`);
-                        const data = await response.json();
-                        this.searchResults = data || [];
-                    } catch (error) {
-                        console.error('Error searching users:', error);
-                        this.searchResults = [];
-                    }
-                },
-
-                async loadRecipients() {
-                    this.loadingRecipients = true;
-
-                    try {
-                        const params = new URLSearchParams({
-                            role: this.selectedRole,
-                            filter_type: this.selectedFilter
-                        });
-
-                        if (this.selectedSecondaryFilter) {
-                            params.append('filter_id', this.selectedSecondaryFilter);
-                        }
-
-                        const response = await fetch(`/api/messages/users?${params}`);
-                        const users = await response.json();
-
-                        users.forEach(user => {
-                            if (!this.selectedRecipients.find(r => r.id === user.id)) {
-                                this.selectedRecipients.push(user);
-                            }
-                        });
-
-                        this.updateRecipientInput();
-                    } catch (error) {
-                        console.error('Error loading recipients:', error);
-                    } finally {
-                        this.loadingRecipients = false;
-                    }
-                },
-
-                selectUser(user) {
-                    if (!this.selectedRecipients.find(r => r.id === user.id)) {
-                        this.selectedRecipients.push(user);
-                        this.updateRecipientInput();
-                    }
-                    this.searchQuery = '';
-                    this.searchResults = [];
-                    this.showSearchResults = false;
-                },
-
-                removeRecipient(id) {
-                    this.selectedRecipients = this.selectedRecipients.filter(r => r.id !== id);
-                    this.updateRecipientInput();
-                },
-
-                updateRecipientInput() {
-                    const recipientIds = this.selectedRecipients.map(r => r.id).join(',');
-                    document.getElementById('recipientIds').value = recipientIds;
-                },
-
-                getRoleName() {
-                    const roleNames = {
-                        'admin': 'Administrador',
-                        'finance_admin': 'Usuario de Finanzas',
-                        'teacher': 'Maestro',
-                        'parent': 'Padre',
-                        'student': 'Estudiante'
-                    };
-                    return roleNames[this.selectedRole] || '';
-                },
-
-                handleSubmit(e) {
-                    if (this.selectedRecipients.length === 0) {
-                        e.preventDefault();
-                        alert('Debes seleccionar al menos un destinatario');
-                    }
-                }
-            };
-        }
-
         // For non-admin users, keep the original search functionality
         @if(!auth()->user()->isAdmin())
         document.addEventListener('DOMContentLoaded', function() {
