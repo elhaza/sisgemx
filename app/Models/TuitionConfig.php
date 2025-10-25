@@ -13,8 +13,6 @@ class TuitionConfig extends Model
 
     protected $fillable = [
         'school_year_id',
-        'grade_level',
-        'month',
         'amount',
     ];
 
@@ -28,5 +26,10 @@ class TuitionConfig extends Model
     public function schoolYear(): BelongsTo
     {
         return $this->belongsTo(SchoolYear::class);
+    }
+
+    public function studentTuitions()
+    {
+        return $this->hasMany(StudentTuition::class, 'school_year_id', 'school_year_id');
     }
 }

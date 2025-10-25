@@ -9,9 +9,12 @@ use App\Models\Grade;
 use App\Models\MedicalJustification;
 use App\Models\Payment;
 use App\Models\PaymentReceipt;
+use App\Models\PaymentReceiptStatusLog;
 use App\Models\Schedule;
+use App\Models\SchoolGrade;
 use App\Models\SchoolYear;
 use App\Models\Student;
+use App\Models\StudentTuition;
 use App\Models\Subject;
 use App\Models\TuitionConfig;
 use App\Models\User;
@@ -35,6 +38,21 @@ class DatabaseSeeder extends Seeder
             'start_date' => '2024-08-01',
             'end_date' => '2025-07-31',
             'is_active' => true,
+        ]);
+
+        // Crear grados escolares
+        $grade6A = SchoolGrade::create([
+            'level' => 6,
+            'name' => 'Sexto',
+            'section' => 'A',
+            'school_year_id' => $schoolYear->id,
+        ]);
+
+        $grade6B = SchoolGrade::create([
+            'level' => 6,
+            'name' => 'Sexto',
+            'section' => 'B',
+            'school_year_id' => $schoolYear->id,
         ]);
 
         // Crear usuarios con diferentes roles
@@ -94,6 +112,7 @@ class DatabaseSeeder extends Seeder
         $student1 = Student::create([
             'user_id' => $studentUser1->id,
             'school_year_id' => $schoolYear->id,
+            'school_grade_id' => $grade6A->id,
             'enrollment_number' => 'EST-2024-001',
             'grade_level' => '6to',
             'group' => 'A',
@@ -110,6 +129,7 @@ class DatabaseSeeder extends Seeder
         $student2 = Student::create([
             'user_id' => $studentUser2->id,
             'school_year_id' => $schoolYear->id,
+            'school_grade_id' => $grade6A->id,
             'enrollment_number' => 'EST-2024-002',
             'grade_level' => '6to',
             'group' => 'A',
@@ -153,15 +173,26 @@ class DatabaseSeeder extends Seeder
             'classroom' => 'Aula 102',
         ]);
 
-        // Configurar montos de colegiatura
-        for ($month = 1; $month <= 12; $month++) {
-            TuitionConfig::create([
-                'school_year_id' => $schoolYear->id,
-                'grade_level' => '6to',
-                'month' => $month,
-                'amount' => $month === 12 ? 2500.00 : 3000.00,
-            ]);
-        }
+        // Configurar monto general de colegiatura por ciclo escolar
+        $tuitionConfig = TuitionConfig::create([
+            'school_year_id' => $schoolYear->id,
+            'amount' => 3000.00,
+        ]);
+
+        // Asignar colegiatura por defecto a los estudiantes
+        StudentTuition::create([
+            'student_id' => $student1->id,
+            'school_year_id' => $schoolYear->id,
+            'monthly_amount' => 3000.00,
+            'notes' => 'Monto estándar',
+        ]);
+
+        StudentTuition::create([
+            'student_id' => $student2->id,
+            'school_year_id' => $schoolYear->id,
+            'monthly_amount' => 2700.00,
+            'notes' => 'Descuento del 10% aplicado por beca académica',
+        ]);
 
         // Crear pagos para estudiante 1
         $payment1 = Payment::create([
@@ -186,14 +217,27 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Crear comprobante de pago pendiente
-        PaymentReceipt::create([
-            'payment_id' => $payment1->id,
+        $receipt = PaymentReceipt::create([
+            'student_id' => $student1->id,
             'parent_id' => $parent1->id,
+            'registered_by_id' => $parent1->id,
             'payment_date' => '2024-09-03',
             'amount_paid' => 3000.00,
+            'reference' => 'TRANSF-20240903-1234',
+            'account_holder_name' => 'Roberto Martínez',
+            'issuing_bank' => 'Banco Nacional',
             'payment_method' => PaymentMethod::Transfer,
-            'receipt_file_path' => 'receipts/comprobante-001.pdf',
+            'receipt_image' => 'payment-receipts/comprobante-001.jpg',
             'status' => ReceiptStatus::Pending,
+        ]);
+
+        // Registrar el log de creación del comprobante
+        PaymentReceiptStatusLog::create([
+            'payment_receipt_id' => $receipt->id,
+            'changed_by_id' => $parent1->id,
+            'previous_status' => null,
+            'new_status' => ReceiptStatus::Pending,
+            'notes' => 'Comprobante creado por el padre de familia',
         ]);
 
         // Crear descuento especial

@@ -13,13 +13,9 @@ return new class extends Migration
     {
         Schema::create('tuition_configs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('school_year_id')->constrained()->cascadeOnDelete();
-            $table->string('grade_level');
-            $table->integer('month');
+            $table->foreignId('school_year_id')->unique()->constrained()->cascadeOnDelete();
             $table->decimal('amount', 10, 2);
             $table->timestamps();
-
-            $table->unique(['school_year_id', 'grade_level', 'month']);
         });
     }
 

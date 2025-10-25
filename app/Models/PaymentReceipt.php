@@ -14,12 +14,16 @@ class PaymentReceipt extends Model
     use HasFactory;
 
     protected $fillable = [
-        'payment_id',
+        'student_id',
         'parent_id',
+        'registered_by_id',
         'payment_date',
         'amount_paid',
+        'reference',
+        'account_holder_name',
+        'issuing_bank',
         'payment_method',
-        'receipt_file_path',
+        'receipt_image',
         'status',
         'validated_by',
         'validated_at',
@@ -37,9 +41,9 @@ class PaymentReceipt extends Model
         ];
     }
 
-    public function payment(): BelongsTo
+    public function student(): BelongsTo
     {
-        return $this->belongsTo(Payment::class);
+        return $this->belongsTo(Student::class);
     }
 
     public function parent(): BelongsTo
@@ -47,8 +51,18 @@ class PaymentReceipt extends Model
         return $this->belongsTo(User::class, 'parent_id');
     }
 
+    public function registeredBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'registered_by_id');
+    }
+
     public function validatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'validated_by');
+    }
+
+    public function statusLogs()
+    {
+        return $this->hasMany(PaymentReceiptStatusLog::class);
     }
 }

@@ -6,7 +6,14 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                        @php
+                            $logoPath = \App\Models\Settings::getLogo();
+                        @endphp
+                        @if ($logoPath)
+                            <img src="{{ asset('storage/' . $logoPath) }}" class="block h-10 w-auto" alt="Logo">
+                        @else
+                            <img src="/img/logo.png" class="block h-10 w-auto" alt="Logo">
+                        @endif
                     </a>
                 </div>
 
@@ -15,6 +22,16 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
+                    <!-- Messages Link -->
+                    <a href="{{ route('messages.inbox') }}" class="relative inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        @if(Auth::user()->unread_message_count > 0)
+                            <span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">{{ Auth::user()->unread_message_count }}</span>
+                        @endif
+                    </a>
                 </div>
             </div>
 

@@ -46,4 +46,14 @@ class SchoolYear extends Model
     {
         return $this->hasMany(Discount::class);
     }
+
+    public function studentTuitions(): HasMany
+    {
+        return $this->hasMany(StudentTuition::class);
+    }
+
+    public function tuitionConfig()
+    {
+        return $this->hasOne(TuitionConfig::class);
+    }
 }

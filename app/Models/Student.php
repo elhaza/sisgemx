@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Gender;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,10 +16,26 @@ class Student extends Model
     protected $fillable = [
         'user_id',
         'school_year_id',
+        'school_grade_id',
         'enrollment_number',
         'grade_level',
         'group',
+        'curp',
+        'gender',
+        'birth_country',
+        'birth_state',
+        'birth_city',
+        'phone_number',
+        'address',
+        'parent_email',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'gender' => Gender::class,
+        ];
+    }
 
     public function user(): BelongsTo
     {
@@ -28,6 +45,11 @@ class Student extends Model
     public function schoolYear(): BelongsTo
     {
         return $this->belongsTo(SchoolYear::class);
+    }
+
+    public function schoolGrade(): BelongsTo
+    {
+        return $this->belongsTo(SchoolGrade::class);
     }
 
     public function payments(): HasMany
@@ -53,5 +75,10 @@ class Student extends Model
     public function discounts(): HasMany
     {
         return $this->hasMany(Discount::class);
+    }
+
+    public function tuitions(): HasMany
+    {
+        return $this->hasMany(StudentTuition::class);
     }
 }
