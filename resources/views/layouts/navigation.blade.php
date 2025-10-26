@@ -6,7 +6,11 @@
                 <!-- Logo - Positioned to expand downward -->
                 <div class="shrink-0 flex items-start pt-2 pr-8 absolute top-0 left-4 sm:left-6 lg:left-8">
                     <a href="{{ route('dashboard') }}" class="block">
-                        <x-app-logo fallback-image="/img/logo.png" height="h-20" />
+                        @php
+                            $schoolLogo = \App\Models\Settings::getSchoolLogo();
+                            $schoolName = \App\Models\Settings::getSchoolName();
+                        @endphp
+                        <img src="{{ $schoolLogo }}" alt="{{ $schoolName }}" class="h-20 w-auto object-contain" />
                     </a>
                 </div>
 
