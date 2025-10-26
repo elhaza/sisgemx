@@ -43,14 +43,22 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'apellido_paterno' => 'nullable|string|max:255',
             'apellido_materno' => 'nullable|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:admin,finance_admin,teacher,parent,student',
-        ]);
+        ];
+
+        // For students, email is treated as a username and doesn't need email format
+        if ($request->input('role') === 'student') {
+            $rules['email'] = 'required|string|max:255|unique:users';
+        } else {
+            $rules['email'] = 'required|string|email|max:255|unique:users';
+        }
+
+        $validated = $request->validate($rules);
 
         $validated['password'] = bcrypt($validated['password']);
 
@@ -80,13 +88,21 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        $validated = $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'apellido_paterno' => 'nullable|string|max:255',
             'apellido_materno' => 'nullable|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'role' => 'required|in:admin,finance_admin,teacher,parent,student',
-        ]);
+        ];
+
+        // For students, email is treated as a username and doesn't need email format
+        if ($request->input('role') === 'student') {
+            $rules['email'] = 'required|string|max:255|unique:users,email,'.$user->id;
+        } else {
+            $rules['email'] = 'required|string|email|max:255|unique:users,email,'.$user->id;
+        }
+
+        $validated = $request->validate($rules);
 
         if ($request->filled('password')) {
             $request->validate([

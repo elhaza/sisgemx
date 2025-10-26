@@ -46,9 +46,11 @@
                         </div>
 
                         <div class="mb-4">
-                            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <label for="email" class="block text-sm font-medium text-gray-700" id="email-label">Email</label>
                             <input type="email" name="email" id="email" value="{{ old('email') }}" required
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                placeholder="ejemplo@correo.com o nombre_usuario">
+                            <p id="email-help" class="mt-1 text-xs text-gray-500"></p>
                             @error('email')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -96,4 +98,34 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleSelect = document.getElementById('role');
+            const emailLabel = document.getElementById('email-label');
+            const emailInput = document.getElementById('email');
+            const emailHelp = document.getElementById('email-help');
+
+            function updateEmailField() {
+                if (roleSelect.value === 'student') {
+                    emailLabel.textContent = 'Email/Username';
+                    emailInput.type = 'text';
+                    emailInput.placeholder = 'nombre_usuario o ejemplo@correo.com';
+                    emailHelp.textContent = 'Para estudiantes: puedes usar un nombre único de usuario sin necesidad de formato de email.';
+                } else {
+                    emailLabel.textContent = 'Email';
+                    emailInput.type = 'email';
+                    emailInput.placeholder = 'ejemplo@correo.com';
+                    emailHelp.textContent = '';
+                }
+            }
+
+            roleSelect.addEventListener('change', updateEmailField);
+
+            // Initialize on load if role is pre-selected
+            if (roleSelect.value) {
+                updateEmailField();
+            }
+        });
+    </script>
 </x-app-layout>
