@@ -90,4 +90,33 @@ class SubjectController extends Controller
         return redirect()->route('admin.subjects.index')
             ->with('success', 'Materia eliminada exitosamente.');
     }
+
+    public function storeTeacher(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'apellido_paterno' => 'required|string|max:255',
+            'apellido_materno' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8',
+        ]);
+
+        $teacher = User::create([
+            'name' => $validated['name'],
+            'apellido_paterno' => $validated['apellido_paterno'],
+            'apellido_materno' => $validated['apellido_materno'],
+            'email' => $validated['email'],
+            'password' => bcrypt($validated['password']),
+            'role' => 'teacher',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Docente creado exitosamente.',
+            'teacher' => [
+                'id' => $teacher->id,
+                'name' => $teacher->full_name,
+            ],
+        ]);
+    }
 }

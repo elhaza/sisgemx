@@ -78,6 +78,7 @@
                                         @foreach($teachers as $teacher)
                                             <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
                                         @endforeach
+                                        <option value="add-new">+ Agregar</option>
                                     </select>
                                 </td>
                                 <td class="px-6 py-4">
@@ -97,6 +98,35 @@
                                     </button>
                                 </td>
                             </tr>
+
+                            <!-- Fila para agregar nuevo maestro -->
+                            <tr id="new-teacher-row" class="hidden bg-purple-50 hover:bg-purple-100">
+                                <td colspan="5" class="px-6 py-4">
+                                    <div class="grid grid-cols-5 gap-3">
+                                        <input type="text" id="teacher-name" placeholder="Nombre"
+                                            class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <input type="text" id="teacher-first-last-name" placeholder="Apellido Paterno"
+                                            class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <input type="text" id="teacher-second-last-name" placeholder="Apellido Materno"
+                                            class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <input type="email" id="teacher-email" placeholder="Email"
+                                            class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <input type="password" id="teacher-password" placeholder="Contraseña"
+                                            class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                            @keyup.enter="document.getElementById('add-teacher-btn').click()">
+                                    </div>
+                                    <div class="mt-3 flex gap-2">
+                                        <button id="add-teacher-btn"
+                                            class="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 transition">
+                                            + Crear Docente
+                                        </button>
+                                        <button id="cancel-teacher-btn"
+                                            class="rounded-md bg-gray-400 px-4 py-2 text-sm font-medium text-white hover:bg-gray-500 transition">
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
 
@@ -107,6 +137,113 @@
     </div>
 
     <script>
+        // Manejar selección de "Agregar+" en el combo de maestro
+        document.getElementById('subject-teacher').addEventListener('change', function() {
+            if (this.value === 'add-new') {
+                document.getElementById('new-teacher-row').classList.remove('hidden');
+                document.getElementById('teacher-name').focus();
+            }
+        });
+
+        // Botón para cancelar creación de maestro
+        document.getElementById('cancel-teacher-btn').addEventListener('click', function() {
+            document.getElementById('new-teacher-row').classList.add('hidden');
+            document.getElementById('subject-teacher').value = '';
+            // Limpiar inputs
+            document.getElementById('teacher-name').value = '';
+            document.getElementById('teacher-first-last-name').value = '';
+            document.getElementById('teacher-second-last-name').value = '';
+            document.getElementById('teacher-email').value = '';
+            document.getElementById('teacher-password').value = '';
+        });
+
+        // Botón para crear nuevo maestro
+        document.getElementById('add-teacher-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('teacher-name').value.trim();
+            const firstLastName = document.getElementById('teacher-first-last-name').value.trim();
+            const secondLastName = document.getElementById('teacher-second-last-name').value.trim();
+            const email = document.getElementById('teacher-email').value.trim();
+            const password = document.getElementById('teacher-password').value.trim();
+
+            // Validación básica
+            if (!name || !firstLastName || !secondLastName || !email || !password) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+
+            if (password.length < 8) {
+                alert('La contraseña debe tener al menos 8 caracteres');
+                return;
+            }
+
+            const btn = this;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Creando...';
+
+            // Enviar via AJAX
+            fetch('{{ route("subjects.store-teacher") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    apellido_paterno: firstLastName,
+                    apellido_materno: secondLastName,
+                    email: email,
+                    password: password
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Error al crear el docente');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Agregar nuevo maestro al combo
+                    const teacherSelect = document.getElementById('subject-teacher');
+                    const newOption = document.createElement('option');
+                    newOption.value = data.teacher.id;
+                    newOption.text = data.teacher.name;
+                    newOption.selected = true;
+
+                    // Insertar antes de la opción "Agregar+"
+                    const addNewOption = teacherSelect.querySelector('[value="add-new"]');
+                    teacherSelect.insertBefore(newOption, addNewOption);
+
+                    // Esconder la fila
+                    document.getElementById('new-teacher-row').classList.add('hidden');
+
+                    // Limpiar inputs
+                    document.getElementById('teacher-name').value = '';
+                    document.getElementById('teacher-first-last-name').value = '';
+                    document.getElementById('teacher-second-last-name').value = '';
+                    document.getElementById('teacher-email').value = '';
+                    document.getElementById('teacher-password').value = '';
+
+                    showNotification('Docente creado exitosamente', 'success');
+                } else {
+                    showNotification(data.message || 'Error al crear el docente', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification(error.message || 'Error al crear el docente', 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            });
+        });
+
         document.getElementById('add-subject-btn').addEventListener('click', function(e) {
             e.preventDefault();
 

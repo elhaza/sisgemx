@@ -138,6 +138,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('students-transfer/get-destination-grades', [StudentTransferController::class, 'getDestinationGrades'])->name('students.get-destination-grades');
         Route::post('students-transfer', [StudentTransferController::class, 'transfer'])->name('students.transfer-store');
         Route::resource('subjects', SubjectController::class);
+        Route::post('subjects/teacher/store', [SubjectController::class, 'storeTeacher'])->name('subjects.store-teacher');
         Route::resource('schedules', ScheduleController::class);
         Route::get('schedules-visual', [ScheduleController::class, 'visual'])->name('schedules.visual');
         Route::get('schedules-visual/get-group-schedule', [ScheduleController::class, 'getGroupSchedule'])->name('schedules.get-group-schedule');
