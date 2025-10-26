@@ -25,7 +25,7 @@
                     @foreach($parentReport as $parent)
                         <div class="overflow-hidden rounded-lg bg-white shadow-sm">
                             <div class="border-b border-gray-200 bg-gray-50 p-6">
-                                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                                     <!-- Padre/Tutor 1 -->
                                     <div class="col-span-1">
                                         <h3 class="text-sm font-semibold text-gray-700">Padre/Tutor 1</h3>
@@ -48,17 +48,33 @@
                                                 </a>
                                             @endif
                                         </div>
+                                    @else
+                                        <div class="col-span-1"></div>
                                     @endif
 
-                                    <!-- Resumen de Mora -->
-                                    <div class="col-span-1 md:col-span-1 lg:col-span-1">
+                                    <!-- Montos de Adeudo -->
+                                    <div class="col-span-1">
                                         <div class="grid grid-cols-2 gap-4">
                                             <div>
-                                                <h3 class="text-sm font-semibold text-gray-700">Pagos con Mora</h3>
-                                                <p class="mt-1 text-lg font-bold text-red-600">{{ $parent['total_overdue_tuitions'] }}</p>
+                                                <h3 class="text-sm font-semibold text-gray-700">Adeudo</h3>
+                                                <p class="mt-1 text-lg font-bold text-red-600">${{ number_format($parent['total_tuition_amount'], 2) }}</p>
                                             </div>
                                             <div>
-                                                <h3 class="text-sm font-semibold text-gray-700">Días Máximo</h3>
+                                                <h3 class="text-sm font-semibold text-gray-700">Mora</h3>
+                                                <p class="mt-1 text-lg font-bold text-orange-600">${{ number_format($parent['total_late_fee_amount'], 2) }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Total y Días -->
+                                    <div class="col-span-1">
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <h3 class="text-sm font-semibold text-gray-700">Total Adeudo</h3>
+                                                <p class="mt-1 text-lg font-bold text-red-700">${{ number_format($parent['total_tuition_amount'] + $parent['total_late_fee_amount'], 2) }}</p>
+                                            </div>
+                                            <div>
+                                                <h3 class="text-sm font-semibold text-gray-700">Días Máx.</h3>
                                                 <p class="mt-1 text-lg font-bold text-red-600">{{ $parent['max_days_late'] }} días</p>
                                             </div>
                                         </div>
@@ -73,8 +89,10 @@
                                         <thead>
                                             <tr class="border-b border-gray-200 bg-gray-50">
                                                 <th class="px-4 py-3 text-left font-semibold text-gray-700">Nombre del Estudiante</th>
-                                                <th class="px-4 py-3 text-center font-semibold text-gray-700">Pagos con Mora</th>
-                                                <th class="px-4 py-3 text-center font-semibold text-gray-700">Días de Mora</th>
+                                                <th class="px-4 py-3 text-center font-semibold text-gray-700">Adeudo</th>
+                                                <th class="px-4 py-3 text-center font-semibold text-gray-700">Mora</th>
+                                                <th class="px-4 py-3 text-center font-semibold text-gray-700">Total</th>
+                                                <th class="px-4 py-3 text-center font-semibold text-gray-700">Días</th>
                                                 <th class="px-4 py-3 text-center font-semibold text-gray-700">Acciones</th>
                                             </tr>
                                         </thead>
@@ -88,17 +106,27 @@
                                                     </td>
                                                     <td class="px-4 py-3 text-center">
                                                         <span class="inline-block rounded-full bg-red-100 px-3 py-1 text-red-700 font-semibold">
-                                                            {{ $student['overdue_count'] }}
+                                                            ${{ number_format($student['tuition_amount'], 2) }}
                                                         </span>
                                                     </td>
                                                     <td class="px-4 py-3 text-center">
                                                         <span class="inline-block rounded-full bg-orange-100 px-3 py-1 text-orange-700 font-semibold">
-                                                            {{ $student['max_days_late'] }} días
+                                                            ${{ number_format($student['late_fee_amount'], 2) }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-center">
+                                                        <span class="inline-block rounded-full bg-red-200 px-3 py-1 text-red-800 font-bold">
+                                                            ${{ number_format($student['total_amount'], 2) }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-center">
+                                                        <span class="inline-block rounded-full bg-yellow-100 px-3 py-1 text-yellow-700 font-semibold">
+                                                            {{ $student['max_days_late'] }}
                                                         </span>
                                                     </td>
                                                     <td class="px-4 py-3 text-center">
                                                         @if($student['phone_number'])
-                                                            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $student['phone_number']) }}?text=Estimado%20padre%2C%20su%20hijo%2Fa%20{{ urlencode($student['name']) }}%20tiene%20{{ $student['overdue_count'] }}%20pago(s)%20en%20mora.%20Por%20favor%20contactarse%20con%20la%20escuela." target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-md bg-green-100 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-200 transition">
+                                                            <a href="https://wa.me/{{ $student['phone_number'] }}?text=Estimado%20padre%2C%20su%20hijo%2Fa%20{{ urlencode($student['name']) }}%20tiene%20un%20adeudo%20de%20%24{{ number_format($student['tuition_amount'], 2) }}%20en%20colegiaturas%20m%C3%A1s%20%24{{ number_format($student['late_fee_amount'], 2) }}%20en%20mora%2C%20para%20un%20total%20de%20%24{{ number_format($student['total_amount'], 2) }}.%20Por%20favor%20contactarse%20con%20la%20escuela." target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-md bg-green-100 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-200 transition">
                                                                 <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                                                                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-5.031 1.378c-3.055 2.116-4.797 5.864-4.797 9.88 0 1.052.215 2.076.625 3.031L2.792 22l3.265-.995c.896.554 1.962.866 3.083.866 5.514 0 10-4.486 10-10S13.081 2.5 7.566 2.5c-1.102 0-2.153.287-3.053.798"/>
                                                                 </svg>

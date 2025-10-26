@@ -82,6 +82,23 @@ class DashboardController extends Controller
                 return $tuition->due_date ? abs((int) $tuition->due_date->diffInDays($now)) : 0;
             });
 
+            // Calculate tuition amount and late fees
+            $tuitionAmount = $overdueTuitions->sum('final_amount');
+            $lateFeeAmount = $overdueTuitions->sum(function ($tuition) {
+                return $tuition->late_fee;
+            });
+            $totalAmount = $tuitionAmount + $lateFeeAmount;
+
+            // Format phone number for WhatsApp (add +52 if only 10 digits)
+            $phoneNumber = $student->phone_number;
+            if ($phoneNumber) {
+                $cleanPhone = preg_replace('/[^0-9]/', '', $phoneNumber);
+                if (strlen($cleanPhone) === 10) {
+                    $cleanPhone = '52'.$cleanPhone;
+                }
+                $phoneNumber = $cleanPhone;
+            }
+
             // Add to tutor 1
             if ($student->tutor1) {
                 $key = $student->tutor1->id;
@@ -90,12 +107,17 @@ class DashboardController extends Controller
                     $existing['students']->push([
                         'id' => $student->id,
                         'name' => $student->user->full_name,
-                        'phone_number' => $student->phone_number,
+                        'phone_number' => $phoneNumber,
                         'overdue_count' => $overdueCount,
                         'max_days_late' => $maxDaysLate,
+                        'tuition_amount' => $tuitionAmount,
+                        'late_fee_amount' => $lateFeeAmount,
+                        'total_amount' => $totalAmount,
                     ]);
                     $existing['total_overdue_tuitions'] += $overdueCount;
                     $existing['max_days_late'] = max($existing['max_days_late'], $maxDaysLate);
+                    $existing['total_tuition_amount'] += $tuitionAmount;
+                    $existing['total_late_fee_amount'] += $lateFeeAmount;
                 } else {
                     $parentReport->put($key, [
                         'tutor_1_name' => $student->tutor1->full_name,
@@ -106,13 +128,18 @@ class DashboardController extends Controller
                             [
                                 'id' => $student->id,
                                 'name' => $student->user->full_name,
-                                'phone_number' => $student->phone_number,
+                                'phone_number' => $phoneNumber,
                                 'overdue_count' => $overdueCount,
                                 'max_days_late' => $maxDaysLate,
+                                'tuition_amount' => $tuitionAmount,
+                                'late_fee_amount' => $lateFeeAmount,
+                                'total_amount' => $totalAmount,
                             ],
                         ]),
                         'total_overdue_tuitions' => $overdueCount,
                         'max_days_late' => $maxDaysLate,
+                        'total_tuition_amount' => $tuitionAmount,
+                        'total_late_fee_amount' => $lateFeeAmount,
                     ]);
                 }
             }
@@ -125,12 +152,17 @@ class DashboardController extends Controller
                     $existing['students']->push([
                         'id' => $student->id,
                         'name' => $student->user->full_name,
-                        'phone_number' => $student->phone_number,
+                        'phone_number' => $phoneNumber,
                         'overdue_count' => $overdueCount,
                         'max_days_late' => $maxDaysLate,
+                        'tuition_amount' => $tuitionAmount,
+                        'late_fee_amount' => $lateFeeAmount,
+                        'total_amount' => $totalAmount,
                     ]);
                     $existing['total_overdue_tuitions'] += $overdueCount;
                     $existing['max_days_late'] = max($existing['max_days_late'], $maxDaysLate);
+                    $existing['total_tuition_amount'] += $tuitionAmount;
+                    $existing['total_late_fee_amount'] += $lateFeeAmount;
                 } else {
                     $parentReport->put($key, [
                         'tutor_1_name' => $student->tutor2->full_name,
@@ -141,13 +173,18 @@ class DashboardController extends Controller
                             [
                                 'id' => $student->id,
                                 'name' => $student->user->full_name,
-                                'phone_number' => $student->phone_number,
+                                'phone_number' => $phoneNumber,
                                 'overdue_count' => $overdueCount,
                                 'max_days_late' => $maxDaysLate,
+                                'tuition_amount' => $tuitionAmount,
+                                'late_fee_amount' => $lateFeeAmount,
+                                'total_amount' => $totalAmount,
                             ],
                         ]),
                         'total_overdue_tuitions' => $overdueCount,
                         'max_days_late' => $maxDaysLate,
+                        'total_tuition_amount' => $tuitionAmount,
+                        'total_late_fee_amount' => $lateFeeAmount,
                     ]);
                 }
             }
