@@ -331,7 +331,13 @@ class SchoolYearController extends Controller
 
     public function edit(SchoolYear $schoolYear)
     {
-        return view('admin.school-years.edit', compact('schoolYear'));
+        // Load existing monthly tuitions
+        $monthlyTuitions = MonthlyTuition::where('school_year_id', $schoolYear->id)
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+
+        return view('admin.school-years.edit', compact('schoolYear', 'monthlyTuitions'));
     }
 
     public function update(Request $request, SchoolYear $schoolYear)
@@ -341,6 +347,11 @@ class SchoolYearController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
             'is_active' => 'boolean',
+            'monthly_tuitions' => 'required|array',
+            'monthly_tuitions.*.id' => 'nullable|exists:monthly_tuitions,id',
+            'monthly_tuitions.*.year' => 'required|integer',
+            'monthly_tuitions.*.month' => 'required|integer|min:1|max:12',
+            'monthly_tuitions.*.amount' => 'required|numeric|min:0',
         ]);
 
         // Ensure is_active is set even when checkbox is unchecked
@@ -350,7 +361,33 @@ class SchoolYearController extends Controller
             SchoolYear::where('is_active', true)->update(['is_active' => false]);
         }
 
-        $schoolYear->update($validated);
+        // Update school year basic info
+        $schoolYear->update([
+            'name' => $validated['name'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'is_active' => $validated['is_active'],
+        ]);
+
+        // Update monthly tuitions
+        foreach ($validated['monthly_tuitions'] as $monthlyData) {
+            if (! empty($monthlyData['id'])) {
+                // Update existing monthly tuition
+                MonthlyTuition::findOrFail($monthlyData['id'])->update([
+                    'amount' => $monthlyData['amount'],
+                ]);
+            } else {
+                // Create new monthly tuition if it doesn't exist
+                MonthlyTuition::firstOrCreate(
+                    [
+                        'school_year_id' => $schoolYear->id,
+                        'year' => $monthlyData['year'],
+                        'month' => $monthlyData['month'],
+                    ],
+                    ['amount' => $monthlyData['amount']]
+                );
+            }
+        }
 
         return redirect()->route('admin.school-years.index')->with('success', 'Ciclo escolar actualizado exitosamente.');
     }
