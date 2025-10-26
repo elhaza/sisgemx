@@ -331,11 +331,40 @@ class SchoolYearController extends Controller
 
     public function edit(SchoolYear $schoolYear)
     {
+        // Generate all months between start_date and end_date
+        $start = $schoolYear->start_date;
+        $end = $schoolYear->end_date;
+
+        $months = [];
+        $current = $start->copy()->startOfMonth();
+
+        while ($current <= $end) {
+            $months[] = [
+                'year' => $current->year,
+                'month' => $current->month,
+            ];
+            $current->addMonth();
+        }
+
         // Load existing monthly tuitions
-        $monthlyTuitions = MonthlyTuition::where('school_year_id', $schoolYear->id)
-            ->orderBy('year')
-            ->orderBy('month')
-            ->get();
+        $existingTuitions = MonthlyTuition::where('school_year_id', $schoolYear->id)
+            ->get()
+            ->keyBy(function ($item) {
+                return $item->year.'-'.$item->month;
+            });
+
+        // Merge with generated months
+        $monthlyTuitions = collect($months)->map(function ($monthData) use ($existingTuitions) {
+            $key = $monthData['year'].'-'.$monthData['month'];
+            $existing = $existingTuitions[$key] ?? null;
+
+            return [
+                'id' => $existing?->id,
+                'year' => $monthData['year'],
+                'month' => $monthData['month'],
+                'amount' => $existing?->amount ?? 0,
+            ];
+        });
 
         return view('admin.school-years.edit', compact('schoolYear', 'monthlyTuitions'));
     }

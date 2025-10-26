@@ -51,13 +51,19 @@
                                             5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
                                             9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre',
                                         ];
+                                        $isNew = empty($monthlyTuition['id']);
                                     @endphp
-                                    <div class="flex items-center gap-4">
-                                        <input type="hidden" name="monthly_tuitions[{{ $index }}][id]" value="{{ $monthlyTuition->id }}">
-                                        <input type="hidden" name="monthly_tuitions[{{ $index }}][year]" value="{{ $monthlyTuition->year }}">
-                                        <input type="hidden" name="monthly_tuitions[{{ $index }}][month]" value="{{ $monthlyTuition->month }}">
+                                    <div class="flex items-center gap-4 @if($isNew)rounded-lg bg-yellow-50 border border-yellow-200 p-3 @endif">
+                                        @if(!$isNew)
+                                            <input type="hidden" name="monthly_tuitions[{{ $index }}][id]" value="{{ $monthlyTuition['id'] }}">
+                                        @endif
+                                        <input type="hidden" name="monthly_tuitions[{{ $index }}][year]" value="{{ $monthlyTuition['year'] }}">
+                                        <input type="hidden" name="monthly_tuitions[{{ $index }}][month]" value="{{ $monthlyTuition['month'] }}">
                                         <label class="w-48 text-sm font-medium text-gray-700">
-                                            {{ $monthNames[$monthlyTuition->month] }} {{ $monthlyTuition->year }}
+                                            {{ $monthNames[$monthlyTuition['month']] }} {{ $monthlyTuition['year'] }}
+                                            @if($isNew)
+                                                <span class="ml-2 inline-block bg-yellow-200 text-yellow-900 text-xs px-2 py-1 rounded">Nuevo</span>
+                                            @endif
                                         </label>
                                         <div class="flex-1">
                                             <div class="relative">
@@ -67,14 +73,14 @@
                                                     step="0.01"
                                                     min="0"
                                                     required
-                                                    value="{{ old('monthly_tuitions.' . $index . '.amount', $monthlyTuition->amount) }}"
+                                                    value="{{ old('monthly_tuitions.' . $index . '.amount', $monthlyTuition['amount']) }}"
                                                     placeholder="0.00"
-                                                    class="block w-full rounded-md border-gray-300 pl-7 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                                    class="block w-full rounded-md border-gray-300 pl-7 shadow-sm focus:border-blue-500 focus:ring-blue-500 @if($isNew)bg-yellow-50 border-yellow-300 @endif">
                                             </div>
                                         </div>
                                     </div>
                                 @empty
-                                    <p class="text-sm text-gray-500">No hay colegiaturas mensuales configuradas para este ciclo escolar.</p>
+                                    <p class="text-sm text-gray-500">No hay fechas configuradas para este ciclo escolar.</p>
                                 @endforelse
                             </div>
                         </div>

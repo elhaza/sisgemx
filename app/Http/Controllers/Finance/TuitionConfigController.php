@@ -64,11 +64,41 @@ class TuitionConfigController extends Controller
 
     public function edit(TuitionConfig $tuitionConfig)
     {
-        // Load monthly tuitions from the school year
-        $monthlyTuitions = MonthlyTuition::where('school_year_id', $tuitionConfig->school_year_id)
-            ->orderBy('year')
-            ->orderBy('month')
-            ->get();
+        // Generate all months between start_date and end_date from school year
+        $schoolYear = $tuitionConfig->schoolYear;
+        $start = $schoolYear->start_date;
+        $end = $schoolYear->end_date;
+
+        $months = [];
+        $current = $start->copy()->startOfMonth();
+
+        while ($current <= $end) {
+            $months[] = [
+                'year' => $current->year,
+                'month' => $current->month,
+            ];
+            $current->addMonth();
+        }
+
+        // Load existing monthly tuitions
+        $existingTuitions = MonthlyTuition::where('school_year_id', $tuitionConfig->school_year_id)
+            ->get()
+            ->keyBy(function ($item) {
+                return $item->year.'-'.$item->month;
+            });
+
+        // Merge with generated months
+        $monthlyTuitions = collect($months)->map(function ($monthData) use ($existingTuitions) {
+            $key = $monthData['year'].'-'.$monthData['month'];
+            $existing = $existingTuitions[$key] ?? null;
+
+            return [
+                'id' => $existing?->id,
+                'year' => $monthData['year'],
+                'month' => $monthData['month'],
+                'amount' => $existing?->amount ?? 0,
+            ];
+        });
 
         return view('finance.tuition-configs.edit', compact('tuitionConfig', 'monthlyTuitions'));
     }
