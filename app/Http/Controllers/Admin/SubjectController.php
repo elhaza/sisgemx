@@ -10,11 +10,26 @@ use Illuminate\Http\Request;
 
 class SubjectController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $subjects = Subject::with(['teacher', 'schoolYear'])
-            ->latest()
-            ->paginate(15);
+        $query = Subject::with(['teacher', 'schoolYear']);
+
+        // Filter by teacher
+        if ($request->filled('teacher_id')) {
+            $query->where('teacher_id', $request->teacher_id);
+        }
+
+        // Filter by subject name
+        if ($request->filled('subject_name')) {
+            $query->where('name', 'like', '%'.$request->subject_name.'%');
+        }
+
+        // Filter by grade level
+        if ($request->filled('grade_level')) {
+            $query->where('grade_level', $request->grade_level);
+        }
+
+        $subjects = $query->latest()->paginate(15);
 
         $teachers = User::where('role', 'teacher')->get();
         $schoolYears = SchoolYear::all();
@@ -25,7 +40,21 @@ class SubjectController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.subjects.index', compact('subjects', 'teachers', 'schoolYears', 'activeSchoolYear', 'gradeLevels', 'subjectList'));
+        // Calculate teacher hours
+        $teacherHours = [];
+        foreach ($teachers as $teacher) {
+            $totalHours = Subject::where('teacher_id', $teacher->id)
+                ->whereNotNull('default_hours_per_week')
+                ->sum('default_hours_per_week');
+
+            $teacherHours[$teacher->id] = [
+                'name' => $teacher->full_name,
+                'hours' => $totalHours,
+                'max_hours' => $teacher->max_hours_per_week ?? 40,
+            ];
+        }
+
+        return view('admin.subjects.index', compact('subjects', 'teachers', 'schoolYears', 'activeSchoolYear', 'gradeLevels', 'subjectList', 'teacherHours'));
     }
 
     public function create()

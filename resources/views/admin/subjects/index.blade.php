@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                Gestión de Materias
+                Gestión de Maestros / Materias
             </h2>
             <a href="{{ route('admin.subjects.create') }}" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
                 Nueva Materia
@@ -15,6 +15,87 @@
             @if(session('success'))
                 <div class="mb-4 rounded-lg bg-green-100 p-4 text-green-700">{{ session('success') }}</div>
             @endif
+
+            <!-- Resumen de Maestros -->
+            <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                <button onclick="document.getElementById('teachers-summary').classList.toggle('hidden')" class="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
+                    <div class="flex items-center gap-3">
+                        <svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 12H9m6 0a6 6 0 11-12 0 6 6 0 0112 0z"></path>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-900">Maestros Asignados</h3>
+                        <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">{{ count($teacherHours) }} maestros</span>
+                    </div>
+                    <svg class="h-5 w-5 text-gray-600 transform transition-transform" id="teachers-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                    </svg>
+                </button>
+
+                <div id="teachers-summary" class="hidden border-t border-gray-200 bg-gray-50 p-6">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">Maestro</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">Horas Asignadas</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">Progreso</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                                @forelse($teacherHours as $teacherId => $hours)
+                                    @if($hours['hours'] > 0)
+                                    <tr>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ $hours['name'] }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ $hours['hours'] }} de {{ $hours['max_hours'] }} horas</td>
+                                        <td class="px-6 py-4">
+                                            <div class="w-32 bg-gray-200 rounded-full h-2">
+                                                @php
+                                                    $percentage = min(($hours['hours'] / $hours['max_hours']) * 100, 100);
+                                                    $barColor = $percentage >= 100 ? 'bg-red-500' : ($percentage >= 80 ? 'bg-yellow-500' : 'bg-green-500');
+                                                @endphp
+                                                <div class="{{ $barColor }} h-2 rounded-full" style="width: {{ $percentage }}%"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endif
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">No hay maestros con materias asignadas.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Filtros</h3>
+                    <form method="GET" action="{{ route('admin.subjects.index') }}" class="flex flex-wrap gap-3">
+                        <input type="text" name="subject_name" placeholder="Nombre de materia" value="{{ request('subject_name') }}"
+                            class="rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+
+                        <select name="grade_level" class="rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">Todos los grados</option>
+                            @foreach($gradeLevels as $level)
+                                <option value="{{ $level }}" {{ request('grade_level') == $level ? 'selected' : '' }}>Grado {{ $level }}</option>
+                            @endforeach
+                        </select>
+
+                        <select name="teacher_id" class="rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">Todos los maestros</option>
+                            @foreach($teachers as $teacher)
+                                <option value="{{ $teacher->id }}" {{ request('teacher_id') == $teacher->id ? 'selected' : '' }}>{{ $teacher->full_name }}</option>
+                            @endforeach
+                        </select>
+
+                        <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Filtrar</button>
+                        <a href="{{ route('admin.subjects.index') }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Limpiar</a>
+                    </form>
+                </div>
+            </div>
 
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 <div class="p-6">
@@ -41,7 +122,7 @@
                                     </td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->grade_level }}°</td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->default_hours_per_week ?? '-' }}</td>
-                                    <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->teacher?->name ?? '-' }}</td>
+                                    <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->teacher?->full_name ?? '-' }}</td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->schoolYear?->name ?? '-' }}</td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm">
                                         <div class="flex gap-2">
@@ -93,7 +174,7 @@
                                     <select id="subject-teacher" class="w-full rounded-md border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
                                         <option value="">Maestro</option>
                                         @foreach($teachers as $teacher)
-                                            <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
+                                            <option value="{{ $teacher->id }}">{{ $teacher->full_name }}</option>
                                         @endforeach
                                         <option value="add-new">+ Agregar</option>
                                     </select>
@@ -578,6 +659,12 @@
             if (e.key === 'Enter') {
                 document.getElementById('add-subject-btn').click();
             }
+        });
+
+        // Animación del chevron al expandir/contraer maestros
+        document.querySelector('button[onclick*="teachers-summary"]').addEventListener('click', function() {
+            const chevron = document.getElementById('teachers-chevron');
+            chevron.classList.toggle('rotate-180');
         });
     </script>
 
