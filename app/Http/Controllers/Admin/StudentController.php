@@ -43,7 +43,7 @@ class StudentController extends Controller
         // Filter by grade level (using school_grade_id)
         if ($request->filled('grade_level')) {
             $query->whereHas('schoolGrade', function ($q) use ($request) {
-                $q->where('level', $request->grade_level);
+                $q->where('grade_level', $request->grade_level);
             });
         }
 
@@ -99,8 +99,8 @@ class StudentController extends Controller
             'enrollment_number' => 'students.enrollment_number',
             'name' => 'users.name',
             'gender' => 'students.gender',
-            'level' => 'school_grades.level',
-            'section' => 'school_grades.section',
+            'level' => 'grade_sections.grade_level',
+            'section' => 'grade_sections.section',
             'school_year' => 'school_years.name',
             'created_at' => 'students.created_at',
         ];
@@ -120,8 +120,8 @@ class StudentController extends Controller
         if (strpos($columnToSort, 'users.') !== false) {
             $query->join('users', 'students.user_id', '=', 'users.id');
         }
-        if (strpos($columnToSort, 'school_grades.') !== false) {
-            $query->join('school_grades', 'students.school_grade_id', '=', 'school_grades.id');
+        if (strpos($columnToSort, 'grade_sections.') !== false) {
+            $query->join('grade_sections', 'students.school_grade_id', '=', 'grade_sections.id');
         }
         if (strpos($columnToSort, 'school_years.') !== false) {
             $query->join('school_years', 'students.school_year_id', '=', 'school_years.id');

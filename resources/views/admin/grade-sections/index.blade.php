@@ -78,7 +78,8 @@
                                             </span>
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4 text-sm">
-                                            <a href="{{ route('admin.grade-sections.edit', $gradeSection) }}" class="text-blue-600 hover:text-blue-900">Editar</a>
+                                            <a href="{{ route('admin.students.index', ['grade_level' => $gradeSection->grade_level, 'group' => $gradeSection->section, 'school_year_id' => $gradeSection->school_year_id]) }}" class="text-green-600 hover:text-green-900">Ver</a>
+                                            <a href="{{ route('admin.grade-sections.edit', $gradeSection) }}" class="ml-3 text-blue-600 hover:text-blue-900">Editar</a>
                                             <form action="{{ route('admin.grade-sections.destroy', $gradeSection) }}" method="POST" class="inline">
                                                 @csrf
                                                 @method('DELETE')
