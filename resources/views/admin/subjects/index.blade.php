@@ -184,7 +184,7 @@
             btn.textContent = 'Creando...';
 
             // Enviar via AJAX
-            fetch('{{ route("subjects.store-teacher") }}', {
+            fetch('{{ route("admin.subjects.store-teacher") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
