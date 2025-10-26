@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\SchoolGrade;
+use App\Models\GradeSection;
 use App\Models\Subject;
 use App\Models\User;
 use App\UserRole;
@@ -151,9 +151,9 @@ class MessageFilterController extends Controller
                 ])->values()->all(),
             ],
             'by_school_grade' => [
-                'items' => SchoolGrade::orderBy('level')->orderBy('section')->get()->map(fn ($grade) => [
+                'items' => GradeSection::orderBy('grade_level')->orderBy('section')->get()->map(fn ($grade) => [
                     'id' => $grade->id,
-                    'name' => "{$grade->name} - Sección {$grade->section}",
+                    'name' => "{$grade->grade_level}° Grado - Sección {$grade->section}",
                 ])->all(),
             ],
             default => [],
@@ -167,15 +167,15 @@ class MessageFilterController extends Controller
     {
         return match ($filterType) {
             'by_school_grade' => [
-                'items' => SchoolGrade::orderBy('level')->orderBy('section')->get()->map(fn ($grade) => [
+                'items' => GradeSection::orderBy('grade_level')->orderBy('section')->get()->map(fn ($grade) => [
                     'id' => $grade->id,
-                    'name' => $grade->name,
+                    'name' => "{$grade->grade_level}° Grado",
                 ])->all(),
             ],
             'by_school_grade_group' => [
-                'items' => SchoolGrade::orderBy('level')->orderBy('section')->get()->map(fn ($grade) => [
+                'items' => GradeSection::orderBy('grade_level')->orderBy('section')->get()->map(fn ($grade) => [
                     'id' => $grade->id,
-                    'name' => "{$grade->name} - {$grade->section}",
+                    'name' => "{$grade->grade_level}° Grado - {$grade->section}",
                 ])->all(),
             ],
             default => [],
@@ -189,15 +189,15 @@ class MessageFilterController extends Controller
     {
         return match ($filterType) {
             'by_school_grade' => [
-                'items' => SchoolGrade::orderBy('level')->orderBy('section')->get()->map(fn ($grade) => [
+                'items' => GradeSection::orderBy('grade_level')->orderBy('section')->get()->map(fn ($grade) => [
                     'id' => $grade->id,
-                    'name' => $grade->name,
+                    'name' => "{$grade->grade_level}° Grado",
                 ])->all(),
             ],
             'by_school_grade_group' => [
-                'items' => SchoolGrade::orderBy('level')->orderBy('section')->get()->map(fn ($grade) => [
+                'items' => GradeSection::orderBy('grade_level')->orderBy('section')->get()->map(fn ($grade) => [
                     'id' => $grade->id,
-                    'name' => "{$grade->name} - {$grade->section}",
+                    'name' => "{$grade->grade_level}° Grado - {$grade->section}",
                 ])->all(),
             ],
             default => [],

@@ -2,7 +2,7 @@
 
 namespace App\Imports;
 
-use App\Models\SchoolGrade;
+use App\Models\GradeSection;
 use App\Models\SchoolYear;
 use App\Models\Student;
 use App\Models\StudentTuition;
@@ -89,19 +89,16 @@ class StudentsImport implements ToCollection, WithHeadingRow
         $this->validateRequiredFields($row);
 
         // Get or create school grade (cached)
-        $level = (int) trim($row['grado']);
+        $gradeLevel = (int) trim($row['grado']);
         $section = strtoupper(trim($row['seccion']));
-        $gradeKey = "{$level}_{$section}";
+        $gradeKey = "{$gradeLevel}_{$section}";
 
         if (! isset($this->schoolGradeCache[$gradeKey])) {
-            $schoolGrade = SchoolGrade::firstOrCreate(
+            $schoolGrade = GradeSection::firstOrCreate(
                 [
-                    'level' => $level,
+                    'grade_level' => $gradeLevel,
                     'section' => $section,
                     'school_year_id' => $this->schoolYear->id,
-                ],
-                [
-                    'name' => "{$level}° Grado",
                 ]
             );
             $this->schoolGradeCache[$gradeKey] = $schoolGrade->id;

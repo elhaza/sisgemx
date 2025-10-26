@@ -36,7 +36,7 @@ class Schedule extends Model
 
     public function schoolGrade(): BelongsTo
     {
-        return $this->belongsTo(SchoolGrade::class);
+        return $this->belongsTo(GradeSection::class, 'school_grade_id');
     }
 
     public function teacher(): BelongsTo

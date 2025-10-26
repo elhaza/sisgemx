@@ -249,9 +249,9 @@ class User extends Authenticatable
      */
     public static function getAvailableLevels(): \Illuminate\Support\Collection
     {
-        return SchoolGrade::distinct('level')
-            ->orderBy('level')
-            ->pluck('level');
+        return GradeSection::distinct('grade_level')
+            ->orderBy('grade_level')
+            ->pluck('grade_level');
     }
 
     /**
@@ -259,7 +259,7 @@ class User extends Authenticatable
      */
     public static function getAvailableSchoolGrades(): \Illuminate\Database\Eloquent\Collection
     {
-        return SchoolGrade::orderBy('level')->orderBy('section')->get();
+        return GradeSection::orderBy('grade_level')->orderBy('section')->get();
     }
 
     /**

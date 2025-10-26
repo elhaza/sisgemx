@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\SchoolGrade;
+use App\Models\GradeSection;
 use App\Models\SchoolYear;
 use App\Models\Student;
 use Illuminate\Http\Request;
@@ -13,9 +13,9 @@ class StudentTransferController extends Controller
     public function index()
     {
         $activeSchoolYear = SchoolYear::where('is_active', true)->first();
-        $schoolGrades = SchoolGrade::with('schoolYear')
+        $schoolGrades = GradeSection::with('schoolYear')
             ->where('school_year_id', $activeSchoolYear?->id)
-            ->orderBy('level')
+            ->orderBy('grade_level')
             ->orderBy('section')
             ->get();
 
@@ -53,14 +53,14 @@ class StudentTransferController extends Controller
             return response()->json(['grades' => []]);
         }
 
-        $sourceGrade = SchoolGrade::find($sourceGradeId);
+        $sourceGrade = GradeSection::find($sourceGradeId);
 
         if (! $sourceGrade) {
             return response()->json(['grades' => []]);
         }
 
-        $destinationGrades = SchoolGrade::where('school_year_id', $activeSchoolYear->id)
-            ->where('level', $sourceGrade->level)
+        $destinationGrades = GradeSection::where('school_year_id', $activeSchoolYear->id)
+            ->where('grade_level', $sourceGrade->grade_level)
             ->where('id', '!=', $sourceGradeId)
             ->orderBy('section')
             ->get();
@@ -81,10 +81,10 @@ class StudentTransferController extends Controller
             'student_ids' => 'required|array|min:1',
             'student_ids.*' => 'exists:students,id',
             'target_school_year_id' => 'required|exists:school_years,id',
-            'target_school_grade_id' => 'required|exists:school_grades,id',
+            'target_school_grade_id' => 'required|exists:grade_sections,id',
         ]);
 
-        $targetSchoolGrade = SchoolGrade::findOrFail($validated['target_school_grade_id']);
+        $targetSchoolGrade = GradeSection::findOrFail($validated['target_school_grade_id']);
 
         // Verify the target school grade belongs to the target school year
         if ($targetSchoolGrade->school_year_id != $validated['target_school_year_id']) {

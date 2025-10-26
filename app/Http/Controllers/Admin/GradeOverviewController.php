@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Grade;
-use App\Models\SchoolGrade;
+use App\Models\GradeSection;
 use App\Models\SchoolYear;
 use App\Models\Student;
 use App\Models\Subject;
@@ -15,7 +15,7 @@ class GradeOverviewController extends Controller
     public function index(Request $request)
     {
         $schoolYears = SchoolYear::all();
-        $schoolGrades = SchoolGrade::with('schoolYear')->get();
+        $schoolGrades = GradeSection::with('schoolYear')->get();
         $subjects = Subject::with('teacher')->get();
 
         $selectedSchoolYear = $request->input('school_year_id');

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\DatabaseBackupController;
 use App\Http\Controllers\Admin\GradeOverviewController;
+use App\Http\Controllers\Admin\GradeSectionController;
 use App\Http\Controllers\Admin\MedicalJustificationController as AdminMedicalJustificationController;
 use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\SchoolYearController;
@@ -120,6 +121,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
 
         Route::resource('users', UserController::class);
+        Route::resource('grade-sections', GradeSectionController::class);
         Route::resource('school-years', SchoolYearController::class);
         Route::get('school-years/{schoolYear}/assign-students', [SchoolYearController::class, 'assignStudents'])->name('school-years.assign-students');
         Route::post('school-years/{schoolYear}/assign-students', [SchoolYearController::class, 'storeStudentAssignments'])->name('school-years.store-student-assignments');

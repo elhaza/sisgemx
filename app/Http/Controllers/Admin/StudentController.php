@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\SchoolGrade;
+use App\Models\GradeSection;
 use App\Models\SchoolYear;
 use App\Models\Student;
 use App\Models\StudentTuition;
@@ -146,8 +146,8 @@ class StudentController extends Controller
         $activeSchoolYear = SchoolYear::where('is_active', true)->first();
 
         // Get unique grade levels and groups for filters
-        $gradeLevels = SchoolGrade::distinct('level')->orderBy('level')->pluck('level');
-        $groups = SchoolGrade::distinct('section')->orderBy('section')->pluck('section');
+        $gradeLevels = GradeSection::distinct('grade_level')->orderBy('grade_level')->pluck('grade_level');
+        $groups = GradeSection::distinct('section')->orderBy('section')->pluck('section');
 
         return view('admin.students.index', compact('students', 'schoolYears', 'activeSchoolYear', 'gradeLevels', 'groups', 'sortBy', 'sortOrder'));
     }
@@ -158,11 +158,11 @@ class StudentController extends Controller
         $activeSchoolYear = SchoolYear::where('is_active', true)->first();
 
         // Only get grades from active school year
-        $schoolGrades = SchoolGrade::with('schoolYear')
+        $schoolGrades = GradeSection::with('schoolYear')
             ->when($activeSchoolYear, function ($query) use ($activeSchoolYear) {
                 $query->where('school_year_id', $activeSchoolYear->id);
             })
-            ->orderBy('level')
+            ->orderBy('grade_level')
             ->orderBy('section')
             ->get();
 
@@ -241,7 +241,7 @@ class StudentController extends Controller
     public function edit(Student $student)
     {
         $schoolYears = SchoolYear::all();
-        $schoolGrades = SchoolGrade::with('schoolYear')->orderBy('school_year_id')->orderBy('level')->orderBy('section')->get();
+        $schoolGrades = GradeSection::with('schoolYear')->orderBy('school_year_id')->orderBy('grade_level')->orderBy('section')->get();
         $parents = User::where('role', 'parent')->get();
 
         return view('admin.students.edit', compact('student', 'schoolYears', 'schoolGrades', 'parents'));

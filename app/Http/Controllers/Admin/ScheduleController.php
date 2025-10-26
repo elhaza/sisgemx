@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\DayOfWeek;
 use App\Http\Controllers\Controller;
+use App\Models\GradeSection;
 use App\Models\Schedule;
-use App\Models\SchoolGrade;
 use App\Models\SchoolYear;
 use App\Models\Student;
 use App\Models\Subject;
@@ -27,7 +27,7 @@ class ScheduleController extends Controller
     {
         $activeSchoolYear = SchoolYear::where('is_active', true)->first();
         $subjects = Subject::with('teacher')->get();
-        $schoolGrades = SchoolGrade::with('schoolYear')->get();
+        $schoolGrades = GradeSection::with('schoolYear')->get();
         $daysOfWeek = DayOfWeek::cases();
 
         return view('admin.schedules.create', compact('activeSchoolYear', 'subjects', 'schoolGrades', 'daysOfWeek'));
@@ -53,7 +53,7 @@ class ScheduleController extends Controller
     public function edit(Schedule $schedule)
     {
         $subjects = Subject::with('teacher')->get();
-        $schoolGrades = SchoolGrade::with('schoolYear')->get();
+        $schoolGrades = GradeSection::with('schoolYear')->get();
         $daysOfWeek = DayOfWeek::cases();
 
         return view('admin.schedules.edit', compact('schedule', 'subjects', 'schoolGrades', 'daysOfWeek'));
@@ -89,7 +89,7 @@ class ScheduleController extends Controller
         $schoolYears = SchoolYear::all();
         $activeSchoolYear = SchoolYear::where('is_active', true)->first();
         $subjects = Subject::with('teacher')->where('school_year_id', $activeSchoolYear?->id)->get();
-        $schoolGrades = SchoolGrade::with('schoolYear')->get();
+        $schoolGrades = GradeSection::with('schoolYear')->get();
 
         // Group subjects by name and calculate teacher hours
         $groupedSubjects = $this->groupSubjectsByNameWithTeacherHours($subjects, $activeSchoolYear?->id);
@@ -236,7 +236,7 @@ class ScheduleController extends Controller
         }
 
         // Get all school grades from source school year
-        $sourceSchoolGrades = SchoolGrade::where('school_year_id', $sourceSchoolYear->id)->get();
+        $sourceSchoolGrades = GradeSection::where('school_year_id', $sourceSchoolYear->id)->get();
 
         $copiedCount = 0;
         $createdGradesCount = 0;
@@ -244,24 +244,23 @@ class ScheduleController extends Controller
         $errors = [];
 
         foreach ($sourceSchoolGrades as $sourceGrade) {
-            // Find matching school grade in target school year by level and section
-            $targetGrade = SchoolGrade::where('school_year_id', $targetSchoolYear->id)
-                ->where('level', $sourceGrade->level)
+            // Find matching school grade in target school year by grade_level and section
+            $targetGrade = GradeSection::where('school_year_id', $targetSchoolYear->id)
+                ->where('grade_level', $sourceGrade->grade_level)
                 ->where('section', $sourceGrade->section)
                 ->first();
 
             if (! $targetGrade) {
                 // Create grade if checkbox is enabled
                 if ($request->has('create_missing_grades') && $request->create_missing_grades) {
-                    $targetGrade = SchoolGrade::create([
+                    $targetGrade = GradeSection::create([
                         'school_year_id' => $targetSchoolYear->id,
-                        'level' => $sourceGrade->level,
+                        'grade_level' => $sourceGrade->grade_level,
                         'section' => $sourceGrade->section,
-                        'name' => $sourceGrade->name,
                     ]);
                     $createdGradesCount++;
                 } else {
-                    $errors[] = "No se encontró grupo equivalente para {$sourceGrade->name} {$sourceGrade->section}";
+                    $errors[] = "No se encontró grupo equivalente para {$sourceGrade->grade_level}° {$sourceGrade->section}";
 
                     continue;
                 }
@@ -350,7 +349,7 @@ class ScheduleController extends Controller
     public function storeVisual(Request $request)
     {
         $validated = $request->validate([
-            'school_grade_id' => 'required|exists:school_grades,id',
+            'school_grade_id' => 'required|exists:grade_sections,id',
             'subject_id' => 'required|exists:subjects,id',
             'teacher_id' => 'nullable|exists:users,id',
             'day_of_week' => 'required|string',
@@ -361,7 +360,7 @@ class ScheduleController extends Controller
 
         // Check for teacher conflicts
         $subject = Subject::findOrFail($validated['subject_id']);
-        $schoolGrade = SchoolGrade::findOrFail($validated['school_grade_id']);
+        $schoolGrade = GradeSection::findOrFail($validated['school_grade_id']);
 
         // Use provided teacher_id or default to subject's teacher
         if (! $validated['teacher_id']) {

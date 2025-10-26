@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\GradeSection;
 use App\Models\MonthlyTuition;
 use App\Models\Schedule;
-use App\Models\SchoolGrade;
 use App\Models\SchoolYear;
 use App\Models\Student;
 use App\Models\StudentTuition;
@@ -96,13 +96,12 @@ class SchoolYearController extends Controller
 
     protected function copyGroups(SchoolYear $source, SchoolYear $target): void
     {
-        $sourceGrades = SchoolGrade::where('school_year_id', $source->id)->get();
+        $sourceGrades = GradeSection::where('school_year_id', $source->id)->get();
 
         foreach ($sourceGrades as $grade) {
-            SchoolGrade::create([
+            GradeSection::create([
                 'school_year_id' => $target->id,
-                'level' => $grade->level,
-                'name' => $grade->name,
+                'grade_level' => $grade->grade_level,
                 'section' => $grade->section,
             ]);
         }
@@ -131,8 +130,8 @@ class SchoolYearController extends Controller
 
         foreach ($sourceSchedules as $schedule) {
             // Find corresponding school grade in target year
-            $targetGrade = SchoolGrade::where('school_year_id', $target->id)
-                ->where('level', $schedule->schoolGrade->level)
+            $targetGrade = GradeSection::where('school_year_id', $target->id)
+                ->where('grade_level', $schedule->schoolGrade->grade_level)
                 ->where('section', $schedule->schoolGrade->section)
                 ->first();
 
@@ -177,20 +176,20 @@ class SchoolYearController extends Controller
             ->get();
 
         // Get target grades for the new school year
-        $targetGrades = SchoolGrade::where('school_year_id', $schoolYear->id)
-            ->orderBy('level')
+        $targetGrades = GradeSection::where('school_year_id', $schoolYear->id)
+            ->orderBy('grade_level')
             ->orderBy('section')
             ->get();
 
         // Get maximum level available in target grades
-        $maxLevelAvailable = $targetGrades->max('level') ?? 0;
+        $maxLevelAvailable = $targetGrades->max('grade_level') ?? 0;
 
         // Separate students into those who can advance and those who completed
         $studentsToAdvance = collect();
         $studentsCompleted = collect();
 
         foreach ($students as $student) {
-            $currentLevel = $student->schoolGrade->level ?? 0;
+            $currentLevel = $student->schoolGrade->grade_level ?? 0;
             $nextLevel = $currentLevel + 1;
 
             if ($nextLevel > $maxLevelAvailable) {
@@ -221,13 +220,13 @@ class SchoolYearController extends Controller
 
         // Group target grades by level
         foreach ($targetGrades as $grade) {
-            $levelGroups[$grade->level][] = $grade;
+            $levelGroups[$grade->grade_level][] = $grade;
         }
 
         // Group students by their current level
         $studentsByLevel = [];
         foreach ($students as $student) {
-            $currentLevel = $student->schoolGrade->level ?? 0;
+            $currentLevel = $student->schoolGrade->grade_level ?? 0;
             $studentsByLevel[$currentLevel][] = $student;
         }
 
@@ -278,7 +277,7 @@ class SchoolYearController extends Controller
 
             foreach ($validated['students'] as $studentId) {
                 $gradeId = $validated['assignments'][$studentId];
-                $grade = SchoolGrade::find($gradeId);
+                $grade = GradeSection::find($gradeId);
 
                 // Update student school year and grade
                 $student = Student::find($studentId);
@@ -380,10 +379,10 @@ class SchoolYearController extends Controller
 
     public function getSchoolGrades(SchoolYear $schoolYear)
     {
-        $schoolGrades = $schoolYear->schoolGrades()
-            ->orderBy('level')
+        $schoolGrades = $schoolYear->gradeSections()
+            ->orderBy('grade_level')
             ->orderBy('section')
-            ->get(['id', 'level', 'name', 'section', 'school_year_id']);
+            ->get(['id', 'grade_level', 'section', 'school_year_id']);
 
         return response()->json($schoolGrades);
     }

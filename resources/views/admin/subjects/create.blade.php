@@ -48,9 +48,15 @@
 
                         <div class="mb-4">
                             <label for="grade_level" class="block text-sm font-medium text-gray-700">Grado</label>
-                            <input type="text" name="grade_level" id="grade_level" value="{{ old('grade_level') }}" required
-                                placeholder="Ej: Primero, Segundo, Tercero"
+                            <select name="grade_level" id="grade_level" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Seleccionar grado</option>
+                                @foreach($gradeLevels as $level)
+                                    <option value="{{ $level }}" {{ old('grade_level') == $level ? 'selected' : '' }}>
+                                        {{ $level }}° Grado
+                                    </option>
+                                @endforeach
+                            </select>
                             @error('grade_level')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror

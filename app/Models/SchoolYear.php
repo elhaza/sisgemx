@@ -57,8 +57,13 @@ class SchoolYear extends Model
         return $this->hasMany(MonthlyTuition::class);
     }
 
+    public function gradeSections(): HasMany
+    {
+        return $this->hasMany(GradeSection::class);
+    }
+
     public function schoolGrades(): HasMany
     {
-        return $this->hasMany(SchoolGrade::class);
+        return $this->hasMany(GradeSection::class);
     }
 }
