@@ -45,7 +45,7 @@ class SubjectController extends Controller
         foreach ($teachers as $teacher) {
             $teacherSubjects = Subject::where('teacher_id', $teacher->id)
                 ->whereNotNull('default_hours_per_week')
-                ->get(['id', 'name']);
+                ->get(['id', 'name', 'default_hours_per_week']);
 
             $totalHours = $teacherSubjects->sum('default_hours_per_week');
 
