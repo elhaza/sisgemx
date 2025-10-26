@@ -33,6 +33,9 @@ class StudentImportController extends Controller
         }
 
         try {
+            // Increase execution time for import
+            set_time_limit(300); // 5 minutes
+
             $import = new StudentsImport($activeSchoolYear);
             Excel::import($import, $request->file('file'));
 

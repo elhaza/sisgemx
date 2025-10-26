@@ -74,6 +74,14 @@
                                 <option value="unspecified" {{ request('gender') === 'unspecified' ? 'selected' : '' }}>No especificado</option>
                             </select>
 
+                            <select name="per_page" class="filter-select w-32 rounded-md border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Por página</option>
+                                <option value="15" {{ request('per_page') === '15' || !request('per_page') ? 'selected' : '' }}>15 por página</option>
+                                <option value="30" {{ request('per_page') === '30' ? 'selected' : '' }}>30 por página</option>
+                                <option value="50" {{ request('per_page') === '50' ? 'selected' : '' }}>50 por página</option>
+                                <option value="100" {{ request('per_page') === '100' ? 'selected' : '' }}>100 por página</option>
+                            </select>
+
                             <button type="submit" class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">Filtrar</button>
 
                             <a href="{{ route('admin.students.index') }}" class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Limpiar</a>
@@ -88,12 +96,54 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Matrícula</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Nombre</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Sexo</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Grado</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Grupo</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Ciclo Escolar</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <a href="{{ route('admin.students.index', array_merge(request()->query(), ['sort_by' => 'enrollment_number', 'sort_order' => $sortBy === 'enrollment_number' && $sortOrder === 'asc' ? 'desc' : 'asc'])) }}" class="inline-flex items-center gap-1 hover:text-gray-700">
+                                            Matrícula
+                                            @if($sortBy === 'enrollment_number')
+                                                <span class="text-xs">{{ $sortOrder === 'asc' ? '↑' : '↓' }}</span>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <a href="{{ route('admin.students.index', array_merge(request()->query(), ['sort_by' => 'name', 'sort_order' => $sortBy === 'name' && $sortOrder === 'asc' ? 'desc' : 'asc'])) }}" class="inline-flex items-center gap-1 hover:text-gray-700">
+                                            Nombre
+                                            @if($sortBy === 'name')
+                                                <span class="text-xs">{{ $sortOrder === 'asc' ? '↑' : '↓' }}</span>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <a href="{{ route('admin.students.index', array_merge(request()->query(), ['sort_by' => 'gender', 'sort_order' => $sortBy === 'gender' && $sortOrder === 'asc' ? 'desc' : 'asc'])) }}" class="inline-flex items-center gap-1 hover:text-gray-700">
+                                            Sexo
+                                            @if($sortBy === 'gender')
+                                                <span class="text-xs">{{ $sortOrder === 'asc' ? '↑' : '↓' }}</span>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <a href="{{ route('admin.students.index', array_merge(request()->query(), ['sort_by' => 'level', 'sort_order' => $sortBy === 'level' && $sortOrder === 'asc' ? 'desc' : 'asc'])) }}" class="inline-flex items-center gap-1 hover:text-gray-700">
+                                            Grado
+                                            @if($sortBy === 'level')
+                                                <span class="text-xs">{{ $sortOrder === 'asc' ? '↑' : '↓' }}</span>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <a href="{{ route('admin.students.index', array_merge(request()->query(), ['sort_by' => 'section', 'sort_order' => $sortBy === 'section' && $sortOrder === 'asc' ? 'desc' : 'asc'])) }}" class="inline-flex items-center gap-1 hover:text-gray-700">
+                                            Grupo
+                                            @if($sortBy === 'section')
+                                                <span class="text-xs">{{ $sortOrder === 'asc' ? '↑' : '↓' }}</span>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <a href="{{ route('admin.students.index', array_merge(request()->query(), ['sort_by' => 'school_year', 'sort_order' => $sortBy === 'school_year' && $sortOrder === 'asc' ? 'desc' : 'asc'])) }}" class="inline-flex items-center gap-1 hover:text-gray-700">
+                                            Ciclo Escolar
+                                            @if($sortBy === 'school_year')
+                                                <span class="text-xs">{{ $sortOrder === 'asc' ? '↑' : '↓' }}</span>
+                                            @endif
+                                        </a>
+                                    </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Descuento</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Acciones</th>
                                 </tr>

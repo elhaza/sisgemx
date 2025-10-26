@@ -135,4 +135,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Special Commands Token
+    |--------------------------------------------------------------------------
+    |
+    | Token required to execute special administrative commands like clearing
+    | all database data. Should be set in the .env file as TOKEN_SPECIAL_COMMANDS.
+    |
+    */
+
+    'token_special_commands' => env('TOKEN_SPECIAL_COMMANDS'),
+
 ];

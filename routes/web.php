@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DatabaseBackupController;
 use App\Http\Controllers\Admin\GradeOverviewController;
 use App\Http\Controllers\Admin\MedicalJustificationController as AdminMedicalJustificationController;
 use App\Http\Controllers\Admin\ScheduleController;
@@ -150,6 +151,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('medical-justifications/{medicalJustification}', [AdminMedicalJustificationController::class, 'show'])->name('medical-justifications.show');
         Route::post('medical-justifications/{medicalJustification}/approve', [AdminMedicalJustificationController::class, 'approve'])->name('medical-justifications.approve');
         Route::post('medical-justifications/{medicalJustification}/reject', [AdminMedicalJustificationController::class, 'reject'])->name('medical-justifications.reject');
+
+        // Database operations routes
+        Route::get('database/backup', [DatabaseBackupController::class, 'backup'])->name('database.backup');
+        Route::get('database/restore', [DatabaseBackupController::class, 'showRestore'])->name('database.restore-form');
+        Route::post('database/restore', [DatabaseBackupController::class, 'restore'])->name('database.restore');
+        Route::get('database/clear-all', [DatabaseBackupController::class, 'showClearAll'])->name('database.clear-form');
+        Route::post('database/clear-all', [DatabaseBackupController::class, 'clearAll'])->name('database.clear');
     });
 
     // API routes for schedules

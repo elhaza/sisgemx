@@ -56,11 +56,11 @@ class StudentController extends Controller
 
         // Filter by school year (default to active)
         if ($request->filled('school_year_id')) {
-            $query->where('school_year_id', $request->school_year_id);
+            $query->where('students.school_year_id', $request->school_year_id);
         } else {
             $activeSchoolYear = SchoolYear::where('is_active', true)->first();
             if ($activeSchoolYear) {
-                $query->where('school_year_id', $activeSchoolYear->id);
+                $query->where('students.school_year_id', $activeSchoolYear->id);
             }
         }
 
@@ -82,7 +82,64 @@ class StudentController extends Controller
             $query->where('gender', $request->gender);
         }
 
-        $students = $query->latest()->paginate(15)->withQueryString();
+        // Get per_page parameter from request (default to 15)
+        $perPage = $request->get('per_page', 15);
+        // Limit to allowed values to prevent abuse
+        $allowedPerPage = [15, 30, 50, 100];
+        if (! in_array($perPage, $allowedPerPage)) {
+            $perPage = 15;
+        }
+
+        // Handle sorting
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        // Validate sort parameters
+        $allowedSortColumns = [
+            'enrollment_number' => 'students.enrollment_number',
+            'name' => 'users.name',
+            'gender' => 'students.gender',
+            'level' => 'school_grades.level',
+            'section' => 'school_grades.section',
+            'school_year' => 'school_years.name',
+            'created_at' => 'students.created_at',
+        ];
+
+        if (! isset($allowedSortColumns[$sortBy])) {
+            $sortBy = 'created_at';
+        }
+
+        if (! in_array($sortOrder, ['asc', 'desc'])) {
+            $sortOrder = 'desc';
+        }
+
+        // Apply sorting
+        $columnToSort = $allowedSortColumns[$sortBy];
+
+        // Handle joins for sorting related tables
+        if (strpos($columnToSort, 'users.') !== false) {
+            $query->join('users', 'students.user_id', '=', 'users.id');
+        }
+        if (strpos($columnToSort, 'school_grades.') !== false) {
+            $query->join('school_grades', 'students.school_grade_id', '=', 'school_grades.id');
+        }
+        if (strpos($columnToSort, 'school_years.') !== false) {
+            $query->join('school_years', 'students.school_year_id', '=', 'school_years.id');
+        }
+
+        // Special handling for name sorting: sort by apellido_paterno, apellido_materno, then name
+        if ($sortBy === 'name') {
+            $query->orderBy('users.apellido_paterno', $sortOrder)
+                ->orderBy('users.apellido_materno', $sortOrder)
+                ->orderBy('users.name', $sortOrder);
+        } else {
+            $query->orderBy($columnToSort, $sortOrder);
+        }
+
+        // Select distinct to avoid duplicates from joins
+        $query->select('students.*');
+
+        $students = $query->paginate($perPage)->withQueryString();
 
         // Get data for filters
         $schoolYears = SchoolYear::orderBy('start_date', 'desc')->get();
@@ -92,7 +149,7 @@ class StudentController extends Controller
         $gradeLevels = SchoolGrade::distinct('level')->orderBy('level')->pluck('level');
         $groups = SchoolGrade::distinct('section')->orderBy('section')->pluck('section');
 
-        return view('admin.students.index', compact('students', 'schoolYears', 'activeSchoolYear', 'gradeLevels', 'groups'));
+        return view('admin.students.index', compact('students', 'schoolYears', 'activeSchoolYear', 'gradeLevels', 'groups', 'sortBy', 'sortOrder'));
     }
 
     public function create()

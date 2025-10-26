@@ -113,7 +113,7 @@
                             <tbody class="divide-y divide-gray-200 bg-white">
                                 @forelse($users as $user)
                                     <tr>
-                                        <td class="whitespace-nowrap px-6 py-4">{{ $user->name }}</td>
+                                        <td class="whitespace-nowrap px-6 py-4">{{ $user->name }} {{ $user->apellido_paterno }} {{ $user->apellido_materno }}</td>
                                         <td class="whitespace-nowrap px-6 py-4">{{ $user->email }}</td>
                                         <td class="whitespace-nowrap px-6 py-4">
                                             <span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
