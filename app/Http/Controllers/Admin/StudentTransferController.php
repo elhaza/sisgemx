@@ -12,10 +12,14 @@ class StudentTransferController extends Controller
 {
     public function index()
     {
-        $schoolYears = SchoolYear::orderBy('start_date', 'desc')->get();
-        $schoolGrades = SchoolGrade::with('schoolYear')->orderBy('school_year_id')->orderBy('level')->orderBy('section')->get();
+        $activeSchoolYear = SchoolYear::where('is_active', true)->first();
+        $schoolGrades = SchoolGrade::with('schoolYear')
+            ->where('school_year_id', $activeSchoolYear?->id)
+            ->orderBy('level')
+            ->orderBy('section')
+            ->get();
 
-        return view('admin.students.transfer', compact('schoolYears', 'schoolGrades'));
+        return view('admin.students.transfer', compact('schoolGrades', 'activeSchoolYear'));
     }
 
     public function getStudents(Request $request)
@@ -31,6 +35,30 @@ class StudentTransferController extends Controller
         $students = $query->orderBy('enrollment_number')->get();
 
         return response()->json($students);
+    }
+
+    public function getDestinationGrades(Request $request)
+    {
+        $sourceGradeId = $request->query('source_grade_id');
+        $activeSchoolYear = SchoolYear::where('is_active', true)->first();
+
+        if (! $sourceGradeId || ! $activeSchoolYear) {
+            return response()->json(['grades' => []]);
+        }
+
+        $sourceGrade = SchoolGrade::find($sourceGradeId);
+
+        if (! $sourceGrade) {
+            return response()->json(['grades' => []]);
+        }
+
+        $destinationGrades = SchoolGrade::where('school_year_id', $activeSchoolYear->id)
+            ->where('level', $sourceGrade->level)
+            ->where('id', '!=', $sourceGradeId)
+            ->orderBy('section')
+            ->get();
+
+        return response()->json(['grades' => $destinationGrades]);
     }
 
     public function transfer(Request $request)
@@ -66,8 +94,6 @@ class StudentTransferController extends Controller
             $student->update([
                 'school_year_id' => $validated['target_school_year_id'],
                 'school_grade_id' => $validated['target_school_grade_id'],
-                'grade_level' => $targetSchoolGrade->name,
-                'group' => $targetSchoolGrade->section,
             ]);
 
             $transferredCount++;

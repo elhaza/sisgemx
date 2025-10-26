@@ -35,13 +35,13 @@
                     <div class="p-6">
                         <div class="mb-4">
                             <label for="source_school_grade_id" class="block text-sm font-medium text-gray-700">
-                                Seleccionar Grupo
+                                Seleccionar Grupo (Ciclo {{ $activeSchoolYear?->name }})
                             </label>
                             <select id="source_school_grade_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="">-- Seleccione un grupo --</option>
                                 @foreach($schoolGrades as $grade)
                                     <option value="{{ $grade->id }}">
-                                        {{ $grade->schoolYear->name }} - {{ $grade->name }} {{ $grade->section }}
+                                        {{ $grade->name }} {{ $grade->section }}
                                     </option>
                                 @endforeach
                             </select>
@@ -77,24 +77,18 @@
                     <div class="p-6">
                         <div class="mb-4">
                             <label for="target_school_year_id" class="block text-sm font-medium text-gray-700">
-                                Ciclo Escolar
+                                Ciclo Escolar (Activo)
                             </label>
-                            <select id="target_school_year_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">-- Seleccione un ciclo --</option>
-                                @foreach($schoolYears as $year)
-                                    <option value="{{ $year->id }}">
-                                        {{ $year->name }} ({{ $year->start_date->format('Y') }} - {{ $year->end_date->format('Y') }})
-                                    </option>
-                                @endforeach
-                            </select>
+                            <input type="text" class="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-gray-700" value="{{ $activeSchoolYear?->name }}" readonly>
+                            <input type="hidden" id="target_school_year_id" value="{{ $activeSchoolYear?->id }}">
                         </div>
 
                         <div class="mb-4">
                             <label for="target_school_grade_id" class="block text-sm font-medium text-gray-700">
-                                Grado y Grupo
+                                Grado y Grupo Destino
                             </label>
                             <select id="target_school_grade_id" disabled class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100">
-                                <option value="">-- Primero seleccione un ciclo --</option>
+                                <option value="">-- Primero seleccione un grupo origen --</option>
                             </select>
                         </div>
 
@@ -120,7 +114,6 @@
     <script>
         let selectedStudents = [];
         let allStudents = [];
-        let targetSchoolGrades = @json($schoolGrades);
 
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
@@ -130,6 +123,7 @@
             // Source school grade selector
             document.getElementById('source_school_grade_id').addEventListener('change', function() {
                 loadStudents(this.value);
+                loadDestinationGrades(this.value);
             });
 
             // Select all checkbox
@@ -146,32 +140,6 @@
                     }
                 });
                 updateSelectedCount();
-                updateTransferButton();
-            });
-
-            // Target school year selector
-            document.getElementById('target_school_year_id').addEventListener('change', function() {
-                const schoolYearId = this.value;
-                const targetGradeSelect = document.getElementById('target_school_grade_id');
-
-                if (schoolYearId) {
-                    const grades = targetSchoolGrades.filter(g => g.school_year_id == schoolYearId);
-
-                    targetGradeSelect.disabled = false;
-                    targetGradeSelect.innerHTML = '<option value="">-- Seleccione un grado --</option>';
-
-                    grades.forEach(grade => {
-                        const option = document.createElement('option');
-                        option.value = grade.id;
-                        option.textContent = `${grade.name} ${grade.section}`;
-                        targetGradeSelect.appendChild(option);
-                    });
-                } else {
-                    targetGradeSelect.disabled = true;
-                    targetGradeSelect.innerHTML = '<option value="">-- Primero seleccione un ciclo --</option>';
-                }
-
-                updateSummary();
                 updateTransferButton();
             });
 
@@ -194,7 +162,9 @@
                 return;
             }
 
-            fetch(`{{ route('admin.students.get-students') }}?school_grade_id=${schoolGradeId}`)
+            fetch(`{{ route('admin.students.get-students') }}?school_grade_id=${schoolGradeId}`, {
+                credentials: 'include'
+            })
                 .then(response => response.json())
                 .then(students => {
                     allStudents = students;
@@ -249,6 +219,47 @@
                 });
         }
 
+        function loadDestinationGrades(sourceGradeId) {
+            const targetGradeSelect = document.getElementById('target_school_grade_id');
+
+            if (!sourceGradeId) {
+                targetGradeSelect.disabled = true;
+                targetGradeSelect.innerHTML = '<option value="">-- Primero seleccione un grupo origen --</option>';
+                updateSummary();
+                updateTransferButton();
+                return;
+            }
+
+            fetch(`{{ route('admin.students.get-destination-grades') }}?source_grade_id=${sourceGradeId}`, {
+                credentials: 'include'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.grades && data.grades.length > 0) {
+                        targetGradeSelect.disabled = false;
+                        targetGradeSelect.innerHTML = '<option value="">-- Seleccione un grado --</option>';
+
+                        data.grades.forEach(grade => {
+                            const option = document.createElement('option');
+                            option.value = grade.id;
+                            option.textContent = `${grade.name} ${grade.section}`;
+                            targetGradeSelect.appendChild(option);
+                        });
+                    } else {
+                        targetGradeSelect.disabled = true;
+                        targetGradeSelect.innerHTML = '<option value="">No hay grupos disponibles para este nivel</option>';
+                    }
+
+                    targetGradeSelect.value = '';
+                    updateSummary();
+                    updateTransferButton();
+                })
+                .catch(error => {
+                    console.error('Error loading destination grades:', error);
+                    showNotification('Error al cargar los grados destino', 'error');
+                });
+        }
+
         function updateSelectedCount() {
             const count = selectedStudents.length;
             document.getElementById('selected-count').textContent = `${count} seleccionado${count !== 1 ? 's' : ''}`;
@@ -256,15 +267,14 @@
         }
 
         function updateSummary() {
-            const targetYearSelect = document.getElementById('target_school_year_id');
+            const targetYearInput = document.querySelector('input[value="{{ $activeSchoolYear?->name }}"]');
             const targetGradeSelect = document.getElementById('target_school_grade_id');
 
             let summaryText = 'No seleccionado';
 
-            if (targetYearSelect.value && targetGradeSelect.value) {
-                const yearText = targetYearSelect.options[targetYearSelect.selectedIndex].text;
+            if (targetGradeSelect.value) {
                 const gradeText = targetGradeSelect.options[targetGradeSelect.selectedIndex].text;
-                summaryText = `${yearText} - ${gradeText}`;
+                summaryText = `${gradeText}`;
             }
 
             document.getElementById('summary-target').innerHTML = `Destino: <span class="font-semibold">${summaryText}</span>`;
@@ -301,6 +311,7 @@
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     student_ids: selectedStudents,
                     target_school_year_id: targetSchoolYearId,
