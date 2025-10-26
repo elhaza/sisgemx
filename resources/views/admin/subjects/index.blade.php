@@ -31,6 +31,7 @@
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
                             @forelse($subjects as $subject)
+                                @if($subject->teacher_id && $subject->school_year_id)
                                 <tr>
                                     <td class="whitespace-nowrap px-6 py-4">
                                         <div class="text-sm font-medium text-gray-900">{{ $subject->name }}</div>
@@ -40,8 +41,8 @@
                                     </td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->grade_level }}°</td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->default_hours_per_week ?? '-' }}</td>
-                                    <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->teacher->name }}</td>
-                                    <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->schoolYear->name }}</td>
+                                    <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->teacher?->name ?? '-' }}</td>
+                                    <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->schoolYear?->name ?? '-' }}</td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm">
                                         <div class="flex gap-2">
                                             <a href="{{ route('admin.subjects.edit', $subject) }}" class="text-blue-600 hover:text-blue-900">Editar</a>
@@ -53,6 +54,7 @@
                                         </div>
                                     </td>
                                 </tr>
+                                @endif
                             @empty
                                 <tr>
                                     <td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay materias registradas.</td>
