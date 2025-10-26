@@ -40,17 +40,21 @@ class SubjectController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Calculate teacher hours
+        // Calculate teacher hours and subjects
         $teacherHours = [];
         foreach ($teachers as $teacher) {
-            $totalHours = Subject::where('teacher_id', $teacher->id)
+            $teacherSubjects = Subject::where('teacher_id', $teacher->id)
                 ->whereNotNull('default_hours_per_week')
-                ->sum('default_hours_per_week');
+                ->get(['id', 'name']);
+
+            $totalHours = $teacherSubjects->sum('default_hours_per_week');
 
             $teacherHours[$teacher->id] = [
                 'name' => $teacher->full_name,
                 'hours' => $totalHours,
                 'max_hours' => $teacher->max_hours_per_week ?? 40,
+                'subject_count' => $teacherSubjects->count(),
+                'subjects' => $teacherSubjects->pluck('name')->unique()->toArray(),
             ];
         }
 

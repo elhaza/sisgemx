@@ -37,6 +37,7 @@
                             <thead class="bg-gray-100">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">Maestro</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">Materias</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">Horas Asignadas</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">Progreso</th>
                                 </tr>
@@ -45,8 +46,27 @@
                                 @forelse($teacherHours as $teacherId => $hours)
                                     @if($hours['hours'] > 0)
                                     <tr>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ $hours['name'] }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ $hours['hours'] }} de {{ $hours['max_hours'] }} horas</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">
+                                            <div>
+                                                <p class="font-medium">{{ $hours['name'] }}</p>
+                                                <p class="text-xs text-gray-500">{{ $hours['subject_count'] }} {{ $hours['subject_count'] === 1 ? 'materia' : 'materias' }}</p>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex flex-wrap gap-2">
+                                                @foreach($hours['subjects'] as $subject)
+                                                    @php
+                                                        $colors = ['bg-blue-100 text-blue-800', 'bg-green-100 text-green-800', 'bg-purple-100 text-purple-800', 'bg-pink-100 text-pink-800', 'bg-indigo-100 text-indigo-800', 'bg-yellow-100 text-yellow-800'];
+                                                        $colorIndex = (crc32($subject) % count($colors));
+                                                        $color = $colors[$colorIndex];
+                                                    @endphp
+                                                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium {{ $color }}">
+                                                        {{ $subject }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{{ $hours['hours'] }} de {{ $hours['max_hours'] }} horas</td>
                                         <td class="px-6 py-4">
                                             <div class="w-32 bg-gray-200 rounded-full h-2">
                                                 @php
@@ -60,7 +80,7 @@
                                     @endif
                                 @empty
                                     <tr>
-                                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">No hay maestros con materias asignadas.</td>
+                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">No hay maestros con materias asignadas.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
