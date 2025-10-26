@@ -188,8 +188,8 @@
                         <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${yearName}</td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm">
                             <div class="flex gap-2">
-                                <a href="{{ route('admin.subjects.edit', '') }}/${data.id}" class="text-blue-600 hover:text-blue-900">Editar</a>
-                                <form action="{{ route('admin.subjects.destroy', '') }}/${data.id}" method="POST" class="inline" onsubmit="return confirm('¿Está seguro de eliminar esta materia?')">
+                                <a href="{{ url('admin/subjects') }}/${data.id}/edit" class="text-blue-600 hover:text-blue-900">Editar</a>
+                                <form action="{{ url('admin/subjects') }}/${data.id}" method="POST" class="inline" onsubmit="return confirm('¿Está seguro de eliminar esta materia?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-600 hover:text-red-900">Eliminar</button>
