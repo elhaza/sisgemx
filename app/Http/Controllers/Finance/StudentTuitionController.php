@@ -16,7 +16,10 @@ class StudentTuitionController extends Controller
         $schoolYears = SchoolYear::all();
         $selectedSchoolYearId = $request->get('school_year_id', SchoolYear::where('is_active', true)->first()?->id);
 
-        $query = StudentTuition::with(['student.user', 'schoolYear'])->orderBy('student_id')->orderBy('month');
+        $query = StudentTuition::with(['student.user', 'schoolYear'])
+            ->orderBy('student_id')
+            ->orderBy('year')
+            ->orderBy('month');
 
         if ($selectedSchoolYearId) {
             $query->where('school_year_id', $selectedSchoolYearId);
@@ -67,6 +70,7 @@ class StudentTuitionController extends Controller
         // Get all tuitions for this student and school year
         $allTuitions = StudentTuition::where('student_id', $studentTuition->student_id)
             ->where('school_year_id', $studentTuition->school_year_id)
+            ->orderBy('year')
             ->orderBy('month')
             ->get();
 
