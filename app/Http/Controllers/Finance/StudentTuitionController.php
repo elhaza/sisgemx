@@ -7,6 +7,7 @@ use App\Models\MonthlyTuition;
 use App\Models\SchoolYear;
 use App\Models\StudentTuition;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\Paginator;
 
 class StudentTuitionController extends Controller
 {
@@ -45,12 +46,16 @@ class StudentTuitionController extends Controller
             ];
         })->values();
 
-        // Paginate the grouped results
+        // Paginate the grouped results using Laravel's Paginator
         $page = $request->get('page', 1);
         $perPage = 10;
-        $studentTuitions = collect($studentTuitionPeriods)
-            ->slice(($page - 1) * $perPage, $perPage)
-            ->values();
+        $offset = ($page - 1) * $perPage;
+        $items = array_slice($studentTuitionPeriods->toArray(), $offset, $perPage, true);
+
+        $studentTuitions = new Paginator($items, $perPage, $page, [
+            'path' => $request->url(),
+            'query' => $request->query(),
+        ]);
 
         return view('finance.student-tuitions.index', compact('studentTuitions', 'schoolYears', 'selectedSchoolYearId'));
     }
