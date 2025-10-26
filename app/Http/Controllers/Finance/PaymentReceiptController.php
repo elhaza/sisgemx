@@ -19,8 +19,8 @@ class PaymentReceiptController extends Controller
     public function index(Request $request)
     {
         $status = $request->get('status');
-        $month = $request->get('month');
-        $year = $request->get('year');
+        $month = $request->has('month') ? (int) $request->get('month') : null;
+        $year = $request->has('year') ? (int) $request->get('year') : null;
         $view = $request->get('view', 'month'); // 'month' or 'school_year'
 
         // Get active school year for context
@@ -59,8 +59,8 @@ class PaymentReceiptController extends Controller
 
         // Handle month view
         if ($view === 'month') {
-            $monthToDisplay = $month ?: now()->month;
-            $yearToDisplay = $year ?: now()->year;
+            $monthToDisplay = $month ?? now()->month;
+            $yearToDisplay = $year ?? now()->year;
             $query->whereMonth('payment_date', $monthToDisplay)
                 ->whereYear('payment_date', $yearToDisplay);
 
@@ -155,8 +155,8 @@ class PaymentReceiptController extends Controller
         $validatedReceiptsCount = PaymentReceipt::where('status', ReceiptStatus::Validated)->count() + $adminPayments->count();
 
         // Calculate income based on view
-        $monthToCalculate = $month ?: now()->month;
-        $yearToCalculate = $year ?: now()->year;
+        $monthToCalculate = $month ?? now()->month;
+        $yearToCalculate = $year ?? now()->year;
 
         $incomeCurrentMonth = 0;
         $incomeAccumulated = 0;
@@ -180,7 +180,7 @@ class PaymentReceiptController extends Controller
             $incomeAccumulated = PaymentReceipt::where('status', ReceiptStatus::Validated)
                 ->whereYear('payment_date', $yearToCalculate)
                 ->whereBetween('payment_date', [
-                    now()->setYear($yearToCalculate)->startOfYear(),
+                    now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
                     now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
                 ])
                 ->sum('amount_paid');
@@ -198,7 +198,7 @@ class PaymentReceiptController extends Controller
             $incomeMonthlyDetails = PaymentReceipt::where('status', ReceiptStatus::Validated)
                 ->whereYear('payment_date', $yearToCalculate)
                 ->whereBetween('payment_date', [
-                    now()->setYear($yearToCalculate)->startOfYear(),
+                    now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
                     now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
                 ])
                 ->selectRaw('MONTH(payment_date) as month, SUM(amount_paid) as total')
