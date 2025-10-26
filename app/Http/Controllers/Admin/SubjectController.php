@@ -20,8 +20,9 @@ class SubjectController extends Controller
         $schoolYears = SchoolYear::all();
         $activeSchoolYear = SchoolYear::where('is_active', true)->first();
         $gradeLevels = [1, 2, 3, 4, 5, 6];
+        $subjectList = Subject::orderBy('name')->get();
 
-        return view('admin.subjects.index', compact('subjects', 'teachers', 'schoolYears', 'activeSchoolYear', 'gradeLevels'));
+        return view('admin.subjects.index', compact('subjects', 'teachers', 'schoolYears', 'activeSchoolYear', 'gradeLevels', 'subjectList'));
     }
 
     public function create()
@@ -41,7 +42,27 @@ class SubjectController extends Controller
             'teacher_id' => 'required|exists:users,id',
             'grade_level' => 'required|integer|between:1,6',
             'school_year_id' => 'required|exists:school_years,id',
+            'default_hours_per_week' => 'nullable|numeric|min:0.5|max:40',
         ]);
+
+        // Validar que no exista duplicado (mismo maestro, misma materia, mismo grade_level)
+        $existing = Subject::where('teacher_id', $validated['teacher_id'])
+            ->where('name', $validated['name'])
+            ->where('grade_level', $validated['grade_level'])
+            ->first();
+
+        if ($existing) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este maestro ya tiene esta materia asignada para este grado.',
+                ], 422);
+            }
+
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['name' => 'Este maestro ya tiene esta materia asignada para este grado.']);
+        }
 
         $subject = Subject::create($validated);
 
@@ -51,6 +72,7 @@ class SubjectController extends Controller
                 'success' => true,
                 'message' => 'Materia creada exitosamente.',
                 'id' => $subject->id,
+                'name' => $subject->name,
             ]);
         }
 
@@ -89,6 +111,30 @@ class SubjectController extends Controller
 
         return redirect()->route('admin.subjects.index')
             ->with('success', 'Materia eliminada exitosamente.');
+    }
+
+    public function storeCatalogSubject(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:subjects,name',
+        ]);
+
+        $subject = Subject::create([
+            'name' => $validated['name'],
+            'description' => null,
+            'teacher_id' => null,
+            'grade_level' => null,
+            'school_year_id' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Materia creada exitosamente.',
+            'subject' => [
+                'id' => $subject->id,
+                'name' => $subject->name,
+            ],
+        ]);
     }
 
     public function storeTeacher(Request $request)

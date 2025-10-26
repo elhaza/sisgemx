@@ -23,6 +23,7 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Materia</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Grado</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Horas/Semana</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Maestro</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Ciclo Escolar</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Acciones</th>
@@ -38,6 +39,7 @@
                                         @endif
                                     </td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->grade_level }}°</td>
+                                    <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->default_hours_per_week ?? '-' }}</td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->teacher->name }}</td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $subject->schoolYear->name }}</td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm">
@@ -60,9 +62,18 @@
                             <!-- Fila para agregar nueva materia rápidamente -->
                             <tr id="new-subject-row" class="bg-blue-50 hover:bg-blue-100">
                                 <td class="px-6 py-4">
-                                    <input type="text" id="subject-name" placeholder="Nombre de la materia"
-                                        class="w-full rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
-                                        @keyup.enter="document.getElementById('add-subject-btn').click()">
+                                    @if($subjectList->count() > 0)
+                                        <select id="subject-name" class="w-full rounded-md border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                            <option value="">Seleccionar materia</option>
+                                            @foreach($subjectList as $s)
+                                                <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                            @endforeach
+                                            <option value="add-new">+ Agregar</option>
+                                        </select>
+                                    @else
+                                        <input type="text" id="subject-name" placeholder="Nombre de la materia"
+                                            class="w-full rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4">
                                     <select id="subject-grade" class="w-full rounded-md border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
@@ -71,6 +82,10 @@
                                             <option value="{{ $level }}">{{ $level }}°</option>
                                         @endforeach
                                     </select>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <input type="number" id="subject-hours" placeholder="Horas/semana" step="0.5" min="0.5" max="40"
+                                        class="w-full rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
                                 </td>
                                 <td class="px-6 py-4">
                                     <select id="subject-teacher" class="w-full rounded-md border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
@@ -96,6 +111,24 @@
                                         class="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition">
                                         + Agregar
                                     </button>
+                                </td>
+                            </tr>
+
+                            <!-- Fila para agregar nueva materia al catálogo -->
+                            <tr id="new-subject-form-row" class="hidden bg-indigo-50 hover:bg-indigo-100">
+                                <td colspan="6" class="px-6 py-4">
+                                    <div class="flex gap-3">
+                                        <input type="text" id="new-subject-input" placeholder="Nombre de la nueva materia"
+                                            class="flex-1 rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <button id="add-new-subject-btn"
+                                            class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition">
+                                            + Crear Materia
+                                        </button>
+                                        <button type="button" onclick="document.getElementById('new-subject-form-row').classList.add('hidden'); document.getElementById('subject-name').value = ''; document.getElementById('subject-name').focus();"
+                                            class="rounded-md bg-gray-400 px-4 py-2 text-sm font-medium text-white hover:bg-gray-500 transition">
+                                            Cancelar
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
 
@@ -137,6 +170,81 @@
     </div>
 
     <script>
+        // Manejar selección de "Agregar+" en el combo de materia (si existe)
+        const subjectNameElement = document.getElementById('subject-name');
+        if (subjectNameElement && subjectNameElement.tagName === 'SELECT') {
+            subjectNameElement.addEventListener('change', function() {
+                if (this.value === 'add-new') {
+                    document.getElementById('new-subject-form-row').classList.remove('hidden');
+                    document.getElementById('new-subject-input').focus();
+                }
+            });
+        }
+
+        // Crear nueva materia en el catálogo
+        if (document.getElementById('add-new-subject-btn')) {
+            document.getElementById('add-new-subject-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                const subjectInput = document.getElementById('new-subject-input').value.trim();
+
+                if (!subjectInput) {
+                    alert('Por favor ingresa el nombre de la materia');
+                    return;
+                }
+
+                const btn = this;
+                const originalText = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = 'Creando...';
+
+                fetch('{{ route("admin.subjects.store-catalog") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        name: subjectInput
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'Error al crear la materia');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        const subjectSelect = document.getElementById('subject-name');
+                        const newOption = document.createElement('option');
+                        newOption.value = data.subject.id;
+                        newOption.text = data.subject.name;
+                        newOption.selected = true;
+
+                        const addNewOption = subjectSelect.querySelector('[value="add-new"]');
+                        subjectSelect.insertBefore(newOption, addNewOption);
+
+                        document.getElementById('new-subject-form-row').classList.add('hidden');
+                        document.getElementById('new-subject-input').value = '';
+
+                        showNotification('Materia creada exitosamente', 'success');
+                    } else {
+                        showNotification(data.message || 'Error al crear la materia', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification(error.message || 'Error al crear la materia', 'error');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                });
+            });
+        }
+
         // Manejar selección de "Agregar+" en el combo de maestro
         document.getElementById('subject-teacher').addEventListener('change', function() {
             if (this.value === 'add-new') {
@@ -247,15 +355,27 @@
         document.getElementById('add-subject-btn').addEventListener('click', function(e) {
             e.preventDefault();
 
-            const name = document.getElementById('subject-name').value.trim();
+            const nameInput = document.getElementById('subject-name');
+            let name, subject_id;
+
+            // Determinar si es un combo o un input
+            if (nameInput.tagName === 'SELECT') {
+                subject_id = nameInput.value;
+                name = nameInput.options[nameInput.selectedIndex].text;
+            } else {
+                name = nameInput.value.trim();
+                subject_id = null;
+            }
+
             const grade_level = document.getElementById('subject-grade').value;
+            const hours = document.getElementById('subject-hours').value;
             const teacher_id = document.getElementById('subject-teacher').value;
             const school_year_id = document.getElementById('subject-school-year').value;
 
             // Validación básica
-            if (!name) {
-                alert('Por favor ingresa el nombre de la materia');
-                document.getElementById('subject-name').focus();
+            if (!subject_id && !name) {
+                alert('Por favor selecciona o ingresa el nombre de la materia');
+                nameInput.focus();
                 return;
             }
 
@@ -294,6 +414,7 @@
                     grade_level: grade_level,
                     teacher_id: teacher_id,
                     school_year_id: school_year_id,
+                    default_hours_per_week: hours || null,
                     description: ''
                 })
             })
@@ -321,6 +442,7 @@
                             <div class="text-sm font-medium text-gray-900">${name}</div>
                         </td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${grade_level}°</td>
+                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${hours || '-'}</td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${teacherName}</td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${yearName}</td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm">
@@ -340,8 +462,13 @@
                     newSubjectRow.parentNode.insertBefore(newRow, newSubjectRow);
 
                     // Limpiar inputs
-                    document.getElementById('subject-name').value = '';
+                    if (nameInput.tagName === 'SELECT') {
+                        nameInput.value = '';
+                    } else {
+                        nameInput.value = '';
+                    }
                     document.getElementById('subject-grade').value = '';
+                    document.getElementById('subject-hours').value = '';
                     document.getElementById('subject-teacher').value = '';
                     document.getElementById('subject-school-year').value = '{{ $activeSchoolYear?->id }}';
 
@@ -349,7 +476,7 @@
                     showNotification('Materia agregada exitosamente', 'success');
 
                     // Enfocar el input de nombre para agregar otra
-                    document.getElementById('subject-name').focus();
+                    nameInput.focus();
                 } else {
                     showNotification(data.message || 'Error al agregar la materia', 'error');
                 }

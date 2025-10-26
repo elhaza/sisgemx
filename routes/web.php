@@ -139,6 +139,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('students-transfer', [StudentTransferController::class, 'transfer'])->name('students.transfer-store');
         Route::resource('subjects', SubjectController::class);
         Route::post('subjects/teacher/store', [SubjectController::class, 'storeTeacher'])->name('subjects.store-teacher');
+        Route::post('subjects/catalog/store', [SubjectController::class, 'storeCatalogSubject'])->name('subjects.store-catalog');
         Route::resource('schedules', ScheduleController::class);
         Route::get('schedules-visual', [ScheduleController::class, 'visual'])->name('schedules.visual');
         Route::get('schedules-visual/get-group-schedule', [ScheduleController::class, 'getGroupSchedule'])->name('schedules.get-group-schedule');
