@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\PaymentReceipt;
 use App\Models\PaymentReceiptStatusLog;
+use App\Models\SchoolYear;
 use App\Models\Student;
 use App\Models\User;
 use App\ReceiptStatus;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class PaymentReceiptController extends Controller
@@ -19,6 +21,33 @@ class PaymentReceiptController extends Controller
         $status = $request->get('status');
         $month = $request->get('month');
         $year = $request->get('year');
+        $view = $request->get('view', 'month'); // 'month' or 'school_year'
+
+        // Get active school year for context
+        $activeSchoolYear = SchoolYear::where('is_active', true)->first();
+
+        // Determine the year to use
+        $displayYear = $year ?: ($activeSchoolYear ? $activeSchoolYear->end_date->year : now()->year);
+
+        // Determine month range for display
+        $monthLabel = 'Ciclo Escolar Completo';
+        $schoolYearMonths = collect();
+
+        if ($activeSchoolYear) {
+            // Calculate months in school year
+            $startMonth = $activeSchoolYear->start_date->month;
+            $startYear = $activeSchoolYear->start_date->year;
+            $endMonth = $activeSchoolYear->end_date->month;
+            $endYear = $activeSchoolYear->end_date->year;
+
+            for ($y = $startYear; $y <= $endYear; $y++) {
+                $monthStart = ($y === $startYear) ? $startMonth : 1;
+                $monthEnd = ($y === $endYear) ? $endMonth : 12;
+                for ($m = $monthStart; $m <= $monthEnd; $m++) {
+                    $schoolYearMonths->push(['month' => $m, 'year' => $y]);
+                }
+            }
+        }
 
         // Get PaymentReceipts
         $query = PaymentReceipt::query()
@@ -28,12 +57,21 @@ class PaymentReceiptController extends Controller
             $query->where('status', $status);
         }
 
-        if ($month) {
-            $query->whereMonth('payment_date', $month);
-        }
+        // Handle month view
+        if ($view === 'month') {
+            $monthToDisplay = $month ?: now()->month;
+            $yearToDisplay = $year ?: now()->year;
+            $query->whereMonth('payment_date', $monthToDisplay)
+                ->whereYear('payment_date', $yearToDisplay);
 
-        if ($year) {
-            $query->whereYear('payment_date', $year);
+            $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            $monthLabel = $monthNames[(int) $monthToDisplay].' '.$yearToDisplay;
+        } elseif ($activeSchoolYear && $view === 'school_year') {
+            // Filter by school year months
+            $query->whereBetween('payment_date', [
+                $activeSchoolYear->start_date,
+                $activeSchoolYear->end_date,
+            ]);
         }
 
         $receipts = $query->latest()->paginate(15)->withQueryString();
@@ -43,12 +81,18 @@ class PaymentReceiptController extends Controller
             ->with(['student.user', 'studentTuition'])
             ->where('is_paid', true);
 
-        if ($month) {
-            $paymentQuery->where('month', $month);
-        }
-
-        if ($year) {
-            $paymentQuery->where('year', $year);
+        if ($view === 'month') {
+            $monthToDisplay = $month ?: now()->month;
+            $yearToDisplay = $year ?: now()->year;
+            $paymentQuery->where('month', $monthToDisplay)
+                ->where('year', $yearToDisplay);
+        } elseif ($activeSchoolYear && $view === 'school_year') {
+            // Get all payments in school year months
+            $paymentQuery->whereIn(DB::raw('CONCAT(year, "-", LPAD(month, 2, "0"))'),
+                $schoolYearMonths->map(function ($m) {
+                    return sprintf('%04d-%02d', $m['year'], $m['month']);
+                })->toArray()
+            );
         }
 
         $adminPayments = $paymentQuery->get();
@@ -167,7 +211,8 @@ class PaymentReceiptController extends Controller
             'validatedReceiptsCount',
             'income',
             'incomeLabel',
-            'rejectedReceiptsCount'
+            'rejectedReceiptsCount',
+            'monthLabel'
         ));
     }
 

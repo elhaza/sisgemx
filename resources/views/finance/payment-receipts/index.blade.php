@@ -12,6 +12,23 @@
 
     <div class="py-12">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <!-- View Selection Tabs -->
+            <div class="mb-6 flex border-b border-gray-200">
+                <a href="{{ route('finance.payment-receipts.index', array_merge(request()->query(), ['view' => 'month'])) }}" class="px-4 py-2 font-medium text-sm border-b-2 {{ request('view', 'month') === 'month' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800' }}">
+                    Por Mes
+                </a>
+                <a href="{{ route('finance.payment-receipts.index', array_merge(request()->query(), ['view' => 'school_year'])) }}" class="px-4 py-2 font-medium text-sm border-b-2 {{ request('view', 'month') === 'school_year' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800' }}">
+                    Ciclo Escolar Completo
+                </a>
+            </div>
+
+            <!-- Month/Period Label -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">
+                    {{ $monthLabel }}
+                </h3>
+            </div>
+
             <!-- Estadísticas -->
             <div class="mb-6 grid gap-6 md:grid-cols-4">
                 <div class="overflow-hidden rounded-lg bg-white shadow-sm">
@@ -95,6 +112,7 @@
             <div class="mb-4 overflow-hidden rounded-lg bg-white shadow-sm" style="max-height: 200px;">
                 <div class="p-3">
                     <form action="{{ route('finance.payment-receipts.index') }}" method="GET">
+                        <input type="hidden" name="view" value="{{ request('view', 'month') }}">
                         <div class="flex flex-wrap items-center gap-2">
                             <select name="status" class="w-40 rounded-md border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="">Estado</option>
@@ -103,7 +121,7 @@
                                 <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rechazados</option>
                             </select>
 
-                            <select name="month" class="w-32 rounded-md border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                            <select name="month" class="w-32 rounded-md border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-blue-500" {{ request('view', 'month') === 'school_year' ? 'disabled' : '' }}>
                                 <option value="">Mes</option>
                                 <option value="1" {{ request('month') == '1' ? 'selected' : '' }}>Enero</option>
                                 <option value="2" {{ request('month') == '2' ? 'selected' : '' }}>Febrero</option>
@@ -119,7 +137,7 @@
                                 <option value="12" {{ request('month') == '12' ? 'selected' : '' }}>Diciembre</option>
                             </select>
 
-                            <select name="year" class="w-24 rounded-md border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                            <select name="year" class="w-24 rounded-md border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-blue-500" {{ request('view', 'month') === 'school_year' ? 'disabled' : '' }}>
                                 <option value="">Año</option>
                                 @for($y = date('Y'); $y >= date('Y') - 5; $y--)
                                     <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
