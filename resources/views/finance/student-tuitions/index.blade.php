@@ -27,12 +27,6 @@
                 </a>
             </div>
 
-            @if($defaultTuition)
-                <div class="mb-4 rounded-lg bg-blue-50 p-4">
-                    <p class="text-sm text-blue-800"><strong>Monto general del ciclo:</strong> ${{ number_format($defaultTuition->amount, 2) }}</p>
-                </div>
-            @endif
-
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <table class="min-w-full divide-y divide-gray-200">
