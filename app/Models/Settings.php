@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Settings extends Model
 {
     /** @var array<int, string> */
-    protected $fillable = ['logo_path', 'school_name', 'school_logo'];
+    protected $fillable = ['logo_path', 'school_name', 'school_logo', 'break_time_start', 'break_time_end'];
 
     public static function getLogo(): ?string
     {
@@ -38,5 +38,15 @@ class Settings extends Model
         }
 
         return asset('img/logo.png');
+    }
+
+    public static function getDefaultBreakTime(): array
+    {
+        $settings = self::first();
+
+        return [
+            'start' => $settings?->break_time_start,
+            'end' => $settings?->break_time_end,
+        ];
     }
 }

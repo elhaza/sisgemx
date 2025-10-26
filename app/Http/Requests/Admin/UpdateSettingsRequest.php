@@ -25,6 +25,8 @@ class UpdateSettingsRequest extends FormRequest
             'school_name' => ['nullable', 'string', 'max:255'],
             'school_logo' => ['nullable', 'image', 'mimes:jpeg,png,gif,webp', 'max:2048'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,gif,webp', 'max:2048'],
+            'break_time_start' => ['nullable', 'date_format:H:i'],
+            'break_time_end' => ['nullable', 'date_format:H:i'],
         ];
     }
 
@@ -43,6 +45,8 @@ class UpdateSettingsRequest extends FormRequest
             'logo.image' => 'El archivo debe ser una imagen.',
             'logo.mimes' => 'La imagen debe estar en formato JPEG, PNG, GIF o WEBP.',
             'logo.max' => 'La imagen no debe exceder 2MB.',
+            'break_time_start.date_format' => 'La hora de inicio del receso debe estar en formato HH:MM.',
+            'break_time_end.date_format' => 'La hora de fin del receso debe estar en formato HH:MM.',
         ];
     }
 }

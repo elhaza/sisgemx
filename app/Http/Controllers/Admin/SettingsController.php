@@ -48,6 +48,15 @@ class SettingsController extends Controller
             $data['logo_path'] = $logoPath;
         }
 
+        // Update break time
+        if ($request->filled('break_time_start')) {
+            $data['break_time_start'] = $request->input('break_time_start');
+        }
+
+        if ($request->filled('break_time_end')) {
+            $data['break_time_end'] = $request->input('break_time_end');
+        }
+
         if (! empty($data)) {
             $settings->update($data);
         }

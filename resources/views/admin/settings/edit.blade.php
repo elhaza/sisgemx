@@ -165,6 +165,38 @@
                             <p class="mt-1 text-sm text-gray-500">Este logo aparecerá en el favicon del navegador y en el encabezado de las páginas.</p>
                         </div>
 
+                        <!-- Horario de Receso Global -->
+                        <div class="mb-6 border-t border-gray-200 pt-6">
+                            <h4 class="mb-4 text-base font-semibold text-gray-800">Horario de Receso (Predeterminado Global)</h4>
+                            <p class="mb-4 text-sm text-gray-600">Este es el horario de receso predeterminado para todos los grupos. Cada grupo puede tener su propio horario si es necesario.</p>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="break_time_start" class="block text-sm font-medium text-gray-700">
+                                        Hora de Inicio del Receso
+                                    </label>
+                                    <input type="time" name="break_time_start" id="break_time_start"
+                                        value="{{ old('break_time_start', $settings?->break_time_start) }}"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    @error('break_time_start')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label for="break_time_end" class="block text-sm font-medium text-gray-700">
+                                        Hora de Fin del Receso
+                                    </label>
+                                    <input type="time" name="break_time_end" id="break_time_end"
+                                        value="{{ old('break_time_end', $settings?->break_time_end) }}"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    @error('break_time_end')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="flex justify-end gap-3 mb-6">
                             <button type="submit"
                                 class="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">

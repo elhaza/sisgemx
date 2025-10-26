@@ -148,7 +148,8 @@ class ScheduleGenerationService
             $requirement['subject_id'],
             $sessionsNeeded,
             $teachers,
-            $timeSlots
+            $timeSlots,
+            $requirement['grade_section_id']
         );
 
         if (! $assignedTeacher) {
@@ -191,7 +192,7 @@ class ScheduleGenerationService
         }
     }
 
-    private function findAvailableTeacher(int $subjectId, array $timeSlotIds, Collection $teachers, Collection $timeSlots): ?User
+    private function findAvailableTeacher(int $subjectId, array $timeSlotIds, Collection $teachers, Collection $timeSlots, int $gradeSectionId): ?User
     {
         // Obtener docentes que pueden enseñar esta materia
         $eligibleTeachers = TeacherSubject::where('subject_id', $subjectId)
@@ -199,6 +200,10 @@ class ScheduleGenerationService
             ->get()
             ->pluck('teacher')
             ->filter(fn ($t) => $t !== null);
+
+        // Obtener horario de receso del grupo
+        $gradeSection = GradeSection::find($gradeSectionId);
+        $breakTime = $gradeSection?->getBreakTime();
 
         foreach ($eligibleTeachers as $teacher) {
             $canAssign = true;
@@ -217,6 +222,15 @@ class ScheduleGenerationService
                     $canAssign = false;
 
                     break;
+                }
+
+                // Verificar que el slot no cae dentro del horario de receso
+                if ($breakTime['start'] && $breakTime['end']) {
+                    if ($this->timesOverlap($breakTime['start'], $breakTime['end'], $slot->start_time, $slot->end_time)) {
+                        $canAssign = false;
+
+                        break;
+                    }
                 }
 
                 // Verificar límite diario

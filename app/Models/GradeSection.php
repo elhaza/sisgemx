@@ -17,6 +17,8 @@ class GradeSection extends Model
         'grade_level',
         'section',
         'school_year_id',
+        'break_time_start',
+        'break_time_end',
     ];
 
     public function schoolYear()
@@ -34,8 +36,22 @@ class GradeSection extends Model
         return $this->hasMany(Schedule::class, 'school_grade_id');
     }
 
-    public function getFullNameAttribute()
+    public function getFullNameAttribute(): string
     {
-        return $this->name.' - Sección '.$this->section;
+        return $this->grade_level.' - Sección '.$this->section;
+    }
+
+    public function getBreakTime(): array
+    {
+        // If group has its own break time, use it
+        if ($this->break_time_start && $this->break_time_end) {
+            return [
+                'start' => $this->break_time_start,
+                'end' => $this->break_time_end,
+            ];
+        }
+
+        // Otherwise, use the global default from Settings
+        return Settings::getDefaultBreakTime();
     }
 }
