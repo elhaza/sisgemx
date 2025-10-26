@@ -21,38 +21,35 @@
                     @csrf
 
                     <div class="space-y-6">
-                        <!-- Día de la Semana -->
+                        <!-- Días de la Semana (Múltiples) -->
                         <div>
-                            <label for="day_of_week" class="block text-sm font-medium text-gray-700">
-                                Día de la Semana *
+                            <label class="block text-sm font-medium text-gray-700 mb-3">
+                                Días de la Semana * (Selecciona uno o más)
                             </label>
-                            <select name="day_of_week" id="day_of_week" required
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">Seleccionar día</option>
-                                <option value="monday" {{ old('day_of_week') === 'monday' ? 'selected' : '' }}>
-                                    Lunes
-                                </option>
-                                <option value="tuesday" {{ old('day_of_week') === 'tuesday' ? 'selected' : '' }}>
-                                    Martes
-                                </option>
-                                <option value="wednesday" {{ old('day_of_week') === 'wednesday' ? 'selected' : '' }}>
-                                    Miércoles
-                                </option>
-                                <option value="thursday" {{ old('day_of_week') === 'thursday' ? 'selected' : '' }}>
-                                    Jueves
-                                </option>
-                                <option value="friday" {{ old('day_of_week') === 'friday' ? 'selected' : '' }}>
-                                    Viernes
-                                </option>
-                                <option value="saturday" {{ old('day_of_week') === 'saturday' ? 'selected' : '' }}>
-                                    Sábado
-                                </option>
-                                <option value="sunday" {{ old('day_of_week') === 'sunday' ? 'selected' : '' }}>
-                                    Domingo
-                                </option>
-                            </select>
-                            @error('day_of_week')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            <div class="space-y-2">
+                                @php
+                                    $days = [
+                                        'monday' => 'Lunes',
+                                        'tuesday' => 'Martes',
+                                        'wednesday' => 'Miércoles',
+                                        'thursday' => 'Jueves',
+                                        'friday' => 'Viernes',
+                                        'saturday' => 'Sábado',
+                                        'sunday' => 'Domingo',
+                                    ];
+                                    $selectedDays = old('days_of_week', []);
+                                @endphp
+                                @foreach($days as $value => $label)
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" name="days_of_week[]" value="{{ $value }}"
+                                            {{ in_array($value, $selectedDays) ? 'checked' : '' }}
+                                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <span class="text-sm text-gray-700">{{ $label }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('days_of_week')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 

@@ -43,9 +43,13 @@ class TimeSlotController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'days_of_week' => 'required|array|min:1',
+            'days_of_week.*' => 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
+        ], [
+            'days_of_week.required' => 'Debes seleccionar al menos un día de la semana.',
+            'days_of_week.min' => 'Debes seleccionar al menos un día de la semana.',
         ]);
 
         // Calculate duration in minutes
@@ -53,12 +57,21 @@ class TimeSlotController extends Controller
         $endTime = \Carbon\Carbon::createFromFormat('H:i', $validated['end_time']);
         $durationMinutes = $endTime->diffInMinutes($startTime);
 
-        $validated['duration_minutes'] = $durationMinutes;
+        // Create a TimeSlot for each selected day
+        foreach ($validated['days_of_week'] as $day) {
+            TimeSlot::create([
+                'day_of_week' => $day,
+                'start_time' => $validated['start_time'],
+                'end_time' => $validated['end_time'],
+                'duration_minutes' => $durationMinutes,
+            ]);
+        }
 
-        TimeSlot::create($validated);
+        $dayCount = count($validated['days_of_week']);
+        $message = $dayCount === 1 ? 'Franja horaria creada exitosamente.' : "Se crearon $dayCount franjas horarias exitosamente.";
 
         return redirect()->route('admin.time-slots.index')
-            ->with('success', 'Franja horaria creada exitosamente.');
+            ->with('success', $message);
     }
 
     public function edit(TimeSlot $timeSlot)
