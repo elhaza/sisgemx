@@ -418,7 +418,10 @@ class SchoolYearController extends Controller
             }
         }
 
-        return redirect()->route('admin.school-years.index')->with('success', 'Ciclo escolar actualizado exitosamente.');
+        // Create/update student tuitions for all students in this school year
+        $this->createStudentTuitions($schoolYear);
+
+        return redirect()->route('admin.school-years.index')->with('success', 'Ciclo escolar actualizado exitosamente. Las colegiaturas de los estudiantes han sido creadas/actualizadas.');
     }
 
     public function destroy(Request $request, SchoolYear $schoolYear)
@@ -451,5 +454,41 @@ class SchoolYearController extends Controller
             ->get(['id', 'grade_level', 'section', 'school_year_id']);
 
         return response()->json($schoolGrades);
+    }
+
+    /**
+     * Create student tuitions for all active students in a school year
+     */
+    protected function createStudentTuitions(SchoolYear $schoolYear): void
+    {
+        // Get all active students in this school year
+        $students = Student::where('school_year_id', $schoolYear->id)
+            ->where('status', 'active')
+            ->get();
+
+        // Get all monthly tuitions for this school year
+        $monthlyTuitions = MonthlyTuition::where('school_year_id', $schoolYear->id)
+            ->get();
+
+        // Create StudentTuition for each student and month if it doesn't exist
+        foreach ($students as $student) {
+            foreach ($monthlyTuitions as $monthlyTuition) {
+                StudentTuition::firstOrCreate(
+                    [
+                        'student_id' => $student->id,
+                        'school_year_id' => $schoolYear->id,
+                        'year' => $monthlyTuition->year,
+                        'month' => $monthlyTuition->month,
+                    ],
+                    [
+                        'monthly_tuition_id' => $monthlyTuition->id,
+                        'monthly_amount' => $monthlyTuition->amount,
+                        'discount_percentage' => 0,
+                        'final_amount' => $monthlyTuition->amount,
+                        'due_date' => \App\Helpers\PaymentHelper::calculateDueDate($monthlyTuition->year, $monthlyTuition->month),
+                    ]
+                );
+            }
+        }
     }
 }
