@@ -314,7 +314,7 @@ class ScheduleGenerationService
                     return [
                         'day' => $dayNames[$day],
                         'day_code' => $day,
-                        'assignments' => $sectionAssignments->get($day, [])->values()->toArray(),
+                        'assignments' => collect($sectionAssignments->get($day, []))->values()->toArray(),
                     ];
                 }, $days),
             ];
