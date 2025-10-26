@@ -28,7 +28,7 @@
             <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <form method="GET" action="{{ route('admin.users.index') }}" id="filterForm" class="space-y-4">
-                        <div class="grid gap-4 md:grid-cols-2">
+                        <div class="grid gap-4 md:grid-cols-3">
                             <!-- Búsqueda por nombre/email -->
                             <div>
                                 <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -60,6 +60,24 @@
                                     <option value="teacher" {{ request('role') === 'teacher' ? 'selected' : '' }}>Maestro</option>
                                     <option value="parent" {{ request('role') === 'parent' ? 'selected' : '' }}>Padre de Familia</option>
                                     <option value="student" {{ request('role') === 'student' ? 'selected' : '' }}>Estudiante</option>
+                                </select>
+                            </div>
+
+                            <!-- Por página -->
+                            <div>
+                                <label for="per_page" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Por página
+                                </label>
+                                <select
+                                    name="per_page"
+                                    id="per_page"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                    onchange="document.getElementById('filterForm').submit();"
+                                >
+                                    <option value="15" {{ request('per_page') === '15' || !request('per_page') ? 'selected' : '' }}>15 por página</option>
+                                    <option value="30" {{ request('per_page') === '30' ? 'selected' : '' }}>30 por página</option>
+                                    <option value="50" {{ request('per_page') === '50' ? 'selected' : '' }}>50 por página</option>
+                                    <option value="100" {{ request('per_page') === '100' ? 'selected' : '' }}>100 por página</option>
                                 </select>
                             </div>
                         </div>

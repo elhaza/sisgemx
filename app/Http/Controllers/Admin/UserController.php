@@ -29,7 +29,15 @@ class UserController extends Controller
             $query->where('role', $request->role);
         }
 
-        $users = $query->paginate(15)->withQueryString();
+        // Get per_page parameter from request (default to 15)
+        $perPage = $request->get('per_page', 15);
+        // Limit to allowed values to prevent abuse
+        $allowedPerPage = [15, 30, 50, 100];
+        if (! in_array($perPage, $allowedPerPage)) {
+            $perPage = 15;
+        }
+
+        $users = $query->paginate($perPage)->withQueryString();
 
         return view('admin.users.index', compact('users'));
     }
