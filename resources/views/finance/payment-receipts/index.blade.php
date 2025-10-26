@@ -260,18 +260,33 @@
             <div class="p-6 max-h-96 overflow-y-auto">
                 <div class="space-y-3">
                     @if($view === 'month')
-                        @forelse($incomeMonthlyDetails as $detail)
-                            @php
-                                $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                                $monthName = $monthNames[$detail->month] ?? 'Mes desconocido';
-                            @endphp
-                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span class="text-gray-700">{{ $monthName }}</span>
-                                <span class="font-semibold text-gray-900">${{ number_format($detail->total, 2) }}</span>
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Ingresos por Mes de Referencia</h4>
+                            @forelse($incomeMonthlyDetails as $detail)
+                                @php
+                                    $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                                    $monthName = $monthNames[$detail->month] ?? 'Mes desconocido';
+                                @endphp
+                                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                    <span class="text-gray-700">{{ $monthName }}</span>
+                                    <span class="font-semibold text-gray-900">${{ number_format($detail->total, 2) }}</span>
+                                </div>
+                            @empty
+                                <p class="text-center text-gray-500 text-sm">No hay ingresos registrados</p>
+                            @endforelse
+                        </div>
+
+                        @if($advancePaymentsDetails->count() > 0)
+                            <div class="pt-3 border-t border-gray-300">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-3">Pagos Adelantados Realizados en Este Mes</h4>
+                                @foreach($advancePaymentsDetails as $advance)
+                                    <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                        <span class="text-gray-700">{{ $advance->label }}</span>
+                                        <span class="font-semibold text-blue-900">${{ number_format($advance->total, 2) }}</span>
+                                    </div>
+                                @endforeach
                             </div>
-                        @empty
-                            <p class="text-center text-gray-500">No hay ingresos registrados</p>
-                        @endforelse
+                        @endif
                     @else
                         <p class="text-center text-gray-500">Desglose de ingresos por ciclo escolar no disponible</p>
                     @endif

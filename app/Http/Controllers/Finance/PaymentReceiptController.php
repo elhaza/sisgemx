@@ -161,6 +161,7 @@ class PaymentReceiptController extends Controller
         $incomeCurrentMonth = 0;
         $incomeAccumulated = 0;
         $incomeMonthlyDetails = collect();
+        $advancePaymentsDetails = collect();
         $incomeLabel = 'Ingresos';
 
         if ($view === 'month') {
@@ -228,6 +229,29 @@ class PaymentReceiptController extends Controller
 
             $incomeMonthlyDetails = $incomeMonthlyDetails->sortBy('month');
 
+            // Get advance payments made in current month for future months
+            $advancePayments = Payment::where('is_paid', true)
+                ->whereBetween('paid_at', [
+                    now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->startOfMonth(),
+                    now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
+                ])
+                ->where(DB::raw('CONCAT(year, "-", LPAD(month, 2, "0"))'), '>', sprintf('%04d-%02d', $yearToCalculate, $monthToCalculate))
+                ->selectRaw('month, year, SUM(amount) as total')
+                ->groupByRaw('month, year')
+                ->get();
+
+            // Create a label for advance payments
+            $advancePaymentsDetails = collect();
+            if ($advancePayments->count() > 0) {
+                $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                foreach ($advancePayments as $advance) {
+                    $advancePaymentsDetails->push((object) [
+                        'label' => 'Adelanto para '.$monthNames[(int) $advance->month].' '.$advance->year,
+                        'total' => $advance->total,
+                    ]);
+                }
+            }
+
             // Build label
             $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
             $incomeLabel = 'Ingresos de '.$monthNames[(int) $monthToCalculate].' '.$yearToCalculate;
@@ -262,6 +286,7 @@ class PaymentReceiptController extends Controller
             'incomeCurrentMonth',
             'incomeAccumulated',
             'incomeMonthlyDetails',
+            'advancePaymentsDetails',
             'incomeLabel',
             'rejectedReceiptsCount',
             'monthLabel',
