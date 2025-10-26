@@ -7,7 +7,29 @@
 
     <div class="py-12">
         <div class="mx-auto max-w-3xl sm:px-6 lg:px-8">
+            <!-- Sección de Importar Estudiantes -->
+            <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Importar Estudiantes</h3>
+                </div>
+                <div class="p-6">
+                    <p class="mb-4 text-sm text-gray-700">
+                        Importa estudiantes desde un archivo Excel. El sistema creará automáticamente los usuarios de estudiantes y padres, asignará números de matrícula y configurará los ciclos escolares si es necesario.
+                    </p>
+                    <a href="{{ route('admin.students.import') }}" class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Importar Estudiantes
+                    </a>
+                </div>
+            </div>
+
+            <!-- Sección de Logo -->
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Logotipo de la Institución</h3>
+                </div>
                 <div class="p-6">
                     @if (session('success'))
                         <div class="mb-4 rounded-md bg-green-50 p-4">

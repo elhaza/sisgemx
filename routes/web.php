@@ -127,6 +127,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('students-transfer/get-students', [StudentTransferController::class, 'getStudents'])->name('students.get-students');
         Route::get('students-transfer/get-destination-grades', [StudentTransferController::class, 'getDestinationGrades'])->name('students.get-destination-grades');
         Route::post('students-transfer', [StudentTransferController::class, 'transfer'])->name('students.transfer-store');
+        Route::get('students/import', [\App\Http\Controllers\Admin\StudentImportController::class, 'show'])->name('students.import');
+        Route::post('students/import', [\App\Http\Controllers\Admin\StudentImportController::class, 'upload'])->name('students.import-upload');
+        Route::get('students/create-school-year', [\App\Http\Controllers\Admin\StudentImportController::class, 'createSchoolYear'])->name('students.create-school-year');
+        Route::post('students/create-school-year', [\App\Http\Controllers\Admin\StudentImportController::class, 'storeSchoolYear'])->name('students.store-school-year');
         Route::resource('subjects', SubjectController::class);
         Route::resource('schedules', ScheduleController::class);
         Route::get('schedules-visual', [ScheduleController::class, 'visual'])->name('schedules.visual');
