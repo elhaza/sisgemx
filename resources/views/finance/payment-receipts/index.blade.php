@@ -143,41 +143,100 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Estudiante</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Padre/Tutor</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Monto</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tipo</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Comprobante</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Estado</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
                             @forelse($receipts as $receipt)
-                                <tr>
-                                    <td class="whitespace-nowrap px-6 py-4">{{ $receipt->payment_date->format('d/m/Y') }}</td>
+                                <tr class="{{ isset($receipt->type) && $receipt->type === 'admin_payment' ? 'bg-blue-50' : '' }}">
+                                    <td class="whitespace-nowrap px-6 py-4">{{ $receipt->payment_date?->format('d/m/Y') ?? 'N/A' }}</td>
                                     <td class="whitespace-nowrap px-6 py-4">{{ $receipt->student->user->full_name }}</td>
-                                    <td class="whitespace-nowrap px-6 py-4">{{ $receipt->parent->name }}</td>
+                                    <td class="whitespace-nowrap px-6 py-4">{{ $receipt->parent?->name ?? 'N/A' }}</td>
                                     <td class="whitespace-nowrap px-6 py-4">${{ number_format($receipt->amount_paid, 2) }}</td>
                                     <td class="whitespace-nowrap px-6 py-4">
-                                        @if($receipt->status->value === 'pending')
-                                            <span class="rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">Pendiente</span>
-                                        @elseif($receipt->status->value === 'validated')
-                                            <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Validado</span>
+                                        @if(isset($receipt->type) && $receipt->type === 'admin_payment')
+                                            <span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">Admin</span>
                                         @else
-                                            <span class="rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">Rechazado</span>
+                                            <span class="rounded-full bg-purple-100 px-2 py-1 text-xs font-semibold text-purple-800">Padre</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        @if($receipt->receipt_image && $receipt->receipt_image_url)
+                                            <button type="button" onclick="openImageModal('{{ $receipt->receipt_image_url }}')" class="inline-block">
+                                                <img src="{{ $receipt->receipt_image_url }}" alt="Comprobante" class="h-8 w-8 cursor-pointer rounded object-cover hover:opacity-80">
+                                            </button>
+                                        @else
+                                            <span class="text-gray-400 text-sm">-</span>
                                         @endif
                                     </td>
                                     <td class="whitespace-nowrap px-6 py-4">
-                                        <a href="{{ route('finance.payment-receipts.show', $receipt) }}" class="text-blue-600 hover:text-blue-900">Ver Detalle</a>
+                                        @if(isset($receipt->type) && $receipt->type === 'admin_payment')
+                                            <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Validado</span>
+                                        @elseif(isset($receipt->status) && is_object($receipt->status) && method_exists($receipt->status, 'value'))
+                                            @if($receipt->status->value === 'pending')
+                                                <span class="rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">Pendiente</span>
+                                            @elseif($receipt->status->value === 'validated')
+                                                <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Validado</span>
+                                            @else
+                                                <span class="rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">Rechazado</span>
+                                            @endif
+                                        @else
+                                            <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Validado</span>
+                                        @endif
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-4">
+                                        @if(isset($receipt->type) && $receipt->type === 'admin_payment')
+                                            <span class="text-gray-500 text-sm">-</span>
+                                        @else
+                                            <a href="{{ route('finance.payment-receipts.show', $receipt) }}" class="text-blue-600 hover:text-blue-900">Ver Detalle</a>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">No hay comprobantes registrados.</td>
+                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">No hay comprobantes registrados.</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
 
-                    <div class="mt-4">{{ $receipts->links() }}</div>
+                    <div class="mt-4">
+                        {{-- Simple pagination info since we're mixing collections --}}
+                        <div class="text-sm text-gray-600">
+                            Mostrando {{ count($receipts) }} registros
+                        </div>
+                    </div>
                 </div>
             </div>
+
+    <!-- Modal para ver imagen en grande -->
+    <div id="imageModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+        <div class="relative max-h-screen max-w-2xl">
+            <button type="button" onclick="closeImageModal()" class="absolute -top-10 right-0 text-white hover:text-gray-300 text-2xl">
+                ✕
+            </button>
+            <img id="modalImage" src="" alt="Comprobante" class="max-h-screen max-w-2xl object-contain">
         </div>
     </div>
+
+    <script>
+        function openImageModal(imageSrc) {
+            document.getElementById('modalImage').src = imageSrc;
+            document.getElementById('imageModal').classList.remove('hidden');
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeImageModal();
+            }
+        });
+    </script>
 </x-app-layout>

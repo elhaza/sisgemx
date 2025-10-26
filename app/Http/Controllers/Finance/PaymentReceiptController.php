@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
+use App\Models\Payment;
 use App\Models\PaymentReceipt;
 use App\Models\PaymentReceiptStatusLog;
 use App\Models\Student;
 use App\Models\User;
 use App\ReceiptStatus;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PaymentReceiptController extends Controller
 {
@@ -18,6 +20,7 @@ class PaymentReceiptController extends Controller
         $month = $request->get('month');
         $year = $request->get('year');
 
+        // Get PaymentReceipts
         $query = PaymentReceipt::query()
             ->with(['student.user', 'parent', 'registeredBy']);
 
@@ -35,8 +38,77 @@ class PaymentReceiptController extends Controller
 
         $receipts = $query->latest()->paginate(15)->withQueryString();
 
+        // Get Payments registered by admin
+        $paymentQuery = Payment::query()
+            ->with(['student.user', 'studentTuition'])
+            ->where('is_paid', true);
+
+        if ($month) {
+            $paymentQuery->where('month', $month);
+        }
+
+        if ($year) {
+            $paymentQuery->where('year', $year);
+        }
+
+        $adminPayments = $paymentQuery->get();
+
+        // Transform admin payments to match PaymentReceipt structure
+        $adminPaymentReceipts = $adminPayments->map(function ($payment) {
+            return (object) [
+                'id' => 'admin-'.$payment->id,
+                'type' => 'admin_payment',
+                'payment_id' => $payment->id,
+                'payment_date' => $payment->paid_at,
+                'student' => $payment->student,
+                'parent' => $payment->student->tutor1,
+                'amount_paid' => $payment->amount,
+                'status' => ReceiptStatus::Validated,
+                'receipt_image' => null,
+                'receipt_image_url' => null,
+                'description' => $payment->description,
+            ];
+        });
+
+        // If status filter is 'validated', include admin payments in the list
+        $receiptItems = [];
+        if (! $status || $status === 'validated') {
+            // Get all receipt items and add image URLs
+            foreach ($receipts->items() as $receipt) {
+                $receipt->receipt_image_url = $receipt->receipt_image ? Storage::url($receipt->receipt_image) : null;
+                $receiptItems[] = $receipt;
+            }
+
+            // Merge with admin payments
+            $mergedReceipts = array_merge($receiptItems, $adminPaymentReceipts->toArray());
+
+            // Sort by date descending
+            usort($mergedReceipts, function ($a, $b) {
+                $dateA = $a->payment_date ?? $a->created_at ?? now();
+                $dateB = $b->payment_date ?? $b->created_at ?? now();
+
+                return $dateB->getTimestamp() - $dateA->getTimestamp();
+            });
+
+            // Create a paginated collection
+            $page = $request->input('page', 1);
+            $perPage = 15;
+            $offset = ($page - 1) * $perPage;
+            $receiptItems = array_slice($mergedReceipts, $offset, $perPage);
+            $totalRecords = count($mergedReceipts);
+        } else {
+            foreach ($receipts->items() as $receipt) {
+                $receipt->receipt_image_url = $receipt->receipt_image ? Storage::url($receipt->receipt_image) : null;
+                $receiptItems[] = $receipt;
+            }
+            $totalRecords = count($receiptItems);
+        }
+
+        // Use receiptItems instead of receipts for the view
+        $receipts = $receiptItems;
+
         $pendingReceiptsCount = PaymentReceipt::where('status', ReceiptStatus::Pending)->count();
-        $validatedReceiptsCount = PaymentReceipt::where('status', ReceiptStatus::Validated)->count();
+        $validatedReceiptsCount = PaymentReceipt::where('status', ReceiptStatus::Validated)->count() + $adminPayments->count();
 
         // Calculate income based on filters or default to current month
         $incomeQuery = PaymentReceipt::where('status', ReceiptStatus::Validated);
@@ -56,6 +128,22 @@ class PaymentReceiptController extends Controller
         }
 
         $income = $incomeQuery->sum('amount_paid');
+
+        // Add admin payments to income
+        $adminPaymentIncome = Payment::where('is_paid', true);
+        if ($month) {
+            $adminPaymentIncome->where('month', $month);
+        } elseif (! $year) {
+            $adminPaymentIncome->whereMonth('paid_at', now()->month);
+        }
+
+        if ($year) {
+            $adminPaymentIncome->where('year', $year);
+        } elseif (! $month) {
+            $adminPaymentIncome->whereYear('paid_at', now()->year);
+        }
+
+        $income += $adminPaymentIncome->sum('amount');
 
         // Build dynamic income label
         $incomeLabel = 'Ingresos';
