@@ -172,6 +172,8 @@ class SubjectController extends Controller
             'apellido_materno' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8',
+            'max_hours_per_day' => 'nullable|numeric|min:1|max:12',
+            'max_hours_per_week' => 'nullable|numeric|min:1|max:60',
         ]);
 
         $teacher = User::create([
@@ -180,6 +182,8 @@ class SubjectController extends Controller
             'apellido_materno' => $validated['apellido_materno'],
             'email' => $validated['email'],
             'password' => bcrypt($validated['password']),
+            'max_hours_per_day' => $validated['max_hours_per_day'] ?? 8,
+            'max_hours_per_week' => $validated['max_hours_per_week'] ?? 40,
             'role' => 'teacher',
         ]);
 

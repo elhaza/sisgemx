@@ -137,20 +137,34 @@
                             <!-- Fila para agregar nuevo maestro -->
                             <tr id="new-teacher-row" class="hidden bg-purple-50 hover:bg-purple-100">
                                 <td colspan="5" class="px-6 py-4">
-                                    <div class="grid grid-cols-5 gap-3">
+                                    <!-- Nombres (Nombre, Apellido Paterno, Apellido Materno) -->
+                                    <div class="grid grid-cols-3 gap-3 mb-3">
                                         <input type="text" id="teacher-name" placeholder="Nombre"
                                             class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
                                         <input type="text" id="teacher-first-last-name" placeholder="Apellido Paterno"
                                             class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
                                         <input type="text" id="teacher-second-last-name" placeholder="Apellido Materno"
                                             class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                    </div>
+
+                                    <!-- Email y Contraseña -->
+                                    <div class="grid grid-cols-2 gap-3 mb-3">
                                         <input type="email" id="teacher-email" placeholder="Email"
                                             class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
                                         <input type="text" id="teacher-password" placeholder="Contraseña"
+                                            class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                    </div>
+
+                                    <!-- Horas Máximas -->
+                                    <div class="grid grid-cols-2 gap-3 mb-3">
+                                        <input type="number" id="teacher-max-hours-per-day" placeholder="Máx horas/día" min="1" max="12" step="0.5" value="8"
+                                            class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <input type="number" id="teacher-max-hours-per-week" placeholder="Máx horas/semana" min="1" max="60" step="0.5" value="40"
                                             class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
                                             @keyup.enter="document.getElementById('add-teacher-btn').click()">
                                     </div>
-                                    <div class="mt-3 flex gap-2">
+
+                                    <div class="flex gap-2">
                                         <button id="add-teacher-btn"
                                             class="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 transition">
                                             + Crear Docente
@@ -267,6 +281,8 @@
             document.getElementById('teacher-second-last-name').value = '';
             document.getElementById('teacher-email').value = '';
             document.getElementById('teacher-password').value = '';
+            document.getElementById('teacher-max-hours-per-day').value = '8';
+            document.getElementById('teacher-max-hours-per-week').value = '40';
         });
 
         // Botón para crear nuevo maestro
@@ -278,6 +294,8 @@
             const secondLastName = document.getElementById('teacher-second-last-name').value.trim();
             const email = document.getElementById('teacher-email').value.trim();
             const password = document.getElementById('teacher-password').value.trim();
+            const maxHoursPerDay = document.getElementById('teacher-max-hours-per-day').value;
+            const maxHoursPerWeek = document.getElementById('teacher-max-hours-per-week').value;
 
             // Validación básica
             if (!name || !firstLastName || !secondLastName || !email || !password) {
@@ -287,6 +305,16 @@
 
             if (password.length < 8) {
                 alert('La contraseña debe tener al menos 8 caracteres');
+                return;
+            }
+
+            if (!maxHoursPerDay || maxHoursPerDay < 1 || maxHoursPerDay > 12) {
+                alert('Horas máximas por día debe ser entre 1 y 12');
+                return;
+            }
+
+            if (!maxHoursPerWeek || maxHoursPerWeek < 1 || maxHoursPerWeek > 60) {
+                alert('Horas máximas por semana debe ser entre 1 y 60');
                 return;
             }
 
@@ -309,7 +337,9 @@
                     apellido_paterno: firstLastName,
                     apellido_materno: secondLastName,
                     email: email,
-                    password: password
+                    password: password,
+                    max_hours_per_day: parseFloat(maxHoursPerDay),
+                    max_hours_per_week: parseFloat(maxHoursPerWeek)
                 })
             })
             .then(response => {
@@ -342,6 +372,8 @@
                     document.getElementById('teacher-second-last-name').value = '';
                     document.getElementById('teacher-email').value = '';
                     document.getElementById('teacher-password').value = '';
+                    document.getElementById('teacher-max-hours-per-day').value = '8';
+                    document.getElementById('teacher-max-hours-per-week').value = '40';
 
                     showNotification('Docente creado exitosamente', 'success');
                 } else {
