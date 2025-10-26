@@ -57,9 +57,16 @@ class DashboardController extends Controller
         $now = now();
 
         // Get all overdue student tuitions with active students
-        $overdueStudentIds = StudentTuition::where('due_date', '<', $now->toDateString())
+        $allOverdueTuitions = StudentTuition::where('due_date', '<', $now->toDateString())
             ->whereHas('student', function ($query) {
                 $query->where('status', 'active');
+            })
+            ->get();
+
+        // Filter to only unpaid tuitions
+        $overdueStudentIds = $allOverdueTuitions
+            ->filter(function ($tuition) {
+                return ! $tuition->isPaid();
             })
             ->pluck('student_id')
             ->unique();
@@ -73,9 +80,14 @@ class DashboardController extends Controller
         $parentReport = collect();
 
         foreach ($students as $student) {
-            $overdueTuitions = StudentTuition::where('student_id', $student->id)
+            $allStudentOverdueTuitions = StudentTuition::where('student_id', $student->id)
                 ->where('due_date', '<', $now->toDateString())
                 ->get();
+
+            $overdueTuitions = $allStudentOverdueTuitions
+                ->filter(function ($tuition) {
+                    return ! $tuition->isPaid();
+                });
 
             $overdueCount = $overdueTuitions->count();
             $maxDaysLate = $overdueTuitions->max(function ($tuition) use ($now) {
@@ -218,39 +230,35 @@ class DashboardController extends Controller
             ->sum('amount');
 
         // Cantidad de padres retrazados (parents with overdue tuitions)
-        $parentsOverdue = StudentTuition::where('due_date', '<', $now->toDateString())
-            ->whereHas('student', function ($query) {
-                $query->where('status', 'active');
-            })
-            ->distinct('student_id')
-            ->count('student_id');
-
-        // Convertir a padres únicos
-        $parentsOverdue = Student::whereIn('id',
-            StudentTuition::where('due_date', '<', $now->toDateString())
-                ->whereHas('student', function ($query) {
-                    $query->where('status', 'active');
-                })
-                ->pluck('student_id')
-        )->distinct('user_id')->count('user_id');
-
-        // Colegiaturas pendientes de pago del mes
-        $unpaidTuitionsMonth = StudentTuition::where('month', $currentMonth)
-            ->where('year', $currentYear)
-            ->whereHas('student', function ($query) {
-                $query->where('status', 'active');
-            })
-            ->sum('final_amount');
-
-        // Calcular total de recargos por mora
-        $lateFees = StudentTuition::where('due_date', '<', $now->toDateString())
+        $overdueTuitions = StudentTuition::where('due_date', '<', $now->toDateString())
             ->whereHas('student', function ($query) {
                 $query->where('status', 'active');
             })
             ->get()
-            ->sum(function ($tuition) {
-                return $tuition->late_fee;
+            ->filter(function ($tuition) {
+                return ! $tuition->isPaid();
             });
+
+        $parentsOverdue = Student::whereIn('id', $overdueTuitions->pluck('student_id'))
+            ->distinct('user_id')
+            ->count('user_id');
+
+        // Colegiaturas pendientes de pago del mes
+        $monthTuitions = StudentTuition::where('month', $currentMonth)
+            ->where('year', $currentYear)
+            ->whereHas('student', function ($query) {
+                $query->where('status', 'active');
+            })
+            ->get();
+
+        $unpaidTuitionsMonth = $monthTuitions
+            ->filter(function ($tuition) {
+                return ! $tuition->isPaid();
+            })
+            ->sum('final_amount');
+
+        // Calcular total de recargos por mora
+        $lateFees = $overdueTuitions->sum('late_fee_amount');
 
         return [
             'monthly_payments' => $monthlyPayments,

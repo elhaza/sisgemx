@@ -9,6 +9,7 @@ use App\Models\SchoolYear;
 use App\Models\Student;
 use App\Models\StudentTuition;
 use App\Models\User;
+use App\PaymentType;
 use Illuminate\Http\Request;
 
 class StudentController extends Controller
@@ -248,7 +249,7 @@ class StudentController extends Controller
             'tutor1',
             'tutor2',
             'tuitions' => function ($query) {
-                $query->orderBy('year', 'desc')->orderBy('month', 'desc');
+                $query->orderBy('year')->orderBy('month');
             },
         ]);
 
@@ -321,6 +322,29 @@ class StudentController extends Controller
         return redirect()->route('admin.students.index')->with('success', 'Estudiante eliminado exitosamente.');
     }
 
+    public function updateLateFee(Request $request, Student $student, StudentTuition $studentTuition)
+    {
+        // Verify the tuition belongs to the student
+        if ($studentTuition->student_id !== $student->id) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'late_fee_amount' => 'required|numeric|min:0|max:9999.99',
+        ]);
+
+        $oldLateFeeAmount = $studentTuition->late_fee_amount;
+        $newLateFeeAmount = $validated['late_fee_amount'];
+
+        // Update the late fee amount
+        $studentTuition->update([
+            'late_fee_amount' => $newLateFeeAmount,
+        ]);
+
+        return redirect()->route('admin.students.show', $student)
+            ->with('success', 'Recargo actualizado de $'.number_format($oldLateFeeAmount, 2).' a $'.number_format($newLateFeeAmount, 2).' exitosamente.');
+    }
+
     public function removeLateFee(Student $student, StudentTuition $studentTuition)
     {
         // Verify the tuition belongs to the student
@@ -329,11 +353,12 @@ class StudentController extends Controller
         }
 
         // Store the late fee amount for the message
-        $lateFeeAmount = $studentTuition->late_fee;
+        $lateFeeAmount = $studentTuition->late_fee_amount;
 
-        // Remove the late fee by setting it to 0 in the database
-        // We do this by updating the tuition to reset any late fee calculations
-        $studentTuition->update();
+        // Remove the late fee by setting it to 0
+        $studentTuition->update([
+            'late_fee_amount' => 0,
+        ]);
 
         return redirect()->route('admin.students.show', $student)
             ->with('success', 'Recargo de $'.number_format($lateFeeAmount, 2).' removido exitosamente.');
@@ -346,12 +371,44 @@ class StudentController extends Controller
             abort(404);
         }
 
-        $totalAmount = $studentTuition->final_amount + $studentTuition->late_fee;
+        // Check if already paid
+        if ($studentTuition->isPaid()) {
+            return redirect()->route('admin.students.show', $student)
+                ->with('error', 'Esta mensualidad ya ha sido liquidada.');
+        }
+
+        // Check if there are any unpaid tuitions earlier than this one
+        $earlierTuitions = StudentTuition::where('student_id', $student->id)
+            ->where('school_year_id', $studentTuition->school_year_id)
+            ->where(function ($query) use ($studentTuition) {
+                $query->where('year', '<', $studentTuition->year)
+                    ->orWhere(function ($q) use ($studentTuition) {
+                        $q->where('year', $studentTuition->year)
+                            ->where('month', '<', $studentTuition->month);
+                    });
+            })
+            ->get();
+
+        $hasEarlierUnpaidTuition = false;
+        foreach ($earlierTuitions as $earlierTuition) {
+            if (! $earlierTuition->isPaid()) {
+                $hasEarlierUnpaidTuition = true;
+                break;
+            }
+        }
+
+        if ($hasEarlierUnpaidTuition) {
+            return redirect()->route('admin.students.show', $student)
+                ->with('error', 'No se puede liquidar esta mensualidad. Debe liquidar primero las mensualidades anteriores.');
+        }
+
+        $totalAmount = $studentTuition->final_amount + $studentTuition->late_fee_amount;
 
         // Create a payment record for this tuition
         Payment::create([
             'student_id' => $student->id,
-            'payment_type' => 'tuition',
+            'student_tuition_id' => $studentTuition->id,
+            'payment_type' => PaymentType::Tuition,
             'description' => $studentTuition->month_name.' '.$studentTuition->year,
             'amount' => $totalAmount,
             'month' => $studentTuition->month,
@@ -359,6 +416,11 @@ class StudentController extends Controller
             'due_date' => $studentTuition->due_date,
             'is_paid' => true,
             'paid_at' => now(),
+        ]);
+
+        // Update late_fee_paid to track that fees were paid
+        $studentTuition->update([
+            'late_fee_paid' => $studentTuition->late_fee_amount,
         ]);
 
         return redirect()->route('admin.students.show', $student)

@@ -15,6 +15,7 @@ class Payment extends Model
 
     protected $fillable = [
         'student_id',
+        'student_tuition_id',
         'payment_type',
         'description',
         'amount',
@@ -39,6 +40,11 @@ class Payment extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
+    }
+
+    public function studentTuition(): BelongsTo
+    {
+        return $this->belongsTo(StudentTuition::class);
     }
 
     public function paymentReceipts(): HasMany

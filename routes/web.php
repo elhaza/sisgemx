@@ -135,6 +135,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Student resource and transfer routes
         Route::resource('students', AdminStudentController::class);
+        Route::patch('students/{student}/tuitions/{studentTuition}/update-late-fee', [AdminStudentController::class, 'updateLateFee'])->name('students.update-late-fee');
         Route::delete('students/{student}/tuitions/{studentTuition}/remove-late-fee', [AdminStudentController::class, 'removeLateFee'])->name('students.remove-late-fee');
         Route::post('students/{student}/tuitions/{studentTuition}/pay', [AdminStudentController::class, 'payTuition'])->name('students.pay-tuition');
         Route::get('students-transfer', [StudentTransferController::class, 'index'])->name('students.transfer');

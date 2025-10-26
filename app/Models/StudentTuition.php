@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Helpers\PaymentHelper;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StudentTuition extends Model
 {
@@ -18,6 +19,8 @@ class StudentTuition extends Model
         'discount_percentage',
         'final_amount',
         'due_date',
+        'late_fee_amount',
+        'late_fee_paid',
         'notes',
     ];
 
@@ -27,6 +30,8 @@ class StudentTuition extends Model
             'monthly_amount' => 'decimal:2',
             'discount_percentage' => 'decimal:2',
             'final_amount' => 'decimal:2',
+            'late_fee_amount' => 'decimal:2',
+            'late_fee_paid' => 'decimal:2',
             'due_date' => 'date',
         ];
     }
@@ -44,6 +49,11 @@ class StudentTuition extends Model
     public function monthlyTuition(): BelongsTo
     {
         return $this->belongsTo(MonthlyTuition::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
     }
 
     public function getMonthNameAttribute(): string
@@ -70,17 +80,11 @@ class StudentTuition extends Model
     }
 
     /**
-     * Get the late fee for this tuition
+     * Get the late fee for this tuition (uses stored late_fee_amount)
      */
     public function getLateFeeAttribute(): float
     {
-        if (! $this->due_date) {
-            return 0.0;
-        }
-
-        $daysLate = $this->days_late;
-
-        return PaymentHelper::calculateLateFee($this->final_amount, $daysLate);
+        return (float) ($this->late_fee_amount ?? 0);
     }
 
     /**
@@ -88,7 +92,7 @@ class StudentTuition extends Model
      */
     public function getTotalAmountAttribute(): float
     {
-        return $this->final_amount + $this->late_fee;
+        return $this->final_amount + $this->late_fee_amount;
     }
 
     /**
@@ -97,6 +101,14 @@ class StudentTuition extends Model
     public function getIsOverdueAttribute(): bool
     {
         return $this->days_late > config('payment.grace_period_days', 0);
+    }
+
+    /**
+     * Check if this tuition has been paid
+     */
+    public function isPaid(): bool
+    {
+        return $this->payments()->where('is_paid', true)->exists();
     }
 
     protected static function booted(): void
