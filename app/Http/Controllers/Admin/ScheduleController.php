@@ -91,34 +91,99 @@ class ScheduleController extends Controller
         $schoolYears = SchoolYear::all();
         $activeSchoolYear = SchoolYear::where('is_active', true)->first();
         $subjects = Subject::with('teacher')->where('school_year_id', $activeSchoolYear?->id)->get();
-        $schoolGrades = GradeSection::with('schoolYear')->get();
+        $schoolGrades = GradeSection::with('schoolYear')->where('school_year_id', $activeSchoolYear?->id)->get();
 
-        // Group subjects by name and calculate teacher hours
-        $groupedSubjects = $this->groupSubjectsByNameWithTeacherHours($subjects, $activeSchoolYear?->id);
+        // Group subjects by name and grade level, calculate teacher hours
+        $groupedSubjects = $this->groupSubjectsByNameAndGradeWithTeacherHours($subjects, $activeSchoolYear?->id);
 
-        return view('admin.schedules.visual', compact('schoolYears', 'activeSchoolYear', 'subjects', 'groupedSubjects', 'schoolGrades'));
+        // Get break time from global settings
+        $settings = \App\Models\Settings::first();
+        $breakTime = [
+            'start' => $settings?->break_time_start,
+            'end' => $settings?->break_time_end,
+        ];
+
+        // Get schedule statistics
+        $scheduleStats = $this->getScheduleStatistics($activeSchoolYear?->id, $schoolGrades);
+
+        return view('admin.schedules.visual', compact('schoolYears', 'activeSchoolYear', 'subjects', 'groupedSubjects', 'schoolGrades', 'breakTime', 'scheduleStats'));
     }
 
     /**
-     * Group subjects by name and calculate hours assigned to each teacher
+     * Get schedule statistics - groups with and without schedules
      */
-    private function groupSubjectsByNameWithTeacherHours($subjects, $schoolYearId)
+    private function getScheduleStatistics($schoolYearId, $schoolGrades)
+    {
+        $withSchedules = [];
+        $withoutSchedules = [];
+
+        foreach ($schoolGrades as $grade) {
+            $hasSchedules = Schedule::where('school_grade_id', $grade->id)->exists();
+
+            $gradeLabel = "{$grade->grade_level}° {$grade->section}";
+
+            if ($hasSchedules) {
+                $scheduleCount = Schedule::where('school_grade_id', $grade->id)->count();
+                $withSchedules[] = [
+                    'id' => $grade->id,
+                    'label' => $gradeLabel,
+                    'grade_level' => $grade->grade_level,
+                    'section' => $grade->section,
+                    'schedule_count' => $scheduleCount,
+                ];
+            } else {
+                $withoutSchedules[] = [
+                    'id' => $grade->id,
+                    'label' => $gradeLabel,
+                    'grade_level' => $grade->grade_level,
+                    'section' => $grade->section,
+                ];
+            }
+        }
+
+        // Sort by grade level and section
+        usort($withSchedules, function ($a, $b) {
+            return $a['grade_level'] <=> $b['grade_level'] ?: strcmp($a['section'], $b['section']);
+        });
+        usort($withoutSchedules, function ($a, $b) {
+            return $a['grade_level'] <=> $b['grade_level'] ?: strcmp($a['section'], $b['section']);
+        });
+
+        return [
+            'total' => $schoolGrades->count(),
+            'with_schedules' => $withSchedules,
+            'without_schedules' => $withoutSchedules,
+            'count_with' => count($withSchedules),
+            'count_without' => count($withoutSchedules),
+        ];
+    }
+
+    /**
+     * Group subjects by name and grade level, calculate hours assigned to each teacher
+     */
+    private function groupSubjectsByNameAndGradeWithTeacherHours($subjects, $schoolYearId)
     {
         $grouped = [];
 
         foreach ($subjects as $subject) {
-            $subjectName = $subject->name;
+            // Use both name and grade level as key
+            $subjectKey = "{$subject->name}_grado_{$subject->grade_level}";
+            $displayName = "{$subject->name} grado {$subject->grade_level}";
 
-            if (! isset($grouped[$subjectName])) {
-                $grouped[$subjectName] = [
-                    'name' => $subjectName,
+            if (! isset($grouped[$subjectKey])) {
+                $grouped[$subjectKey] = [
+                    'name' => $displayName,
+                    'subject_name' => $subject->name,
+                    'grade_level' => $subject->grade_level,
                     'teachers' => [],
                 ];
             }
 
-            // Calculate hours assigned to this teacher for this subject
-            $hoursAssigned = Schedule::whereHas('subject', function ($q) use ($subjectName, $schoolYearId) {
-                $q->where('name', $subjectName)->where('school_year_id', $schoolYearId);
+            // Calculate hours assigned to this teacher for this subject and grade
+            $hoursAssigned = Schedule::whereHas('subject', function ($q) use ($subject, $schoolYearId) {
+                $q->where('name', $subject->name)
+                    ->where('grade_level', $subject->grade_level)
+                    ->where('school_year_id', $schoolYearId);
             })
                 ->where('teacher_id', $subject->teacher_id)
                 ->get()
@@ -126,7 +191,7 @@ class ScheduleController extends Controller
                     return $schedule->getDurationHours();
                 });
 
-            $grouped[$subjectName]['teachers'][] = [
+            $grouped[$subjectKey]['teachers'][] = [
                 'id' => $subject->teacher_id,
                 'name' => $subject->teacher->full_name,
                 'email' => $subject->teacher->email,
@@ -142,7 +207,7 @@ class ScheduleController extends Controller
             });
         }
 
-        // Return as array of groups, sorted by subject name
+        // Return as array of groups, sorted by subject name and grade
         ksort($grouped);
 
         return array_values($grouped);

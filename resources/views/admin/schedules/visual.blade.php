@@ -21,8 +21,92 @@
         </div>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-12" data-break-time-start="{{ $breakTime['start'] }}" data-break-time-end="{{ $breakTime['end'] }}">
         <div class="mx-auto max-w-full px-4 sm:px-6 lg:px-8">
+            <!-- Resumen de Horarios -->
+            <div class="mb-6 grid gap-4 md:grid-cols-3">
+                <!-- Total de Grupos -->
+                <div class="rounded-lg bg-white p-6 shadow-sm border-l-4 border-blue-600">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 font-medium">Total de Grupos</p>
+                            <p class="text-3xl font-bold text-gray-900 mt-1">{{ $scheduleStats['total'] }}</p>
+                        </div>
+                        <div class="text-blue-600">
+                            <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 12H9m6 0a6 6 0 11-12 0 6 6 0 0112 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Con Horarios -->
+                <div class="rounded-lg bg-white p-6 shadow-sm border-l-4 border-green-600">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 font-medium">Con Horarios</p>
+                            <p class="text-3xl font-bold text-green-600 mt-1">{{ $scheduleStats['count_with'] }}</p>
+                            <p class="text-xs text-gray-500 mt-2">{{ round(($scheduleStats['count_with'] / max($scheduleStats['total'], 1)) * 100) }}% completado</p>
+                        </div>
+                        <div class="text-green-600">
+                            <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sin Horarios -->
+                <div class="rounded-lg bg-white p-6 shadow-sm border-l-4 border-orange-600">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 font-medium">Sin Horarios</p>
+                            <p class="text-3xl font-bold text-orange-600 mt-1">{{ $scheduleStats['count_without'] }}</p>
+                            <p class="text-xs text-gray-500 mt-2">Por asignar</p>
+                        </div>
+                        <div class="text-orange-600">
+                            <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detalles de Grupos -->
+            @if($scheduleStats['count_without'] > 0)
+            <div class="mb-6 rounded-lg bg-white p-6 shadow-sm border-l-4 border-orange-600">
+                <button onclick="document.getElementById('groups-without-schedules').classList.toggle('hidden')" class="w-full text-left flex items-center justify-between hover:bg-gray-50 pb-4">
+                    <div class="flex items-center gap-3">
+                        <svg class="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-900">Grupos Pendientes de Horarios</h3>
+                        <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">{{ $scheduleStats['count_without'] }} grupo(s)</span>
+                    </div>
+                    <svg class="toggle-icon h-5 w-5 text-gray-600 transform transition-transform" id="groups-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                    </svg>
+                </button>
+
+                <div id="groups-without-schedules" class="hidden border-t border-gray-200 pt-4">
+                    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                        @foreach($scheduleStats['without_schedules'] as $group)
+                        <div class="rounded-lg bg-orange-50 border border-orange-200 p-4 flex items-center justify-between hover:bg-orange-100 transition">
+                            <div>
+                                <p class="font-medium text-gray-900">{{ $group['label'] }}</p>
+                                <p class="text-xs text-gray-500 mt-1">Sin asignar</p>
+                            </div>
+                            <svg class="h-6 w-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Selectores -->
             <div class="mb-6 rounded-lg bg-white p-6 shadow-sm">
                 <div class="mb-4 grid gap-6 md:grid-cols-3">
@@ -31,8 +115,8 @@
                         <select id="school_grade_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">Seleccione un grado</option>
                             @foreach($schoolGrades as $schoolGrade)
-                                <option value="{{ $schoolGrade->id }}">
-                                    {{ $schoolGrade->name }} - {{ $schoolGrade->section }} ({{ $schoolGrade->schoolYear->name }})
+                                <option value="{{ $schoolGrade->id }}" data-grade-level="{{ $schoolGrade->grade_level }}">
+                                    {{ $schoolGrade->grade_level }}° - {{ $schoolGrade->section }} ({{ $schoolGrade->schoolYear->name }})
                                 </option>
                             @endforeach
                         </select>
@@ -83,7 +167,7 @@
                                 @php
                                     $color = $colors[$groupIndex % count($colors)];
                                 @endphp
-                                <div class="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                <div class="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3 subject-group" data-grade-level="{{ $group['grade_level'] }}" data-subject-name="{{ $group['subject_name'] }}">
                                     <!-- Materia (Header) -->
                                     <button type="button" class="toggle-subject w-full text-left" data-subject-name="{{ $group['name'] }}">
                                         <div class="flex items-center justify-between">
@@ -104,6 +188,8 @@
                                                  draggable="true"
                                                  data-subject-id="{{ $teacher['subject_id'] }}"
                                                  data-subject-name="{{ $group['name'] }}"
+                                                 data-subject-name-only="{{ $group['subject_name'] }}"
+                                                 data-grade-level="{{ $group['grade_level'] }}"
                                                  data-teacher-id="{{ $teacher['id'] }}"
                                                  data-teacher-name="{{ $teacher['name'] }}"
                                                  data-subject-color="{{ $color['schedule'] }}">
@@ -188,15 +274,52 @@
         </div>
     </div>
 
+    <style>
+        .break-time {
+            background: repeating-linear-gradient(
+                45deg,
+                #d1d5db,
+                #d1d5db 10px,
+                #e5e7eb 10px,
+                #e5e7eb 20px
+            ) !important;
+            cursor: not-allowed !important;
+            position: relative;
+        }
+
+        .break-time::after {
+            content: 'RECESO';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            font-weight: bold;
+            color: #6b7280;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+    </style>
+
     <script>
         let currentSchedules = [];
         let draggedSubject = null;
         let draggedScheduleItem = null;
         let selectedSchoolGradeId = '';
-        let timeInterval = 60; // Default 60 minutes
+        let timeInterval = 60;
+        let breakTimeStart = null;
+        let breakTimeEnd = null; // Default 60 minutes
         let subjectColorMap = {}; // Map subject_id to color class
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Get break time from data attributes
+            const mainDiv = document.querySelector('[data-break-time-start]');
+            if (mainDiv) {
+                breakTimeStart = mainDiv.dataset.breakTimeStart || null;
+                breakTimeEnd = mainDiv.dataset.breakTimeEnd || null;
+            }
+
             // Initialize
             generateScheduleGrid();
             setupSelectors();
@@ -244,6 +367,7 @@
 
             document.getElementById('school_grade_id').addEventListener('change', function() {
                 selectedSchoolGradeId = this.value;
+                filterSubjectsByGrade();
                 loadSchedule();
 
                 // Enable/disable students button
@@ -260,6 +384,36 @@
                 generateScheduleGrid();
                 loadSchedule();
             });
+        }
+
+        function filterSubjectsByGrade() {
+            if (!selectedSchoolGradeId) {
+                // Show all subjects if no grade is selected
+                document.querySelectorAll('.subject-group').forEach(group => {
+                    group.style.display = '';
+                });
+                return;
+            }
+
+            // Get the selected grade element to find its grade level
+            const gradeSelect = document.getElementById('school_grade_id');
+            const selectedOption = gradeSelect.options[gradeSelect.selectedIndex];
+            const selectedGradeLevel = parseInt(selectedOption.dataset.gradeLevel);
+
+            // Filter subject groups by grade level
+            document.querySelectorAll('.subject-group').forEach(group => {
+                const groupGradeLevel = parseInt(group.dataset.gradeLevel);
+                if (groupGradeLevel === selectedGradeLevel) {
+                    group.style.display = '';
+                } else {
+                    group.style.display = 'none';
+                }
+            });
+        }
+
+        function isBreakTime(timeStr) {
+            if (!breakTimeStart || !breakTimeEnd) return false;
+            return timeStr >= breakTimeStart && timeStr < breakTimeEnd;
         }
 
         function generateScheduleGrid() {
@@ -287,7 +441,14 @@
                     // Day columns
                     ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].forEach(day => {
                         const td = document.createElement('td');
-                        td.className = 'schedule-cell relative h-16 border border-gray-300 bg-white p-1';
+                        let className = 'schedule-cell relative h-16 border border-gray-300 bg-white p-1';
+
+                        // Add break-time class if this time slot is during break
+                        if (isBreakTime(timeStr)) {
+                            className += ' break-time';
+                        }
+
+                        td.className = className;
                         td.dataset.day = day;
                         td.dataset.time = timeStr;
                         tr.appendChild(td);
@@ -431,6 +592,8 @@
                     draggedSubject = {
                         id: this.dataset.subjectId,
                         name: this.dataset.subjectName,
+                        subjectName: this.dataset.subjectNameOnly,
+                        gradeLevel: this.dataset.gradeLevel,
                         teacherId: this.dataset.teacherId,
                         teacherName: this.dataset.teacherName,
                         color: this.dataset.subjectColor
@@ -449,8 +612,13 @@
             scheduleCells.forEach(cell => {
                 cell.ondragover = function(e) {
                     e.preventDefault();
-                    e.dataTransfer.dropEffect = 'copy';
-                    this.classList.add('bg-blue-100');
+                    // Don't show hover effect on break time cells
+                    if (!this.classList.contains('break-time')) {
+                        e.dataTransfer.dropEffect = 'copy';
+                        this.classList.add('bg-blue-100');
+                    } else {
+                        e.dataTransfer.dropEffect = 'none';
+                    }
                     return false;
                 };
 
@@ -470,6 +638,12 @@
 
                     const day = this.dataset.day;
                     const time = this.dataset.time;
+
+                    // Check if dropping on break time
+                    if (this.classList.contains('break-time')) {
+                        alert('No se puede programar una materia durante el receso');
+                        return false;
+                    }
 
                     // Check if we're moving an existing schedule item
                     if (draggedScheduleItem) {
@@ -504,17 +678,42 @@
                     }
                     durationSelect += '</select>';
 
+                    const dayLabels = {
+                        'monday': 'Lun',
+                        'tuesday': 'Mar',
+                        'wednesday': 'Mié',
+                        'thursday': 'Jue',
+                        'friday': 'Vie'
+                    };
+
+                    const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+                    let daysCheckboxHtml = '<div class="flex gap-4">';
+                    daysOfWeek.forEach(dayOfWeek => {
+                        const isChecked = dayOfWeek === day ? 'checked' : '';
+                        daysCheckboxHtml += `
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="days[]" value="${dayOfWeek}" ${isChecked} class="day-checkbox">
+                                <span class="text-sm">${dayLabels[dayOfWeek]}</span>
+                            </label>
+                        `;
+                    });
+                    daysCheckboxHtml += '</div>';
+
                     const modalHtml = `
                         <div id="schedule-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                             <div class="bg-white rounded-lg p-6 w-96">
                                 <h3 class="text-lg font-semibold mb-4">Configurar Clase</h3>
                                 <div class="mb-4">
-                                    <label class="block text-sm font-medium mb-2">Materia: ${draggedSubject.name}</label>
+                                    <label class="block text-sm font-medium mb-2">Materia: ${draggedSubject.subjectName || draggedSubject.name}</label>
                                     <label class="block text-sm font-medium mb-2">Hora de inicio: ${time}</label>
                                 </div>
                                 <div class="mb-4">
                                     <label class="block text-sm font-medium mb-2">Duración:</label>
                                     ${durationSelect}
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium mb-2">Días de la semana:</label>
+                                    ${daysCheckboxHtml}
                                 </div>
                                 <div class="mb-4">
                                     <label class="block text-sm font-medium mb-2">Aula (opcional):</label>
@@ -539,8 +738,21 @@
                         const classroom = document.getElementById('classroom-input').value;
                         const endTime = calculateEndTimeFromDuration(time, durationMinutes);
 
+                        // Get selected days from checkboxes
+                        const selectedDays = Array.from(document.querySelectorAll('.day-checkbox:checked')).map(cb => cb.value);
+
+                        // Validate that at least one day is selected
+                        if (selectedDays.length === 0) {
+                            alert('Por favor selecciona al menos un día de la semana');
+                            return;
+                        }
+
                         document.getElementById('schedule-modal').remove();
-                        createSchedule(draggedSubject.id, day, time, endTime, classroom, draggedSubject.teacherId || null);
+
+                        // Create schedule for each selected day
+                        selectedDays.forEach(selectedDay => {
+                            createSchedule(draggedSubject.id, selectedDay, time, endTime, classroom, draggedSubject.teacherId || null);
+                        });
                     };
 
                     return false;
@@ -750,6 +962,16 @@
             if (modal && event.target === modal) {
                 closeStudentsModal();
             }
+        });
+
+        // Animación del chevron para grupos sin horarios
+        document.querySelectorAll('button[onclick*="groups-without-schedules"]').forEach(button => {
+            button.addEventListener('click', function() {
+                const chevron = document.getElementById('groups-chevron');
+                if (chevron) {
+                    chevron.classList.toggle('rotate-180');
+                }
+            });
         });
     </script>
 </x-app-layout>

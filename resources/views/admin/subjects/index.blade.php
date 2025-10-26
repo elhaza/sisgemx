@@ -4,9 +4,14 @@
             <h2 class="text-xl font-semibold leading-tight text-gray-800">
                 Gestión de Maestros / Materias
             </h2>
-            <a href="{{ route('admin.subjects.create') }}" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-                Nueva Materia
-            </a>
+            <div class="flex gap-3">
+                <a href="{{ route('admin.schedules.index') }}" class="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700">
+                    Crear/Administrar Horarios
+                </a>
+                <a href="{{ route('admin.subjects.create') }}" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                    Nueva Materia
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -88,6 +93,53 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Maestros Sin Asignar -->
+            @if($unassignedTeachers->count() > 0)
+            <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                <button onclick="document.getElementById('unassigned-teachers-summary').classList.toggle('hidden')" class="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
+                    <div class="flex items-center gap-3">
+                        <svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-900">Maestros Sin Asignar</h3>
+                        <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">{{ $unassignedTeachers->count() }} maestros</span>
+                    </div>
+                    <svg class="h-5 w-5 text-gray-600 transform transition-transform" id="unassigned-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                    </svg>
+                </button>
+
+                <div id="unassigned-teachers-summary" class="hidden border-t border-gray-200 bg-gray-50 p-6">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">Maestro</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">Horas Máximas/Día</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">Horas Máximas/Semana</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                                @foreach($unassignedTeachers as $teacher)
+                                <tr>
+                                    <td class="px-6 py-4 text-sm text-gray-900">
+                                        <div>
+                                            <p class="font-medium">{{ $teacher->full_name }}</p>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-600">{{ $teacher->email }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{{ $teacher->max_hours_per_day ?? 8 }} horas</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{{ $teacher->max_hours_per_week ?? 40 }} horas</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @endif
 
             <!-- Filtros -->
             <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
@@ -681,11 +733,20 @@
             }
         });
 
-        // Animación del chevron al expandir/contraer maestros
+        // Animación del chevron al expandir/contraer maestros asignados
         document.querySelector('button[onclick*="teachers-summary"]').addEventListener('click', function() {
             const chevron = document.getElementById('teachers-chevron');
             chevron.classList.toggle('rotate-180');
         });
+
+        // Animación del chevron al expandir/contraer maestros sin asignar
+        const unassignedButton = document.querySelector('button[onclick*="unassigned-teachers-summary"]');
+        if (unassignedButton) {
+            unassignedButton.addEventListener('click', function() {
+                const chevron = document.getElementById('unassigned-chevron');
+                chevron.classList.toggle('rotate-180');
+            });
+        }
     </script>
 
     <style>
