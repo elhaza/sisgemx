@@ -87,8 +87,48 @@
                 </div>
             @endif
 
+            <!-- Acciones Rápidas -->
+            <div class="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <a href="{{ route('admin.students.create') }}" class="block overflow-hidden rounded-lg bg-blue-600 px-6 py-8 text-white shadow-md transition hover:shadow-lg hover:bg-blue-700">
+                    <div class="flex flex-col items-center text-center">
+                        <svg class="mb-3 h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                        </svg>
+                        <h4 class="text-lg font-semibold">Inscribir Estudiante</h4>
+                    </div>
+                </a>
+
+                <a href="{{ route('admin.subjects.index') }}" class="block overflow-hidden rounded-lg bg-green-600 px-6 py-8 text-white shadow-md transition hover:shadow-lg hover:bg-green-700">
+                    <div class="flex flex-col items-center text-center">
+                        <svg class="mb-3 h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                        <h4 class="text-lg font-semibold">Materias</h4>
+                    </div>
+                </a>
+
+                <a href="{{ route('admin.schedules.visual') }}" class="block overflow-hidden rounded-lg bg-purple-600 px-6 py-8 text-white shadow-md transition hover:shadow-lg hover:bg-purple-700">
+                    <div class="flex flex-col items-center text-center">
+                        <svg class="mb-3 h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <h4 class="text-lg font-semibold">Horarios</h4>
+                    </div>
+                </a>
+
+                <a href="{{ route('finance.payment-receipts.index', ['status' => 'pending']) }}" class="block overflow-hidden rounded-lg bg-orange-600 px-6 py-8 text-white shadow-md transition hover:shadow-lg hover:bg-orange-700">
+                    <div class="flex flex-col items-center text-center">
+                        <svg class="mb-3 h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h4 class="text-lg font-semibold">Comprobantes</h4>
+                        <p class="mt-1 text-sm text-orange-100">{{ \App\Models\PaymentReceipt::where('status', 'pending')->count() }} pendientes</p>
+                    </div>
+                </a>
+            </div>
+
             <!-- Estadísticas Generales -->
-            <div class="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+            <div class="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <a href="{{ route('admin.students.index') }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
                     <div class="p-6">
                         <div class="flex items-center">
@@ -115,7 +155,7 @@
                     </div>
                 </a>
 
-                <a href="{{ route('admin.users.index', ['role' => 'teacher']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+                <a href="{{ route('admin.subjects.index') }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
                     <div class="p-6">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
@@ -133,54 +173,48 @@
                     </div>
                 </a>
 
-                <a href="{{ route('finance.payment-receipts.index', ['status' => 'pending']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+                <a href="{{ route('finance.payment-receipts.index', ['status' => 'pending']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md hover:border-l-4 hover:border-orange-600">
                     <div class="p-6">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="h-8 w-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
-                                    <dt class="truncate text-sm font-medium text-gray-500">Comprobantes Pendientes</dt>
-                                    <dd class="text-3xl font-semibold text-gray-900">{{ \App\Models\PaymentReceipt::where('status', 'pending')->count() }}</dd>
+                                    <dt class="truncate text-sm font-medium text-gray-500">Validar Pagos Pendientes</dt>
+                                    <dd class="text-3xl font-semibold text-gray-900">
+                                        @php
+                                            $pendingPayments = \App\Models\PaymentReceipt::where('status', 'pending')->count();
+                                        @endphp
+                                        {{ $pendingPayments }}
+                                    </dd>
+                                    <p class="text-xs text-gray-500 mt-1">comprobantes por validar</p>
                                 </dl>
                             </div>
                         </div>
                     </div>
                 </a>
 
-                <a href="{{ route('admin.medical-justifications.index', ['status' => 'pending']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+                <a href="{{ route('admin.medical-justifications.index') }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md hover:border-l-4 hover:border-red-600">
                     <div class="p-6">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
                                 <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                                 </svg>
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
-                                    <dt class="truncate text-sm font-medium text-gray-500">Justificantes Pendientes</dt>
-                                    <dd class="text-3xl font-semibold text-gray-900">{{ \App\Models\MedicalJustification::where('status', 'pending')->count() }}</dd>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="{{ route('finance.payment-receipts.index', ['month' => now()->month, 'year' => now()->year]) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt class="truncate text-sm font-medium text-gray-500">Pagos del Mes</dt>
-                                    <dd class="text-3xl font-semibold text-gray-900">${{ number_format(\App\Models\Payment::where('is_paid', true)->whereMonth('paid_at', now()->month)->sum('amount'), 2) }}</dd>
+                                    <dt class="truncate text-sm font-medium text-gray-500">Validar Justificantes Pendientes</dt>
+                                    <dd class="text-3xl font-semibold text-gray-900">
+                                        @php
+                                            $pendingJustifications = \App\Models\MedicalJustification::where('status', 'pending')->count();
+                                        @endphp
+                                        {{ $pendingJustifications }}
+                                    </dd>
+                                    <p class="text-xs text-gray-500 mt-1">justificantes por validar</p>
                                 </dl>
                             </div>
                         </div>
@@ -188,155 +222,15 @@
                 </a>
             </div>
 
-            <!-- Secciones Principales -->
-            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <!-- Gestión de Usuarios -->
+            <!-- Secciones Principales - 4 Categorías -->
+            <div class="grid gap-6 md:grid-cols-2">
+                <!-- 📚 Académico -->
                 <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Gestión de Usuarios</h3>
-                    </div>
-                    <div class="p-6">
-                        <ul class="space-y-3">
-                            <li>
-                                <a href="{{ route('admin.users.create') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                    </svg>
-                                    Crear Usuario
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('admin.users.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                                    </svg>
-                                    Lista de Usuarios
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('admin.users.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-                                    </svg>
-                                    Gestión de Roles
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Ciclos Escolares -->
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Ciclos Escolares</h3>
-                    </div>
-                    <div class="p-6">
-                        <ul class="space-y-3">
-                            <li>
-                                <a href="{{ route('admin.school-years.create') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                    </svg>
-                                    Nuevo Ciclo Escolar
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('admin.school-years.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
-                                    Gestionar Ciclos
-                                </a>
-                            </li>
-                            <li class="text-sm text-gray-600">
-                                Ciclo Activo: <span class="font-semibold text-gray-900">{{ \App\Models\SchoolYear::where('is_active', true)->first()?->name ?? 'N/A' }}</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Estudiantes -->
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Estudiantes</h3>
-                    </div>
-                    <div class="p-6">
-                        <ul class="space-y-3">
-                            <li>
-                                <a href="{{ route('admin.students.create') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
-                                    </svg>
-                                    Inscribir Estudiante
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('admin.students.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                                    </svg>
-                                    Lista de Estudiantes
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('admin.students.transfer') }}" class="flex items-center text-purple-600 hover:text-purple-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                                    </svg>
-                                    Transferir entre Grupos
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('admin.students.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    Reportes
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Finanzas -->
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Finanzas</h3>
-                    </div>
-                    <div class="p-6">
-                        <ul class="space-y-3">
-                            <li>
-                                <a href="{{ route('finance.payment-receipts.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    Comprobantes de Pago
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('finance.tuition-configs.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Config. Colegiaturas
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('finance.student-tuitions.discount-report') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                                    </svg>
-                                    Reportes Financieros
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Académico -->
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Académico</h3>
+                    <div class="border-b border-gray-200 bg-blue-50 px-6 py-4">
+                        <h3 class="flex items-center text-lg font-semibold text-gray-900">
+                            <span class="mr-2 text-xl">📚</span>
+                            Académico
+                        </h3>
                     </div>
                     <div class="p-6">
                         <ul class="space-y-3">
@@ -392,46 +286,124 @@
                     </div>
                 </div>
 
-                <!-- Justificantes Médicos -->
+                <!-- 👥 Estudiantes -->
                 <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Justificantes Médicos</h3>
+                    <div class="border-b border-gray-200 bg-green-50 px-6 py-4">
+                        <h3 class="flex items-center text-lg font-semibold text-gray-900">
+                            <span class="mr-2 text-xl">👥</span>
+                            Estudiantes
+                        </h3>
                     </div>
                     <div class="p-6">
                         <ul class="space-y-3">
                             <li>
-                                <a href="{{ route('admin.medical-justifications.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                <a href="{{ route('admin.students.create') }}" class="flex items-center text-blue-600 hover:text-blue-800">
                                     <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                                     </svg>
-                                    Ver Justificantes
+                                    Inscribir Estudiante
                                 </a>
                             </li>
                             <li>
-                                <a href="{{ route('admin.medical-justifications.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                <a href="{{ route('admin.students.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
                                     <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                                     </svg>
-                                    Filtrar por Fecha
+                                    Lista de Estudiantes
                                 </a>
                             </li>
-                            <li class="text-sm text-gray-600">
-                                Total: <span class="font-semibold text-gray-900">{{ \App\Models\MedicalJustification::count() }}</span>
-                            </li>
-                            <li class="text-sm text-gray-600">
-                                Este mes: <span class="font-semibold text-gray-900">{{ \App\Models\MedicalJustification::whereMonth('created_at', now()->month)->count() }}</span>
+                            <li>
+                                <a href="{{ route('admin.students.transfer') }}" class="flex items-center text-purple-600 hover:text-purple-800">
+                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                    </svg>
+                                    Transferir entre Grupos
+                                </a>
                             </li>
                         </ul>
                     </div>
                 </div>
 
-                <!-- Configuración -->
+                <!-- 💰 Finanzas -->
                 <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Configuración</h3>
+                    <div class="border-b border-gray-200 bg-purple-50 px-6 py-4">
+                        <h3 class="flex items-center text-lg font-semibold text-gray-900">
+                            <span class="mr-2 text-xl">💰</span>
+                            Finanzas
+                        </h3>
                     </div>
                     <div class="p-6">
                         <ul class="space-y-3">
+                            <li>
+                                <a href="{{ route('finance.payment-receipts.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    Comprobantes de Pago
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('finance.tuition-configs.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Config. Colegiaturas
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('finance.student-tuitions.discount-report') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Reportes Financieros
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ⚙️ Administración -->
+                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+                    <div class="border-b border-gray-200 bg-red-50 px-6 py-4">
+                        <h3 class="flex items-center text-lg font-semibold text-gray-900">
+                            <span class="mr-2 text-xl">⚙️</span>
+                            Administración
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <ul class="space-y-3">
+                            <li>
+                                <a href="{{ route('admin.users.create') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                    Crear Usuario
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('admin.users.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                    </svg>
+                                    Lista de Usuarios
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('admin.school-years.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Ciclos Escolares
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('admin.medical-justifications.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                                    </svg>
+                                    Justificantes Médicos
+                                </a>
+                            </li>
                             <li>
                                 <a href="{{ route('admin.settings.edit') }}" class="flex items-center text-blue-600 hover:text-blue-800">
                                     <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -439,22 +411,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                     </svg>
                                     Configuración General
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                    </svg>
-                                    Notificaciones
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    Logs del Sistema
                                 </a>
                             </li>
                         </ul>
