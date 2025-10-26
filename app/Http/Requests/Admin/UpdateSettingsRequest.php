@@ -22,6 +22,8 @@ class UpdateSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'school_name' => ['nullable', 'string', 'max:255'],
+            'school_logo' => ['nullable', 'image', 'mimes:jpeg,png,gif,webp', 'max:2048'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,gif,webp', 'max:2048'],
         ];
     }
@@ -34,6 +36,10 @@ class UpdateSettingsRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'school_name.max' => 'El nombre de la escuela no debe exceder 255 caracteres.',
+            'school_logo.image' => 'El archivo debe ser una imagen.',
+            'school_logo.mimes' => 'La imagen debe estar en formato JPEG, PNG, GIF o WEBP.',
+            'school_logo.max' => 'La imagen no debe exceder 2MB.',
             'logo.image' => 'El archivo debe ser una imagen.',
             'logo.mimes' => 'La imagen debe estar en formato JPEG, PNG, GIF o WEBP.',
             'logo.max' => 'La imagen no debe exceder 2MB.',

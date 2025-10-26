@@ -86,10 +86,10 @@
                 </div>
             </div>
 
-            <!-- Sección de Logo -->
-            <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+            <!-- Sección de Información de la Escuela -->
+            <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Logotipo de la Institución</h3>
+                    <h3 class="text-lg font-semibold text-gray-900">Información de la Institución</h3>
                 </div>
                 <div class="p-6">
                     @if (session('success'))
@@ -104,6 +104,83 @@
                         </div>
                     @endif
 
+                    <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        @method('PUT')
+
+                        <!-- Nombre de la Escuela -->
+                        <div class="mb-6">
+                            <label for="school_name" class="block text-sm font-medium text-gray-700">
+                                Nombre de la Institución
+                            </label>
+                            <input type="text" name="school_name" id="school_name" value="{{ old('school_name', $settings?->school_name) }}"
+                                placeholder="Ej: Instituto Tecnológico San Martín"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            @error('school_name')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-1 text-sm text-gray-500">Este nombre aparecerá en el título de las páginas y en el encabezado.</p>
+                        </div>
+
+                        <!-- Logo de la Escuela -->
+                        <div class="mb-6">
+                            <label for="school_logo" class="block text-sm font-medium text-gray-700">
+                                Logo de la Institución
+                            </label>
+                            <div class="mt-2">
+                                <div id="preview-container-school" class="mb-4 flex justify-center hidden">
+                                    <img id="preview-image-school" src="" alt="Preview" class="h-32 w-auto object-contain">
+                                </div>
+                                @if ($settings?->school_logo)
+                                    <div id="current-logo-school" class="mb-4 flex justify-center">
+                                        <img src="{{ asset('storage/' . $settings->school_logo) }}"
+                                            alt="Logo"
+                                            class="h-32 w-auto object-contain">
+                                    </div>
+                                @endif
+                                <div id="upload-area-school" class="flex justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-10 transition-colors hover:border-blue-400 hover:bg-blue-50">
+                                    <div class="text-center">
+                                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor"
+                                            fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                            <path
+                                                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 20M9 20l3.172-3.172a4 4 0 015.656 0L21 20"
+                                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                        <p class="mt-2 text-sm text-gray-600">
+                                            <label for="school_logo" class="relative cursor-pointer font-medium text-blue-600 hover:text-blue-500">
+                                                Sube un archivo
+                                            </label>
+                                            o arrastra y suelta
+                                        </p>
+                                        <p class="text-xs text-gray-500">
+                                            PNG, JPG, GIF o WEBP hasta 2MB
+                                        </p>
+                                    </div>
+                                    <input id="school_logo" name="school_logo" type="file" class="sr-only" accept="image/png,image/jpeg,image/gif,image/webp">
+                                </div>
+                            </div>
+                            @error('school_logo')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-1 text-sm text-gray-500">Este logo aparecerá en el favicon del navegador y en el encabezado de las páginas.</p>
+                        </div>
+
+                        <div class="flex justify-end gap-3 mb-6">
+                            <button type="submit"
+                                class="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                Guardar Información
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sección de Logo (Legacy) -->
+            <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Logotipo de la Institución (Heredado)</h3>
+                </div>
+                <div class="p-6">
                     <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
@@ -148,6 +225,56 @@
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
+
+                        <script>
+                            // School logo handler
+                            const schoolLogoInput = document.getElementById('school_logo');
+                            const uploadAreaSchool = document.getElementById('upload-area-school');
+                            const previewContainerSchool = document.getElementById('preview-container-school');
+                            const previewImageSchool = document.getElementById('preview-image-school');
+                            const currentLogoSchool = document.getElementById('current-logo-school');
+
+                            if (schoolLogoInput) {
+                                // Click to select file
+                                schoolLogoInput.addEventListener('change', handleFileSelectSchool);
+
+                                // Drag and drop
+                                uploadAreaSchool.addEventListener('dragover', (e) => {
+                                    e.preventDefault();
+                                    uploadAreaSchool.classList.add('border-blue-400', 'bg-blue-50');
+                                });
+
+                                uploadAreaSchool.addEventListener('dragleave', () => {
+                                    uploadAreaSchool.classList.remove('border-blue-400', 'bg-blue-50');
+                                });
+
+                                uploadAreaSchool.addEventListener('drop', (e) => {
+                                    e.preventDefault();
+                                    uploadAreaSchool.classList.remove('border-blue-400', 'bg-blue-50');
+
+                                    const files = e.dataTransfer.files;
+                                    if (files.length > 0) {
+                                        schoolLogoInput.files = files;
+                                        handleFileSelectSchool();
+                                    }
+                                });
+
+                                function handleFileSelectSchool() {
+                                    const file = schoolLogoInput.files[0];
+                                    if (file && file.type.startsWith('image/')) {
+                                        const reader = new FileReader();
+                                        reader.onload = (e) => {
+                                            previewImageSchool.src = e.target.result;
+                                            previewContainerSchool.classList.remove('hidden');
+                                            if (currentLogoSchool) {
+                                                currentLogoSchool.classList.add('hidden');
+                                            }
+                                        };
+                                        reader.readAsDataURL(file);
+                                    }
+                                }
+                            }
+                        </script>
 
                         <script>
                             const logoInput = document.getElementById('logo');
