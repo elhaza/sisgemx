@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
+use App\Models\MonthlyTuition;
 use App\Models\SchoolYear;
 use App\Models\StudentTuition;
-use App\Models\TuitionConfig;
 use Illuminate\Http\Request;
 
 class StudentTuitionController extends Controller
@@ -23,13 +23,7 @@ class StudentTuitionController extends Controller
 
         $studentTuitions = $query->paginate(20);
 
-        // Get default tuition amount for the selected school year
-        $defaultTuition = null;
-        if ($selectedSchoolYearId) {
-            $defaultTuition = TuitionConfig::where('school_year_id', $selectedSchoolYearId)->first();
-        }
-
-        return view('finance.student-tuitions.index', compact('studentTuitions', 'schoolYears', 'selectedSchoolYearId', 'defaultTuition'));
+        return view('finance.student-tuitions.index', compact('studentTuitions', 'schoolYears', 'selectedSchoolYearId'));
     }
 
     public function edit(StudentTuition $studentTuition)
@@ -62,33 +56,42 @@ class StudentTuitionController extends Controller
                 'studentsWithDiscount' => collect(),
                 'schoolYears' => $schoolYears,
                 'selectedSchoolYearId' => null,
-                'defaultTuition' => null,
             ]);
         }
 
-        $defaultTuition = TuitionConfig::where('school_year_id', $selectedSchoolYearId)->first();
-
-        if (! $defaultTuition) {
-            return view('finance.student-tuitions.discount-report', [
-                'studentsWithDiscount' => collect(),
-                'schoolYears' => $schoolYears,
-                'selectedSchoolYearId' => $selectedSchoolYearId,
-                'defaultTuition' => null,
-            ]);
-        }
-
-        $studentsWithDiscount = StudentTuition::with(['student.user', 'schoolYear'])
+        // Get all student tuitions for the selected school year
+        $allStudentTuitions = StudentTuition::with(['student.user', 'schoolYear'])
             ->where('school_year_id', $selectedSchoolYearId)
-            ->where('monthly_amount', '<', $defaultTuition->amount)
-            ->get()
-            ->map(function ($tuition) use ($defaultTuition) {
-                $tuition->default_amount = $defaultTuition->amount;
-                $tuition->discount_amount = $defaultTuition->amount - $tuition->monthly_amount;
-                $tuition->discount_percentage = ($tuition->discount_amount / $defaultTuition->amount) * 100;
+            ->get();
 
-                return $tuition;
+        // Get all monthly tuitions for reference
+        $monthlyTuitions = MonthlyTuition::where('school_year_id', $selectedSchoolYearId)
+            ->get()
+            ->keyBy(function ($item) {
+                return $item->year.'-'.$item->month;
             });
 
-        return view('finance.student-tuitions.discount-report', compact('studentsWithDiscount', 'schoolYears', 'selectedSchoolYearId', 'defaultTuition'));
+        // Filter students with discounts by comparing against their specific month's tuition
+        $studentsWithDiscount = $allStudentTuitions
+            ->filter(function ($tuition) use ($monthlyTuitions) {
+                $key = $tuition->year.'-'.$tuition->month;
+
+                return isset($monthlyTuitions[$key]) && $tuition->monthly_amount < $monthlyTuitions[$key]->amount;
+            })
+            ->map(function ($tuition) use ($monthlyTuitions) {
+                $key = $tuition->year.'-'.$tuition->month;
+                $monthlyTuition = $monthlyTuitions[$key] ?? null;
+
+                if ($monthlyTuition) {
+                    $tuition->default_amount = $monthlyTuition->amount;
+                    $tuition->discount_amount = $monthlyTuition->amount - $tuition->monthly_amount;
+                    $tuition->discount_percentage = ($tuition->discount_amount / $monthlyTuition->amount) * 100;
+                }
+
+                return $tuition;
+            })
+            ->values();
+
+        return view('finance.student-tuitions.discount-report', compact('studentsWithDiscount', 'schoolYears', 'selectedSchoolYearId'));
     }
 }

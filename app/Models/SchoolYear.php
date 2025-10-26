@@ -37,19 +37,9 @@ class SchoolYear extends Model
         return $this->hasMany(Subject::class);
     }
 
-    public function tuitionConfigs(): HasMany
-    {
-        return $this->hasMany(TuitionConfig::class);
-    }
-
     public function studentTuitions(): HasMany
     {
         return $this->hasMany(StudentTuition::class);
-    }
-
-    public function tuitionConfig()
-    {
-        return $this->hasOne(TuitionConfig::class);
     }
 
     public function monthlyTuitions(): HasMany

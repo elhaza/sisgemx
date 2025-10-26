@@ -15,7 +15,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Finance\DashboardController as FinanceDashboardController;
 use App\Http\Controllers\Finance\PaymentReceiptController as FinancePaymentReceiptController;
 use App\Http\Controllers\Finance\StudentTuitionController;
-use App\Http\Controllers\Finance\TuitionConfigController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\Parent\DashboardController as ParentDashboardController;
 use App\Http\Controllers\Parent\MedicalJustificationController;
@@ -85,8 +84,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('payment-receipts/{paymentReceipt}', [FinancePaymentReceiptController::class, 'show'])->name('payment-receipts.show');
         Route::post('payment-receipts/{paymentReceipt}/update-status', [FinancePaymentReceiptController::class, 'updateStatus'])->name('payment-receipts.update-status');
 
-        Route::resource('tuition-configs', TuitionConfigController::class)->except(['show']);
-
         Route::get('student-tuitions', [StudentTuitionController::class, 'index'])->name('student-tuitions.index');
         Route::get('student-tuitions/{studentTuition}/edit', [StudentTuitionController::class, 'edit'])->name('student-tuitions.edit');
         Route::put('student-tuitions/{studentTuition}', [StudentTuitionController::class, 'update'])->name('student-tuitions.update');
@@ -121,6 +118,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
 
         Route::resource('users', UserController::class);
+        // Teacher availability routes
+        Route::post('users/{user}/availabilities', [UserController::class, 'storeAvailability'])->name('users.store-availability');
+        Route::delete('users/{user}/availabilities/{availabilityId}', [UserController::class, 'deleteAvailability'])->name('users.delete-availability');
+
         Route::resource('grade-sections', GradeSectionController::class);
         Route::resource('school-years', SchoolYearController::class);
         Route::get('school-years/{schoolYear}/assign-students', [SchoolYearController::class, 'assignStudents'])->name('school-years.assign-students');
@@ -156,7 +157,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Schedule configuration resources
         Route::resource('time-slots', \App\Http\Controllers\Admin\TimeSlotController::class);
-        Route::resource('teacher-availabilities', \App\Http\Controllers\Admin\TeacherAvailabilityController::class);
         Route::resource('teacher-subjects', \App\Http\Controllers\Admin\TeacherSubjectController::class);
         Route::get('grades', [GradeOverviewController::class, 'index'])->name('grades.index');
         Route::get('medical-justifications', [AdminMedicalJustificationController::class, 'index'])->name('medical-justifications.index');
