@@ -66,6 +66,12 @@ class UserController extends Controller
             $rules['email'] = 'required|string|email|max:255|unique:users';
         }
 
+        // Add teacher-specific validation rules
+        if ($request->input('role') === 'teacher') {
+            $rules['max_hours_per_day'] = 'nullable|numeric|min:1|max:12';
+            $rules['max_hours_per_week'] = 'nullable|numeric|min:1|max:60';
+        }
+
         $validated = $request->validate($rules);
 
         $validated['password'] = bcrypt($validated['password']);
@@ -108,6 +114,12 @@ class UserController extends Controller
             $rules['email'] = 'required|string|max:255|unique:users,email,'.$user->id;
         } else {
             $rules['email'] = 'required|string|email|max:255|unique:users,email,'.$user->id;
+        }
+
+        // Add teacher-specific validation rules
+        if ($request->input('role') === 'teacher') {
+            $rules['max_hours_per_day'] = 'nullable|numeric|min:1|max:12';
+            $rules['max_hours_per_week'] = 'nullable|numeric|min:1|max:60';
         }
 
         $validated = $request->validate($rules);
