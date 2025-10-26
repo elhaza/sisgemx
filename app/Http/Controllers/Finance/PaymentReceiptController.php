@@ -185,12 +185,12 @@ class PaymentReceiptController extends Controller
                 ])
                 ->sum('amount_paid');
 
-            // Add admin payments accumulated
+            // Add admin payments accumulated (including advance payments made in current month)
+            // Use paid_at to include payments made in the current month, regardless of what month they're for
             $incomeAccumulated += Payment::where('is_paid', true)
-                ->where('year', $yearToCalculate)
-                ->whereBetween(DB::raw('CONCAT(year, "-", LPAD(month, 2, "0"))'), [
-                    sprintf('%04d-01', $yearToCalculate),
-                    sprintf('%04d-%02d', $yearToCalculate, $monthToCalculate),
+                ->whereBetween('paid_at', [
+                    now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
+                    now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
                 ])
                 ->sum('amount');
 
