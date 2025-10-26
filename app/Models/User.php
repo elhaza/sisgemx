@@ -81,6 +81,11 @@ class User extends Authenticatable
         return $this->hasMany(Announcement::class, 'teacher_id');
     }
 
+    public function availabilities(): HasMany
+    {
+        return $this->hasMany(TeacherAvailability::class, 'teacher_id');
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === UserRole::Admin;

@@ -152,7 +152,7 @@
                     </a>
 
                     <!-- Padres Retrazados en Pago -->
-                    <div class="block overflow-hidden rounded-lg bg-white shadow-sm">
+                    <a href="{{ route('admin.overdue-parents-report') }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
                         <div class="p-6">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
@@ -169,7 +169,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </a>
 
                     <!-- Recargos por Mora -->
                     <div class="block overflow-hidden rounded-lg bg-white shadow-sm">
@@ -499,7 +499,7 @@
                                     <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                     </svg>
-                                    Ciclos Escolares
+                                    Ciclos Escolares / $ asignación de colegiaturas
                                 </a>
                             </li>
                             <li>

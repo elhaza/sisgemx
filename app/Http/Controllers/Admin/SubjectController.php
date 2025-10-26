@@ -42,6 +42,8 @@ class SubjectController extends Controller
 
         // Calculate teacher hours and subjects
         $teacherHours = [];
+        $assignedTeacherIds = [];
+
         foreach ($teachers as $teacher) {
             $teacherSubjects = Subject::where('teacher_id', $teacher->id)
                 ->whereNotNull('default_hours_per_week')
@@ -56,9 +58,19 @@ class SubjectController extends Controller
                 'subject_count' => $teacherSubjects->count(),
                 'subjects' => $teacherSubjects->pluck('name')->unique()->toArray(),
             ];
+
+            // Track which teachers have subjects
+            if ($teacherSubjects->count() > 0) {
+                $assignedTeacherIds[] = $teacher->id;
+            }
         }
 
-        return view('admin.subjects.index', compact('subjects', 'teachers', 'schoolYears', 'activeSchoolYear', 'gradeLevels', 'subjectList', 'teacherHours'));
+        // Get unassigned teachers
+        $unassignedTeachers = $teachers->filter(function ($teacher) use ($assignedTeacherIds) {
+            return ! in_array($teacher->id, $assignedTeacherIds);
+        })->values();
+
+        return view('admin.subjects.index', compact('subjects', 'teachers', 'schoolYears', 'activeSchoolYear', 'gradeLevels', 'subjectList', 'teacherHours', 'unassignedTeachers'));
     }
 
     public function create()
@@ -110,7 +122,7 @@ class SubjectController extends Controller
         $dailyAverage = $newWeeklyHours / 5; // Asumiendo 5 días de clase por semana
 
         // Verificar si se supera el máximo de horas diarias
-        if ($dailyAverage > $teacher->max_hours_per_day && !$request->input('force')) {
+        if ($dailyAverage > $teacher->max_hours_per_day && ! $request->input('force')) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,

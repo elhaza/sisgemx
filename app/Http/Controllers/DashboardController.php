@@ -50,6 +50,108 @@ class DashboardController extends Controller
     }
 
     /**
+     * Get overdue parents report
+     */
+    public function overdueParentsReport()
+    {
+        $now = now();
+
+        // Get all overdue student tuitions with active students
+        $overdueStudentIds = StudentTuition::where('due_date', '<', $now->toDateString())
+            ->whereHas('student', function ($query) {
+                $query->where('status', 'active');
+            })
+            ->pluck('student_id')
+            ->unique();
+
+        // Get students and their tutors
+        $students = Student::whereIn('id', $overdueStudentIds)
+            ->with(['user', 'tutor1', 'tutor2'])
+            ->get();
+
+        // Build report grouped by tutor
+        $parentReport = collect();
+
+        foreach ($students as $student) {
+            $overdueTuitions = StudentTuition::where('student_id', $student->id)
+                ->where('due_date', '<', $now->toDateString())
+                ->get();
+
+            $overdueCount = $overdueTuitions->count();
+            $maxDaysLate = $overdueTuitions->max(function ($tuition) use ($now) {
+                return $tuition->due_date ? $now->diffInDays($tuition->due_date) : 0;
+            });
+
+            // Add to tutor 1
+            if ($student->tutor1) {
+                $key = $student->tutor1->id;
+                if ($parentReport->has($key)) {
+                    $existing = $parentReport->get($key);
+                    $existing['students']->push([
+                        'id' => $student->id,
+                        'name' => $student->user->full_name,
+                        'overdue_count' => $overdueCount,
+                        'max_days_late' => $maxDaysLate,
+                    ]);
+                    $existing['total_overdue_tuitions'] += $overdueCount;
+                    $existing['max_days_late'] = max($existing['max_days_late'], $maxDaysLate);
+                } else {
+                    $parentReport->put($key, [
+                        'tutor_1' => $student->tutor1->full_name,
+                        'tutor_2' => $student->tutor2?->full_name,
+                        'students' => collect([
+                            [
+                                'id' => $student->id,
+                                'name' => $student->user->full_name,
+                                'overdue_count' => $overdueCount,
+                                'max_days_late' => $maxDaysLate,
+                            ],
+                        ]),
+                        'total_overdue_tuitions' => $overdueCount,
+                        'max_days_late' => $maxDaysLate,
+                    ]);
+                }
+            }
+
+            // Add to tutor 2 if different from tutor 1
+            if ($student->tutor2 && (! $student->tutor1 || $student->tutor2->id !== $student->tutor1->id)) {
+                $key = $student->tutor2->id;
+                if ($parentReport->has($key)) {
+                    $existing = $parentReport->get($key);
+                    $existing['students']->push([
+                        'id' => $student->id,
+                        'name' => $student->user->full_name,
+                        'overdue_count' => $overdueCount,
+                        'max_days_late' => $maxDaysLate,
+                    ]);
+                    $existing['total_overdue_tuitions'] += $overdueCount;
+                    $existing['max_days_late'] = max($existing['max_days_late'], $maxDaysLate);
+                } else {
+                    $parentReport->put($key, [
+                        'tutor_1' => $student->tutor2->full_name,
+                        'tutor_2' => null,
+                        'students' => collect([
+                            [
+                                'id' => $student->id,
+                                'name' => $student->user->full_name,
+                                'overdue_count' => $overdueCount,
+                                'max_days_late' => $maxDaysLate,
+                            ],
+                        ]),
+                        'total_overdue_tuitions' => $overdueCount,
+                        'max_days_late' => $maxDaysLate,
+                    ]);
+                }
+            }
+        }
+
+        return view('admin.overdue-parents-report', [
+            'parentReport' => $parentReport->values(),
+            'totalParents' => $parentReport->count(),
+        ]);
+    }
+
+    /**
      * Get financial statistics for the current month
      */
     private function getFinancialStats(): array

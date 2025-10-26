@@ -37,10 +37,25 @@ class DashboardController extends Controller
         })->latest()->take(5)->get();
 
         $schedules = Schedule::where('school_grade_id', $student->school_grade_id)
-            ->with('subject')
+            ->with(['subject', 'subject.teacher.user'])
             ->orderBy('day_of_week')
             ->orderBy('start_time')
             ->get();
+
+        // Get current day and time for highlighting current class
+        $now = now();
+        $currentDayOfWeek = $now->format('l');
+        $dayMapping = [
+            'Monday' => 'monday',
+            'Tuesday' => 'tuesday',
+            'Wednesday' => 'wednesday',
+            'Thursday' => 'thursday',
+            'Friday' => 'friday',
+            'Saturday' => 'saturday',
+            'Sunday' => 'sunday',
+        ];
+        $currentDay = $dayMapping[$currentDayOfWeek] ?? null;
+        $currentTime = $now->format('H:i');
 
         return view('student.dashboard', compact(
             'unreadMessageCount',
@@ -49,7 +64,9 @@ class DashboardController extends Controller
             'pendingAssignments',
             'overdueAssignments',
             'recentAnnouncements',
-            'schedules'
+            'schedules',
+            'currentDay',
+            'currentTime'
         ));
     }
 

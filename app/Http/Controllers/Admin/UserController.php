@@ -96,8 +96,19 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $roles = UserRole::cases();
+        $availabilities = $user->availabilities()->orderBy('day_of_week')->orderBy('start_time')->get();
 
-        return view('admin.users.edit', compact('user', 'roles'));
+        $dayNames = [
+            'monday' => 'Lunes',
+            'tuesday' => 'Martes',
+            'wednesday' => 'Miércoles',
+            'thursday' => 'Jueves',
+            'friday' => 'Viernes',
+            'saturday' => 'Sábado',
+            'sunday' => 'Domingo',
+        ];
+
+        return view('admin.users.edit', compact('user', 'roles', 'availabilities', 'dayNames'));
     }
 
     public function update(Request $request, User $user)
@@ -145,5 +156,55 @@ class UserController extends Controller
         $user->delete();
 
         return redirect()->route('admin.users.index')->with('success', 'Usuario eliminado exitosamente.');
+    }
+
+    public function storeAvailability(Request $request, User $user): \Illuminate\Http\JsonResponse
+    {
+        // Ensure user is a teacher
+        if ($user->role !== \App\UserRole::Teacher) {
+            return response()->json(['message' => 'El usuario no es un maestro.'], 403);
+        }
+
+        $validated = $request->validate([
+            'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+        ], [
+            'day_of_week.required' => 'El día de la semana es requerido.',
+            'day_of_week.in' => 'El día de la semana no es válido.',
+            'start_time.required' => 'La hora de inicio es requerida.',
+            'start_time.date_format' => 'La hora de inicio debe estar en formato HH:mm.',
+            'end_time.required' => 'La hora de fin es requerida.',
+            'end_time.date_format' => 'La hora de fin debe estar en formato HH:mm.',
+            'end_time.after' => 'La hora de fin debe ser posterior a la hora de inicio.',
+        ]);
+
+        // Check for duplicate availability (same day and time)
+        $existingAvailability = $user->availabilities()
+            ->where('day_of_week', $validated['day_of_week'])
+            ->where('start_time', $validated['start_time'])
+            ->where('end_time', $validated['end_time'])
+            ->exists();
+
+        if ($existingAvailability) {
+            return response()->json(['message' => 'Ya existe una disponibilidad con estos datos.'], 422);
+        }
+
+        $user->availabilities()->create($validated);
+
+        return response()->json(['message' => 'Disponibilidad agregada exitosamente.'], 201);
+    }
+
+    public function deleteAvailability(Request $request, User $user, int $availabilityId): \Illuminate\Http\JsonResponse
+    {
+        // Ensure user is a teacher
+        if ($user->role !== \App\UserRole::Teacher) {
+            return response()->json(['message' => 'El usuario no es un maestro.'], 403);
+        }
+
+        $availability = $user->availabilities()->findOrFail($availabilityId);
+        $availability->delete();
+
+        return response()->json(['message' => 'Disponibilidad eliminada exitosamente.'], 200);
     }
 }
