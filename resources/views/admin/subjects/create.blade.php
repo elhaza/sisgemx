@@ -63,6 +63,15 @@
                         </div>
 
                         <div class="mb-4">
+                            <label for="default_hours_per_week" class="block text-sm font-medium text-gray-700">Horas por Semana</label>
+                            <input type="number" name="default_hours_per_week" id="default_hours_per_week" step="0.5" min="0.5" max="40" value="{{ old('default_hours_per_week') }}"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            @error('default_hours_per_week')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="mb-4">
                             <label for="school_year_id" class="block text-sm font-medium text-gray-700">Ciclo Escolar</label>
                             <select name="school_year_id" id="school_year_id" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
