@@ -67,6 +67,30 @@ class SubjectController extends Controller
                 ->withErrors(['name' => 'Este maestro ya tiene esta materia asignada para este grado.']);
         }
 
+        // Validar horas máximas diarias del maestro
+        $teacher = User::find($validated['teacher_id']);
+        $currentWeeklyHours = Subject::where('teacher_id', $teacher->id)
+            ->whereNotNull('default_hours_per_week')
+            ->sum('default_hours_per_week');
+
+        $newWeeklyHours = $currentWeeklyHours + ($validated['default_hours_per_week'] ?? 0);
+        $dailyAverage = $newWeeklyHours / 5; // Asumiendo 5 días de clase por semana
+
+        // Verificar si se supera el máximo de horas diarias
+        if ($dailyAverage > $teacher->max_hours_per_day && !$request->input('force')) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'warning' => true,
+                    'message' => 'El maestro supera el máximo de horas diarias permitidas.',
+                    'teacher_name' => $teacher->full_name,
+                    'current_daily_average' => round($dailyAverage, 2),
+                    'max_hours_per_day' => $teacher->max_hours_per_day,
+                    'total_weekly_hours' => round($newWeeklyHours, 2),
+                ], 422);
+            }
+        }
+
         $subject = Subject::create($validated);
 
         // Si es una petición AJAX, devolver JSON

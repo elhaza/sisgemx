@@ -358,6 +358,120 @@
             });
         });
 
+        function submitSubject(formData) {
+            const btn = document.getElementById('add-subject-btn');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Agregando...';
+
+            fetch('{{ route("admin.subjects.store") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        if (data.warning) {
+                            // Mostrar advertencia de horas
+                            const confirmMsg = `⚠️ Advertencia: ${data.message}\n\n` +
+                                `Maestro: ${data.teacher_name}\n` +
+                                `Promedio diario actual: ${data.current_daily_average}h\n` +
+                                `Horas máximas por día: ${data.max_hours_per_day}h\n` +
+                                `Total de horas semanales: ${data.total_weekly_hours}h\n\n` +
+                                `¿Deseas agregar esta materia de todas formas?`;
+
+                            if (confirm(confirmMsg)) {
+                                // Enviar con force = true
+                                submitSubject({ ...formData, force: true });
+                            }
+                            btn.disabled = false;
+                            btn.textContent = originalText;
+                            return;
+                        }
+                        throw new Error(data.message || 'Error al agregar la materia');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const nameInput = document.getElementById('subject-name');
+                    const grade_level = document.getElementById('subject-grade').value;
+                    const hours = document.getElementById('subject-hours').value;
+
+                    // Obtener información del maestro y ciclo escolar
+                    const teacherSelect = document.getElementById('subject-teacher');
+                    const yearSelect = document.getElementById('subject-school-year');
+                    const teacherName = teacherSelect.options[teacherSelect.selectedIndex].text;
+                    const yearName = yearSelect.options[yearSelect.selectedIndex].text;
+                    const name = formData.name;
+
+                    // Crear nueva fila
+                    const newRow = document.createElement('tr');
+                    newRow.className = 'animate-fadeIn';
+                    newRow.innerHTML = `
+                        <td class="whitespace-nowrap px-6 py-4">
+                            <div class="text-sm font-medium text-gray-900">${name}</div>
+                        </td>
+                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${grade_level}°</td>
+                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${hours || '-'}</td>
+                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${teacherName}</td>
+                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${yearName}</td>
+                        <td class="whitespace-nowrap px-6 py-4 text-sm">
+                            <div class="flex gap-2">
+                                <a href="{{ url('admin/subjects') }}/${data.id}/edit" class="text-blue-600 hover:text-blue-900">Editar</a>
+                                <form action="{{ url('admin/subjects') }}/${data.id}" method="POST" class="inline" onsubmit="return confirm('¿Está seguro de eliminar esta materia?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-900">Eliminar</button>
+                                </form>
+                            </div>
+                        </td>
+                    `;
+
+                    // Insertar antes de la fila de agregar
+                    const newSubjectRow = document.getElementById('new-subject-row');
+                    newSubjectRow.parentNode.insertBefore(newRow, newSubjectRow);
+
+                    // Limpiar inputs
+                    if (nameInput.tagName === 'SELECT') {
+                        nameInput.value = '';
+                    } else {
+                        nameInput.value = '';
+                    }
+                    document.getElementById('subject-grade').value = '';
+                    document.getElementById('subject-hours').value = '';
+                    document.getElementById('subject-teacher').value = '';
+                    document.getElementById('subject-school-year').value = '{{ $activeSchoolYear?->id }}';
+
+                    // Mostrar notificación de éxito
+                    showNotification('Materia agregada exitosamente', 'success');
+
+                    // Enfocar el input de nombre para agregar otra
+                    nameInput.focus();
+
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                } else {
+                    showNotification(data.message || 'Error al agregar la materia', 'error');
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification(error.message || 'Error al agregar la materia', 'error');
+                btn.disabled = false;
+                btn.textContent = originalText;
+            });
+        }
+
         document.getElementById('add-subject-btn').addEventListener('click', function(e) {
             e.preventDefault();
 
@@ -403,99 +517,13 @@
                 return;
             }
 
-            const btn = this;
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.textContent = 'Agregando...';
-
-            // Enviar via AJAX
-            fetch('{{ route("admin.subjects.store") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    name: name,
-                    grade_level: grade_level,
-                    teacher_id: teacher_id,
-                    school_year_id: school_year_id,
-                    default_hours_per_week: hours || null,
-                    description: ''
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message || 'Error al agregar la materia');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Obtener información del maestro y ciclo escolar
-                    const teacherSelect = document.getElementById('subject-teacher');
-                    const yearSelect = document.getElementById('subject-school-year');
-                    const teacherName = teacherSelect.options[teacherSelect.selectedIndex].text;
-                    const yearName = yearSelect.options[yearSelect.selectedIndex].text;
-
-                    // Crear nueva fila
-                    const newRow = document.createElement('tr');
-                    newRow.className = 'animate-fadeIn';
-                    newRow.innerHTML = `
-                        <td class="whitespace-nowrap px-6 py-4">
-                            <div class="text-sm font-medium text-gray-900">${name}</div>
-                        </td>
-                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${grade_level}°</td>
-                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${hours || '-'}</td>
-                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${teacherName}</td>
-                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${yearName}</td>
-                        <td class="whitespace-nowrap px-6 py-4 text-sm">
-                            <div class="flex gap-2">
-                                <a href="{{ url('admin/subjects') }}/${data.id}/edit" class="text-blue-600 hover:text-blue-900">Editar</a>
-                                <form action="{{ url('admin/subjects') }}/${data.id}" method="POST" class="inline" onsubmit="return confirm('¿Está seguro de eliminar esta materia?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900">Eliminar</button>
-                                </form>
-                            </div>
-                        </td>
-                    `;
-
-                    // Insertar antes de la fila de agregar
-                    const newSubjectRow = document.getElementById('new-subject-row');
-                    newSubjectRow.parentNode.insertBefore(newRow, newSubjectRow);
-
-                    // Limpiar inputs
-                    if (nameInput.tagName === 'SELECT') {
-                        nameInput.value = '';
-                    } else {
-                        nameInput.value = '';
-                    }
-                    document.getElementById('subject-grade').value = '';
-                    document.getElementById('subject-hours').value = '';
-                    document.getElementById('subject-teacher').value = '';
-                    document.getElementById('subject-school-year').value = '{{ $activeSchoolYear?->id }}';
-
-                    // Mostrar notificación de éxito
-                    showNotification('Materia agregada exitosamente', 'success');
-
-                    // Enfocar el input de nombre para agregar otra
-                    nameInput.focus();
-                } else {
-                    showNotification(data.message || 'Error al agregar la materia', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification(error.message || 'Error al agregar la materia', 'error');
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.textContent = originalText;
+            submitSubject({
+                name: name,
+                grade_level: grade_level,
+                teacher_id: teacher_id,
+                school_year_id: school_year_id,
+                default_hours_per_week: hours || null,
+                description: ''
             });
         });
 
