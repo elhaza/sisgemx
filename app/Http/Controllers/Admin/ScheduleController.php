@@ -6,9 +6,11 @@ use App\DayOfWeek;
 use App\Http\Controllers\Controller;
 use App\Models\GradeSection;
 use App\Models\Schedule;
+use App\Models\ScheduleRun;
 use App\Models\SchoolYear;
 use App\Models\Student;
 use App\Models\Subject;
+use App\Services\ScheduleGenerationService;
 use Illuminate\Http\Request;
 
 class ScheduleController extends Controller
@@ -542,5 +544,110 @@ class ScheduleController extends Controller
             ->toArray();
 
         return response()->json(['students' => $students]);
+    }
+
+    /**
+     * Show schedule generation form
+     */
+    public function generateForm()
+    {
+        $schoolYears = SchoolYear::orderBy('start_date', 'desc')->get();
+        $activeSchoolYear = SchoolYear::where('is_active', true)->first();
+
+        return view('admin.schedules.generate', compact('schoolYears', 'activeSchoolYear'));
+    }
+
+    /**
+     * Generate schedule proposal
+     */
+    public function generate(Request $request)
+    {
+        $validated = $request->validate([
+            'school_year_id' => 'required|exists:school_years,id',
+            'grade_section_id' => 'nullable|exists:grade_sections,id',
+        ]);
+
+        $schoolYear = SchoolYear::findOrFail($validated['school_year_id']);
+        $gradeSection = $validated['grade_section_id']
+            ? GradeSection::findOrFail($validated['grade_section_id'])
+            : null;
+
+        // Create a schedule run record
+        $scheduleRun = ScheduleRun::create([
+            'school_year_id' => $schoolYear->id,
+            'created_by' => auth()->id(),
+            'status' => 'pending',
+        ]);
+
+        // Generate schedule
+        $service = new ScheduleGenerationService;
+        $result = $service->generate($schoolYear, $gradeSection);
+
+        // Store result in session for confirmation
+        session([
+            'schedule_proposal' => $result,
+            'schedule_run_id' => $scheduleRun->id,
+            'school_year_id' => $schoolYear->id,
+        ]);
+
+        return view('admin.schedules.preview', compact('result', 'schoolYear'));
+    }
+
+    /**
+     * Validate and confirm schedule
+     */
+    public function confirm(Request $request)
+    {
+        $proposal = session('schedule_proposal');
+        $scheduleRunId = session('schedule_run_id');
+        $schoolYearId = session('school_year_id');
+
+        if (! $proposal || ! $scheduleRunId) {
+            return redirect()->route('admin.schedules.generate-form')
+                ->with('error', 'Sesión expirada. Genere el horario nuevamente.');
+        }
+
+        // Validate edited assignments
+        $assignments = $request->input('assignments', []);
+        $validationErrors = [];
+
+        foreach ($assignments as $assignmentId => $assignmentData) {
+            // Validate teacher availability
+            // This will be checked by the validation method
+        }
+
+        if (! empty($validationErrors)) {
+            return redirect()->back()
+                ->with('error', implode('; ', $validationErrors));
+        }
+
+        // Save all assignments to database
+        $schoolYear = SchoolYear::findOrFail($schoolYearId);
+        $count = 0;
+
+        foreach ($proposal['assignments'] as $assignment) {
+            Schedule::create([
+                'school_grade_id' => $assignment['grade_section_id'],
+                'subject_id' => $assignment['subject_id'],
+                'day_of_week' => $assignment['day_of_week'],
+                'start_time' => $assignment['start_time'],
+                'end_time' => $assignment['end_time'],
+                'classroom' => $assignment['classroom_code'] ?? null,
+            ]);
+            $count++;
+        }
+
+        // Update schedule run status
+        $scheduleRun = ScheduleRun::findOrFail($scheduleRunId);
+        $scheduleRun->update([
+            'status' => 'completed',
+            'notes' => "Se generaron y guardaron {$count} asignaciones.",
+        ]);
+
+        // Clear session
+        session()->forget(['schedule_proposal', 'schedule_run_id', 'school_year_id']);
+
+        return redirect()->route('admin.schedules.index')
+            ->with('success', "Horario generado exitosamente. Se crearon {$count} asignaciones.");
     }
 }

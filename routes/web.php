@@ -148,6 +148,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('schedules-visual/{schedule}', [ScheduleController::class, 'destroyVisual'])->name('schedules.destroy-visual');
         Route::get('schedules/copy/form', [ScheduleController::class, 'copyForm'])->name('schedules.copy-form');
         Route::post('schedules/copy', [ScheduleController::class, 'copy'])->name('schedules.copy');
+        Route::get('schedules/generate/form', [ScheduleController::class, 'generateForm'])->name('schedules.generate-form');
+        Route::post('schedules/generate', [ScheduleController::class, 'generate'])->name('schedules.generate');
+        Route::post('schedules/confirm', [ScheduleController::class, 'confirm'])->name('schedules.confirm');
         Route::get('grades', [GradeOverviewController::class, 'index'])->name('grades.index');
         Route::get('medical-justifications', [AdminMedicalJustificationController::class, 'index'])->name('medical-justifications.index');
         Route::get('medical-justifications/{medicalJustification}', [AdminMedicalJustificationController::class, 'show'])->name('medical-justifications.show');
