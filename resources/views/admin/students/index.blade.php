@@ -166,8 +166,8 @@
                                                 <span class="text-gray-400">-</span>
                                             @endif
                                         </td>
-                                        <td class="whitespace-nowrap px-6 py-4">{{ $student->schoolGrade->level }}</td>
-                                        <td class="whitespace-nowrap px-6 py-4">{{ $student->schoolGrade->section }}</td>
+                                        <td class="whitespace-nowrap px-6 py-4">{{ $student->schoolGrade?->grade_level ?? '-' }}</td>
+                                        <td class="whitespace-nowrap px-6 py-4">{{ $student->schoolGrade?->section ?? '-' }}</td>
                                         <td class="whitespace-nowrap px-6 py-4">{{ $student->schoolYear->name }}</td>
                                         <td class="whitespace-nowrap px-6 py-4">
                                             @php
