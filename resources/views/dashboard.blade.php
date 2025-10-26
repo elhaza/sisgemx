@@ -87,6 +87,112 @@
                 </div>
             @endif
 
+            <!-- Finanzas - Información Importante -->
+            <div class="mb-8">
+                <h3 class="mb-4 text-lg font-semibold text-gray-900">💰 Finanzas del Mes</h3>
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                    <!-- Pagos del Mes -->
+                    <a href="{{ route('finance.payment-receipts.index', ['month' => now()->month, 'year' => now()->year, 'status' => 'validated']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+                        <div class="p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="truncate text-sm font-medium text-gray-500">Pagos del Mes</dt>
+                                        <dd class="text-2xl font-semibold text-gray-900">${{ number_format($financialStats['monthly_payments'], 2) }}</dd>
+                                        <p class="text-xs text-gray-500 mt-1">Recaudado</p>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Pendientes de Pago del Mes -->
+                    <a href="{{ route('finance.payment-receipts.index', ['month' => now()->month, 'year' => now()->year, 'status' => 'pending']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+                        <div class="p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="truncate text-sm font-medium text-gray-500">Pendientes del Mes</dt>
+                                        <dd class="text-2xl font-semibold text-gray-900">${{ number_format($financialStats['pending_monthly_payments'], 2) }}</dd>
+                                        <p class="text-xs text-gray-500 mt-1">Por validar</p>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Colegiaturas Pendientes del Mes -->
+                    <a href="{{ route('finance.student-tuitions.index') }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+                        <div class="p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="truncate text-sm font-medium text-gray-500">Colegiaturas Pendientes</dt>
+                                        <dd class="text-2xl font-semibold text-gray-900">${{ number_format($financialStats['unpaid_tuitions_month'], 2) }}</dd>
+                                        <p class="text-xs text-gray-500 mt-1">Este mes</p>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Padres Retrazados en Pago -->
+                    <div class="block overflow-hidden rounded-lg bg-white shadow-sm">
+                        <div class="p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="truncate text-sm font-medium text-gray-500">Padres Retrazados</dt>
+                                        <dd class="text-2xl font-semibold text-gray-900">{{ $financialStats['parents_overdue'] }}</dd>
+                                        <p class="text-xs text-gray-500 mt-1">Con mora</p>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recargos por Mora -->
+                    <div class="block overflow-hidden rounded-lg bg-white shadow-sm">
+                        <div class="p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="truncate text-sm font-medium text-gray-500">Recargos por Mora</dt>
+                                        <dd class="text-2xl font-semibold text-gray-900">${{ number_format($financialStats['late_fees'], 2) }}</dd>
+                                        <p class="text-xs text-gray-500 mt-1">Por cobrar</p>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Acciones Rápidas -->
             <div class="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <a href="{{ route('admin.students.create') }}" class="block overflow-hidden rounded-lg bg-blue-600 px-6 py-8 text-white shadow-md transition hover:shadow-lg hover:bg-blue-700">
