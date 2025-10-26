@@ -37,14 +37,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Late Fee Amount
+    | Late Fee Daily Amount
     |--------------------------------------------------------------------------
     |
-    | Fixed amount for late fees (per day or per month depending on type).
+    | Fixed amount for daily late fees.
     | If set to 0, percentage-based calculation will be used instead.
     |
     */
-    'late_fee_amount' => env('LATE_FEE_AMOUNT', 0.00),
+    'late_fee_daily_amount' => env('LATE_FEE_DAILY_AMOUNT', 0.00),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Late Fee Monthly Amount
+    |--------------------------------------------------------------------------
+    |
+    | Fixed amount for monthly late fees.
+    | If set to 0, percentage-based calculation will be used instead.
+    |
+    */
+    'late_fee_monthly_amount' => env('LATE_FEE_MONTHLY_AMOUNT', 0.00),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Late Fee Amount (Deprecated)
+    |--------------------------------------------------------------------------
+    |
+    | Kept for backwards compatibility. Use late_fee_daily_amount or
+    | late_fee_monthly_amount instead based on your late_fee_type.
+    |
+    */
+    'late_fee_amount' => env('LATE_FEE_DAILY_AMOUNT', env('LATE_FEE_MONTHLY_AMOUNT', 0.00)),
 
     /*
     |--------------------------------------------------------------------------

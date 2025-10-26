@@ -12,7 +12,6 @@ class PaymentHelper
         $graceDays = config('payment.grace_period_days');
         $type = strtoupper(config('payment.late_fee_type'));
         $rate = config('payment.late_fee_rate');
-        $fixed = config('payment.late_fee_amount');
 
         if ($daysLate <= $graceDays) {
             return 0.0;
@@ -22,15 +21,20 @@ class PaymentHelper
 
         switch ($type) {
             case 'ONCE':
+                $fixed = config('payment.late_fee_amount');
+
                 return $fixed;
 
             case 'DAILY':
+                $fixed = config('payment.late_fee_daily_amount');
+
                 return $fixed > 0
                     ? $fixed * $effectiveDays
                     : $amount * $rate * $effectiveDays;
 
             case 'MONTHLY':
             default:
+                $fixed = config('payment.late_fee_monthly_amount');
                 $monthsLate = ceil($effectiveDays / 30);
 
                 return $fixed > 0
