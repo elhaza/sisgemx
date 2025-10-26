@@ -17,6 +17,8 @@ class StudentTuition extends Model
         'month',
         'monthly_amount',
         'discount_percentage',
+        'discount_amount',
+        'discount_reason',
         'final_amount',
         'due_date',
         'late_fee_amount',
@@ -29,6 +31,7 @@ class StudentTuition extends Model
         return [
             'monthly_amount' => 'decimal:2',
             'discount_percentage' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
             'final_amount' => 'decimal:2',
             'late_fee_amount' => 'decimal:2',
             'late_fee_paid' => 'decimal:2',

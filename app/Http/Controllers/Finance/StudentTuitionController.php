@@ -15,13 +15,42 @@ class StudentTuitionController extends Controller
         $schoolYears = SchoolYear::all();
         $selectedSchoolYearId = $request->get('school_year_id', SchoolYear::where('is_active', true)->first()?->id);
 
-        $query = StudentTuition::with(['student.user', 'schoolYear']);
+        $query = StudentTuition::with(['student.user', 'schoolYear'])->orderBy('student_id')->orderBy('month');
 
         if ($selectedSchoolYearId) {
             $query->where('school_year_id', $selectedSchoolYearId);
         }
 
-        $studentTuitions = $query->paginate(20);
+        $allTuitions = $query->get();
+
+        // Group by student and school year to get periods
+        $studentTuitionPeriods = $allTuitions->groupBy(function ($tuition) {
+            return $tuition->student_id.'_'.$tuition->school_year_id;
+        })->map(function ($group) {
+            $firstTuition = $group->first();
+
+            return (object) [
+                'student_id' => $firstTuition->student_id,
+                'student' => $firstTuition->student,
+                'school_year_id' => $firstTuition->school_year_id,
+                'school_year' => $firstTuition->schoolYear,
+                'month_count' => $group->count(),
+                'monthly_amount' => $firstTuition->monthly_amount,
+                'has_discounts' => $group->some(function ($t) {
+                    return $t->discount_amount > 0;
+                }),
+                'total_discount' => $group->sum('discount_amount'),
+                'first_tuition' => $firstTuition,
+                'months' => $group,
+            ];
+        })->values();
+
+        // Paginate the grouped results
+        $page = $request->get('page', 1);
+        $perPage = 10;
+        $studentTuitions = collect($studentTuitionPeriods)
+            ->slice(($page - 1) * $perPage, $perPage)
+            ->values();
 
         return view('finance.student-tuitions.index', compact('studentTuitions', 'schoolYears', 'selectedSchoolYearId'));
     }
@@ -30,20 +59,40 @@ class StudentTuitionController extends Controller
     {
         $studentTuition->load(['student.user', 'schoolYear']);
 
-        return view('finance.student-tuitions.edit', compact('studentTuition'));
+        // Get all tuitions for this student and school year
+        $allTuitions = StudentTuition::where('student_id', $studentTuition->student_id)
+            ->where('school_year_id', $studentTuition->school_year_id)
+            ->orderBy('month')
+            ->get();
+
+        return view('finance.student-tuitions.edit', compact('studentTuition', 'allTuitions'));
     }
 
     public function update(Request $request, StudentTuition $studentTuition)
     {
         $validated = $request->validate([
-            'monthly_amount' => 'required|numeric|min:0',
-            'notes' => 'nullable|string',
+            'tuitions' => 'required|array',
+            'tuitions.*.monthly_amount' => 'required|numeric|min:0',
+            'tuitions.*.discount_amount' => 'required|numeric|min:0',
+            'tuitions.*.discount_reason' => 'nullable|string',
+            'tuitions.*.notes' => 'nullable|string',
         ]);
 
-        $studentTuition->update($validated);
+        // Get all tuitions for this student and school year
+        $allTuitions = StudentTuition::where('student_id', $studentTuition->student_id)
+            ->where('school_year_id', $studentTuition->school_year_id)
+            ->get();
+
+        // Update each tuition
+        foreach ($validated['tuitions'] as $tuitionId => $data) {
+            $tuition = $allTuitions->firstWhere('id', $tuitionId);
+            if ($tuition) {
+                $tuition->update($data);
+            }
+        }
 
         return redirect()->route('finance.student-tuitions.index', ['school_year_id' => $studentTuition->school_year_id])
-            ->with('success', 'Colegiatura del estudiante actualizada exitosamente.');
+            ->with('success', 'Colegiaturas del período actualizado exitosamente.');
     }
 
     public function discountReport(Request $request)

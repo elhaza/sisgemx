@@ -34,25 +34,76 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Estudiante</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Ciclo</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Meses</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Monto Mensual</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Notas</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Descuentos</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
-                            @forelse($studentTuitions as $tuition)
-                                <tr>
-                                    <td class="whitespace-nowrap px-6 py-4">{{ $tuition->student->user->full_name }}</td>
-                                    <td class="whitespace-nowrap px-6 py-4">{{ $tuition->schoolYear->name }}</td>
-                                    <td class="whitespace-nowrap px-6 py-4">${{ number_format($tuition->monthly_amount, 2) }}</td>
-                                    <td class="px-6 py-4 text-sm">{{ $tuition->notes ?? '-' }}</td>
+                            @forelse($studentTuitions as $period)
+                                <tr class="hover:bg-gray-50">
+                                    <td class="whitespace-nowrap px-6 py-4">{{ $period->student->user->full_name }}</td>
+                                    <td class="whitespace-nowrap px-6 py-4">{{ $period->school_year->name }}</td>
                                     <td class="whitespace-nowrap px-6 py-4">
-                                        <a href="{{ route('finance.student-tuitions.edit', $tuition) }}" class="text-blue-600 hover:text-blue-900">Editar</a>
+                                        <span class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+                                            {{ $period->month_count }} meses
+                                        </span>
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-4">${{ number_format($period->monthly_amount, 2) }}</td>
+                                    <td class="px-6 py-4">
+                                        @if($period->has_discounts)
+                                            <span class="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-800">
+                                                -${{ number_format($period->total_discount, 2) }}
+                                            </span>
+                                        @else
+                                            <span class="text-gray-500">Sin descuentos</span>
+                                        @endif
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-4">
+                                        <a href="{{ route('finance.student-tuitions.edit', $period->first_tuition) }}" class="text-blue-600 hover:text-blue-900 font-medium">Editar Período</a>
+                                    </td>
+                                </tr>
+                                <tr class="hidden" id="details-{{ $period->first_tuition->id }}">
+                                    <td colspan="6" class="px-6 py-4 bg-gray-50">
+                                        <div class="mb-4">
+                                            <h4 class="font-semibold text-gray-900 mb-3">Detalle de Meses</h4>
+                                            <div class="overflow-x-auto">
+                                                <table class="min-w-full text-sm">
+                                                    <thead>
+                                                        <tr class="border-b border-gray-200">
+                                                            <th class="text-left py-2 px-3">Mes</th>
+                                                            <th class="text-right py-2 px-3">Monto</th>
+                                                            <th class="text-right py-2 px-3">Descuento</th>
+                                                            <th class="text-right py-2 px-3">Total</th>
+                                                            <th class="text-left py-2 px-3">Razón Descuento</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($period->months as $month)
+                                                            <tr class="border-b border-gray-100">
+                                                                <td class="py-2 px-3">{{ $month->month_name }} {{ $month->year }}</td>
+                                                                <td class="text-right py-2 px-3">${{ number_format($month->monthly_amount, 2) }}</td>
+                                                                <td class="text-right py-2 px-3">
+                                                                    @if($month->discount_amount > 0)
+                                                                        <span class="text-orange-600 font-semibold">-${{ number_format($month->discount_amount, 2) }}</span>
+                                                                    @else
+                                                                        -
+                                                                    @endif
+                                                                </td>
+                                                                <td class="text-right py-2 px-3 font-semibold">${{ number_format($month->monthly_amount - $month->discount_amount, 2) }}</td>
+                                                                <td class="py-2 px-3 text-xs">{{ $month->discount_reason ?? '-' }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay colegiaturas registradas.</td>
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">No hay colegiaturas registradas.</td>
                                 </tr>
                             @endforelse
                         </tbody>
