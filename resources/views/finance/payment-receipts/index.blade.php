@@ -69,17 +69,23 @@
 
                 <div class="overflow-hidden rounded-lg bg-white shadow-sm">
                     <div class="p-6">
-                        <div class="flex items-center">
+                        <div class="flex items-start">
                             <div class="flex-shrink-0">
                                 <svg class="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
+                            <div class="ml-5 w-0 flex-1 space-y-3">
+                                <div class="cursor-pointer hover:opacity-80" onclick="openIncomeDetailsModal()">
                                     <dt class="truncate text-sm font-medium text-gray-500">{{ $incomeLabel }}</dt>
-                                    <dd class="text-3xl font-semibold text-gray-900">${{ number_format($income, 2) }}</dd>
-                                </dl>
+                                    <dd class="text-3xl font-semibold text-gray-900">${{ number_format($incomeCurrentMonth, 2) }}</dd>
+                                </div>
+                                @if($view === 'month' && $incomeAccumulated > 0)
+                                    <div class="pt-2 border-t border-gray-200 cursor-pointer hover:opacity-80" onclick="openIncomeDetailsModal()">
+                                        <dt class="truncate text-sm font-medium text-gray-500">Ingresos Acumulados</dt>
+                                        <dd class="text-xl font-semibold text-gray-700">${{ number_format($incomeAccumulated, 2) }}</dd>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -240,6 +246,40 @@
         </div>
     </div>
 
+    <!-- Modal para detalles de ingresos -->
+    <div id="incomeDetailsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Detalles de Ingresos</h3>
+                <button type="button" onclick="closeIncomeDetailsModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 max-h-96 overflow-y-auto">
+                <div class="space-y-3">
+                    @if($view === 'month')
+                        @forelse($incomeMonthlyDetails as $detail)
+                            @php
+                                $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                                $monthName = $monthNames[$detail->month] ?? 'Mes desconocido';
+                            @endphp
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="text-gray-700">{{ $monthName }}</span>
+                                <span class="font-semibold text-gray-900">${{ number_format($detail->total, 2) }}</span>
+                            </div>
+                        @empty
+                            <p class="text-center text-gray-500">No hay ingresos registrados</p>
+                        @endforelse
+                    @else
+                        <p class="text-center text-gray-500">Desglose de ingresos por ciclo escolar no disponible</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         function openImageModal(imageSrc) {
             document.getElementById('modalImage').src = imageSrc;
@@ -254,6 +294,21 @@
         document.getElementById('imageModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeImageModal();
+            }
+        });
+
+        function openIncomeDetailsModal() {
+            document.getElementById('incomeDetailsModal').classList.remove('hidden');
+        }
+
+        function closeIncomeDetailsModal() {
+            document.getElementById('incomeDetailsModal').classList.add('hidden');
+        }
+
+        // Close income modal when clicking outside
+        document.getElementById('incomeDetailsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeIncomeDetailsModal();
             }
         });
     </script>
