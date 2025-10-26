@@ -111,7 +111,7 @@
                                             class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
                                         <input type="email" id="teacher-email" placeholder="Email"
                                             class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
-                                        <input type="password" id="teacher-password" placeholder="Contraseña"
+                                        <input type="text" id="teacher-password" placeholder="Contraseña"
                                             class="rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
                                             @keyup.enter="document.getElementById('add-teacher-btn').click()">
                                     </div>
@@ -265,8 +265,8 @@
                 return;
             }
 
-            if (!teacher_id) {
-                alert('Por favor selecciona un maestro');
+            if (!teacher_id || teacher_id === 'add-new') {
+                alert('Por favor selecciona un maestro válido o crea uno nuevo primero');
                 document.getElementById('subject-teacher').focus();
                 return;
             }
