@@ -88,8 +88,8 @@ class DashboardController extends Controller
         )->distinct('user_id')->count('user_id');
 
         // Colegiaturas pendientes de pago del mes
-        $unpaidTuitionsMonth = StudentTuition::whereMonth('month', $currentMonth)
-            ->whereYear('year', $currentYear)
+        $unpaidTuitionsMonth = StudentTuition::where('month', $currentMonth)
+            ->where('year', $currentYear)
             ->whereHas('student', function ($query) {
                 $query->where('status', 'active');
             })
