@@ -20,7 +20,10 @@ class SubjectController extends Controller
         $schoolYears = SchoolYear::all();
         $activeSchoolYear = SchoolYear::where('is_active', true)->first();
         $gradeLevels = [1, 2, 3, 4, 5, 6];
-        $subjectList = Subject::orderBy('name')->get();
+        $subjectList = Subject::selectRaw('MIN(id) as id, name')
+            ->groupBy('name')
+            ->orderBy('name')
+            ->get();
 
         return view('admin.subjects.index', compact('subjects', 'teachers', 'schoolYears', 'activeSchoolYear', 'gradeLevels', 'subjectList'));
     }
