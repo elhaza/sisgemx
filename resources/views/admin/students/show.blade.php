@@ -148,8 +148,11 @@
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700">Monto Mensual</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700">Descuento %</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700">Monto Final</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Recargos</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Total a Pagar</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700">Vencimiento</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700">Estado</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -168,6 +171,14 @@
                                                 ${{ number_format($tuition->final_amount, 2) }}
                                             </td>
                                             <td class="px-4 py-3 text-center">
+                                                <span class="inline-block rounded-full {{ $tuition->late_fee > 0 ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-700' }} px-3 py-1 font-semibold">
+                                                    ${{ number_format($tuition->late_fee, 2) }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-center font-bold">
+                                                ${{ number_format($tuition->final_amount + $tuition->late_fee, 2) }}
+                                            </td>
+                                            <td class="px-4 py-3 text-center">
                                                 {{ $tuition->due_date->format('d/m/Y') }}
                                             </td>
                                             <td class="px-4 py-3 text-center">
@@ -180,6 +191,25 @@
                                                         Pendiente
                                                     </span>
                                                 @endif
+                                            </td>
+                                            <td class="px-4 py-3 text-center">
+                                                <div class="flex gap-2 justify-center flex-wrap">
+                                                    @if($tuition->late_fee > 0)
+                                                        <form action="{{ route('admin.students.remove-late-fee', [$student, $tuition]) }}" method="POST" style="display:inline;">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="rounded-md bg-orange-600 px-3 py-1 text-sm font-medium text-white hover:bg-orange-700 transition" onclick="return confirm('¿Remover recargos de ${{ number_format($tuition->late_fee, 2) }}?')">
+                                                                Remover Recargo
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                    <form action="{{ route('admin.students.pay-tuition', [$student, $tuition]) }}" method="POST" style="display:inline;">
+                                                        @csrf
+                                                        <button type="submit" class="rounded-md bg-green-600 px-3 py-1 text-sm font-medium text-white hover:bg-green-700 transition" onclick="return confirm('¿Liquidar mensualidad de ${{ number_format($tuition->final_amount + $tuition->late_fee, 2) }}?')">
+                                                            Liquidar
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach

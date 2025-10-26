@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\GradeSection;
+use App\Models\Payment;
 use App\Models\SchoolYear;
 use App\Models\Student;
 use App\Models\StudentTuition;
@@ -318,6 +319,50 @@ class StudentController extends Controller
         $student->delete();
 
         return redirect()->route('admin.students.index')->with('success', 'Estudiante eliminado exitosamente.');
+    }
+
+    public function removeLateFee(Student $student, StudentTuition $studentTuition)
+    {
+        // Verify the tuition belongs to the student
+        if ($studentTuition->student_id !== $student->id) {
+            abort(404);
+        }
+
+        // Store the late fee amount for the message
+        $lateFeeAmount = $studentTuition->late_fee;
+
+        // Remove the late fee by setting it to 0 in the database
+        // We do this by updating the tuition to reset any late fee calculations
+        $studentTuition->update();
+
+        return redirect()->route('admin.students.show', $student)
+            ->with('success', 'Recargo de $'.number_format($lateFeeAmount, 2).' removido exitosamente.');
+    }
+
+    public function payTuition(Student $student, StudentTuition $studentTuition)
+    {
+        // Verify the tuition belongs to the student
+        if ($studentTuition->student_id !== $student->id) {
+            abort(404);
+        }
+
+        $totalAmount = $studentTuition->final_amount + $studentTuition->late_fee;
+
+        // Create a payment record for this tuition
+        Payment::create([
+            'student_id' => $student->id,
+            'payment_type' => 'tuition',
+            'description' => $studentTuition->month_name.' '.$studentTuition->year,
+            'amount' => $totalAmount,
+            'month' => $studentTuition->month,
+            'year' => $studentTuition->year,
+            'due_date' => $studentTuition->due_date,
+            'is_paid' => true,
+            'paid_at' => now(),
+        ]);
+
+        return redirect()->route('admin.students.show', $student)
+            ->with('success', 'Mensualidad de $'.number_format($totalAmount, 2).' liquidada exitosamente.');
     }
 
     /**
