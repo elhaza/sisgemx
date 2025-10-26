@@ -157,6 +157,7 @@ class SubjectController extends Controller
             'teacher_id' => 'required|exists:users,id',
             'grade_level' => 'required|integer|between:1,6',
             'school_year_id' => 'required|exists:school_years,id',
+            'default_hours_per_week' => 'nullable|numeric|min:0.5|max:40',
         ]);
 
         $subject->update($validated);
