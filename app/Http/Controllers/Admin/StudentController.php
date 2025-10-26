@@ -238,6 +238,22 @@ class StudentController extends Controller
         return redirect()->route('admin.students.index')->with('success', 'Estudiante inscrito exitosamente.');
     }
 
+    public function show(Student $student)
+    {
+        $student->load([
+            'user',
+            'schoolYear',
+            'schoolGrade',
+            'tutor1',
+            'tutor2',
+            'tuitions' => function ($query) {
+                $query->orderBy('year', 'desc')->orderBy('month', 'desc');
+            },
+        ]);
+
+        return view('admin.students.show', compact('student'));
+    }
+
     public function edit(Student $student)
     {
         $schoolYears = SchoolYear::all();
