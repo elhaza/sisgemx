@@ -16,7 +16,12 @@ class SubjectController extends Controller
             ->latest()
             ->paginate(15);
 
-        return view('admin.subjects.index', compact('subjects'));
+        $teachers = User::where('role', 'teacher')->get();
+        $schoolYears = SchoolYear::all();
+        $activeSchoolYear = SchoolYear::where('is_active', true)->first();
+        $gradeLevels = [1, 2, 3, 4, 5, 6];
+
+        return view('admin.subjects.index', compact('subjects', 'teachers', 'schoolYears', 'activeSchoolYear', 'gradeLevels'));
     }
 
     public function create()
@@ -38,7 +43,16 @@ class SubjectController extends Controller
             'school_year_id' => 'required|exists:school_years,id',
         ]);
 
-        Subject::create($validated);
+        $subject = Subject::create($validated);
+
+        // Si es una petición AJAX, devolver JSON
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Materia creada exitosamente.',
+                'id' => $subject->id,
+            ]);
+        }
 
         return redirect()->route('admin.subjects.index')
             ->with('success', 'Materia creada exitosamente.');
