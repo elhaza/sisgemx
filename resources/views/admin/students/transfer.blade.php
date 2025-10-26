@@ -41,7 +41,7 @@
                                 <option value="">-- Seleccione un grupo --</option>
                                 @foreach($schoolGrades as $grade)
                                     <option value="{{ $grade->id }}">
-                                        {{ $grade->name }} {{ $grade->section }}
+                                        {{ $grade->name }} {{ $grade->section }} (Total: {{ $grade->student_count['total'] }}, H:{{ $grade->student_count['males'] }}, M:{{ $grade->student_count['females'] }})
                                     </option>
                                 @endforeach
                             </select>
@@ -242,7 +242,8 @@
                         data.grades.forEach(grade => {
                             const option = document.createElement('option');
                             option.value = grade.id;
-                            option.textContent = `${grade.name} ${grade.section}`;
+                            const studentCount = grade.student_count || { total: 0, males: 0, females: 0 };
+                            option.textContent = `${grade.name} ${grade.section} (Total: ${studentCount.total}, H:${studentCount.males}, M:${studentCount.females})`;
                             targetGradeSelect.appendChild(option);
                         });
                     } else {

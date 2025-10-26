@@ -19,6 +19,13 @@ class StudentTransferController extends Controller
             ->orderBy('section')
             ->get();
 
+        // Add student counts by gender for each grade
+        $schoolGrades = $schoolGrades->map(function ($grade) {
+            $grade->student_count = $this->getGradeStudentStats($grade->id);
+
+            return $grade;
+        });
+
         return view('admin.students.transfer', compact('schoolGrades', 'activeSchoolYear'));
     }
 
@@ -57,6 +64,13 @@ class StudentTransferController extends Controller
             ->where('id', '!=', $sourceGradeId)
             ->orderBy('section')
             ->get();
+
+        // Add student counts by gender for each grade
+        $destinationGrades = $destinationGrades->map(function ($grade) {
+            $grade->student_count = $this->getGradeStudentStats($grade->id);
+
+            return $grade;
+        });
 
         return response()->json(['grades' => $destinationGrades]);
     }
@@ -110,5 +124,18 @@ class StudentTransferController extends Controller
             'success' => false,
             'message' => 'No se pudieron transferir los estudiantes.',
         ], 422);
+    }
+
+    protected function getGradeStudentStats(int $gradeId): array
+    {
+        $total = Student::where('school_grade_id', $gradeId)->count();
+        $males = Student::where('school_grade_id', $gradeId)->where('gender', 'male')->count();
+        $females = Student::where('school_grade_id', $gradeId)->where('gender', 'female')->count();
+
+        return [
+            'total' => $total,
+            'males' => $males,
+            'females' => $females,
+        ];
     }
 }
