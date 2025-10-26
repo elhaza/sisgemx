@@ -74,11 +74,36 @@
                                     </h3>
                                     <div class="mt-2 text-sm text-blue-700">
                                         <ul class="list-inside list-disc space-y-1">
-                                            <li>Grupos (Secciones de Grado) creados</li>
-                                            <li>Materias asignadas a grupos y docentes</li>
-                                            <li>Franjas horarias (Time Slots) definidas</li>
-                                            <li>Disponibilidad de docentes registrada</li>
-                                            <li>Competencias de docentes por materia establecidas</li>
+                                            <li>
+                                                <a href="{{ route('admin.grade-sections.index') }}"
+                                                   class="underline hover:text-blue-900 font-medium">
+                                                    Grupos (Secciones de Grado) creados
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ route('admin.subjects.index') }}"
+                                                   class="underline hover:text-blue-900 font-medium">
+                                                    Materias asignadas a grupos y docentes
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ route('admin.time-slots.index') }}"
+                                                   class="underline hover:text-blue-900 font-medium">
+                                                    Franjas horarias (Time Slots) definidas
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ route('admin.teacher-availabilities.index') }}"
+                                                   class="underline hover:text-blue-900 font-medium">
+                                                    Disponibilidad de docentes registrada
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ route('admin.teacher-subjects.index') }}"
+                                                   class="underline hover:text-blue-900 font-medium">
+                                                    Competencias de docentes por materia establecidas
+                                                </a>
+                                            </li>
                                         </ul>
                                     </div>
                                 </div>

@@ -151,6 +151,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('schedules/generate/form', [ScheduleController::class, 'generateForm'])->name('schedules.generate-form');
         Route::post('schedules/generate', [ScheduleController::class, 'generate'])->name('schedules.generate');
         Route::post('schedules/confirm', [ScheduleController::class, 'confirm'])->name('schedules.confirm');
+
+        // Schedule configuration resources
+        Route::resource('time-slots', \App\Http\Controllers\Admin\TimeSlotController::class);
+        Route::resource('teacher-availabilities', \App\Http\Controllers\Admin\TeacherAvailabilityController::class);
+        Route::resource('teacher-subjects', \App\Http\Controllers\Admin\TeacherSubjectController::class);
         Route::get('grades', [GradeOverviewController::class, 'index'])->name('grades.index');
         Route::get('medical-justifications', [AdminMedicalJustificationController::class, 'index'])->name('medical-justifications.index');
         Route::get('medical-justifications/{medicalJustification}', [AdminMedicalJustificationController::class, 'show'])->name('medical-justifications.show');
