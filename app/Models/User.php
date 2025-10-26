@@ -28,6 +28,8 @@ class User extends Authenticatable
         'password',
         'role',
         'parent_id',
+        'max_hours_per_day',
+        'max_hours_per_week',
     ];
 
     /**

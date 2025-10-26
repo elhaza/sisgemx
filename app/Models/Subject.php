@@ -18,7 +18,15 @@ class Subject extends Model
         'teacher_id',
         'grade_level',
         'school_year_id',
+        'default_hours_per_week',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'default_hours_per_week' => 'decimal:2',
+        ];
+    }
 
     public function teacher(): BelongsTo
     {
