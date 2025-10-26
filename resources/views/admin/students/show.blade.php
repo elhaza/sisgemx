@@ -55,8 +55,8 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Estado</label>
                             <p class="mt-1">
-                                <span class="inline-block rounded-full px-3 py-1 text-sm font-semibold {{ $student->status === 'active' ? 'bg-green-100 text-green-700' : ($student->status === 'graduated' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700') }}">
-                                    {{ ucfirst($student->status) }}
+                                <span class="inline-block rounded-full px-3 py-1 text-sm font-semibold {{ $student->status->value === 'active' ? 'bg-green-100 text-green-700' : ($student->status->value === 'graduated' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700') }}">
+                                    {{ ucfirst($student->status->value) }}
                                 </span>
                             </p>
                         </div>
@@ -171,13 +171,9 @@
                                                 {{ $tuition->due_date->format('d/m/Y') }}
                                             </td>
                                             <td class="px-4 py-3 text-center">
-                                                @if($tuition->is_overdue)
+                                                @if($tuition->due_date && $tuition->due_date->isPast())
                                                     <span class="inline-block rounded-full bg-red-100 px-3 py-1 text-red-700 font-semibold">
                                                         Vencida ({{ $tuition->days_late }} días)
-                                                    </span>
-                                                @elseif($tuition->due_date->isPast())
-                                                    <span class="inline-block rounded-full bg-orange-100 px-3 py-1 text-orange-700 font-semibold">
-                                                        Vencida
                                                     </span>
                                                 @else
                                                     <span class="inline-block rounded-full bg-green-100 px-3 py-1 text-green-700 font-semibold">
