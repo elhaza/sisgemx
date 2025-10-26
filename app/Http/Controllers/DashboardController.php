@@ -79,7 +79,7 @@ class DashboardController extends Controller
 
             $overdueCount = $overdueTuitions->count();
             $maxDaysLate = $overdueTuitions->max(function ($tuition) use ($now) {
-                return $tuition->due_date ? $now->diffInDays($tuition->due_date) : 0;
+                return $tuition->due_date ? abs((int) $tuition->due_date->diffInDays($now)) : 0;
             });
 
             // Add to tutor 1
@@ -90,6 +90,7 @@ class DashboardController extends Controller
                     $existing['students']->push([
                         'id' => $student->id,
                         'name' => $student->user->full_name,
+                        'phone_number' => $student->phone_number,
                         'overdue_count' => $overdueCount,
                         'max_days_late' => $maxDaysLate,
                     ]);
@@ -97,12 +98,15 @@ class DashboardController extends Controller
                     $existing['max_days_late'] = max($existing['max_days_late'], $maxDaysLate);
                 } else {
                     $parentReport->put($key, [
-                        'tutor_1' => $student->tutor1->full_name,
-                        'tutor_2' => $student->tutor2?->full_name,
+                        'tutor_1_name' => $student->tutor1->full_name,
+                        'tutor_1_email' => $student->tutor1->email,
+                        'tutor_2_name' => $student->tutor2?->full_name,
+                        'tutor_2_email' => $student->tutor2?->email,
                         'students' => collect([
                             [
                                 'id' => $student->id,
                                 'name' => $student->user->full_name,
+                                'phone_number' => $student->phone_number,
                                 'overdue_count' => $overdueCount,
                                 'max_days_late' => $maxDaysLate,
                             ],
@@ -121,6 +125,7 @@ class DashboardController extends Controller
                     $existing['students']->push([
                         'id' => $student->id,
                         'name' => $student->user->full_name,
+                        'phone_number' => $student->phone_number,
                         'overdue_count' => $overdueCount,
                         'max_days_late' => $maxDaysLate,
                     ]);
@@ -128,12 +133,15 @@ class DashboardController extends Controller
                     $existing['max_days_late'] = max($existing['max_days_late'], $maxDaysLate);
                 } else {
                     $parentReport->put($key, [
-                        'tutor_1' => $student->tutor2->full_name,
-                        'tutor_2' => null,
+                        'tutor_1_name' => $student->tutor2->full_name,
+                        'tutor_1_email' => $student->tutor2->email,
+                        'tutor_2_name' => null,
+                        'tutor_2_email' => null,
                         'students' => collect([
                             [
                                 'id' => $student->id,
                                 'name' => $student->user->full_name,
+                                'phone_number' => $student->phone_number,
                                 'overdue_count' => $overdueCount,
                                 'max_days_late' => $maxDaysLate,
                             ],

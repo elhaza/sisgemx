@@ -205,7 +205,7 @@
                             <h3 class="mb-4 text-lg font-semibold text-gray-900">Información de Contacto</h3>
 
                             <div class="mb-4">
-                                <label for="phone_number" class="block text-sm font-medium text-gray-700">Número Telefónico de Contacto</label>
+                                <label for="phone_number" class="block text-sm font-medium text-gray-700">Whatsapp de Contacto</label>
                                 <input type="tel" name="phone_number" id="phone_number" value="{{ old('phone_number') }}"
                                     placeholder="Ej: 3312345678"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
