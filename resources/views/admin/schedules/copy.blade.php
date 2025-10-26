@@ -49,7 +49,7 @@
                             <select name="source_school_year_id" id="source_school_year_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="">Seleccione un ciclo escolar</option>
                                 @foreach($schoolYears as $year)
-                                    <option value="{{ $year->id }}">
+                                    <option value="{{ $year->id }}" data-start-date="{{ $year->start_date->timestamp }}">
                                         {{ $year->name }} ({{ $year->start_date->format('Y') }} - {{ $year->end_date->format('Y') }})
                                     </option>
                                 @endforeach
@@ -66,7 +66,7 @@
                             <select name="target_school_year_id" id="target_school_year_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="">Seleccione un ciclo escolar</option>
                                 @foreach($schoolYears as $year)
-                                    <option value="{{ $year->id }}">
+                                    <option value="{{ $year->id }}" data-start-date="{{ $year->start_date->timestamp }}">
                                         {{ $year->name }} ({{ $year->start_date->format('Y') }} - {{ $year->end_date->format('Y') }})
                                     </option>
                                 @endforeach
@@ -118,4 +118,52 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sourceSelect = document.getElementById('source_school_year_id');
+            const targetSelect = document.getElementById('target_school_year_id');
+            const targetOptions = Array.from(targetSelect.querySelectorAll('option'));
+            const defaultOption = targetOptions[0]; // Guardar la opción "Seleccione..."
+
+            sourceSelect.addEventListener('change', function() {
+                const selectedSourceId = this.value;
+                const selectedSourceOption = this.querySelector(`option[value="${selectedSourceId}"]`);
+
+                // Limpiar el select de destino
+                targetSelect.innerHTML = '';
+
+                // Agregar opción por defecto
+                targetSelect.appendChild(defaultOption.cloneNode(true));
+
+                if (!selectedSourceId) {
+                    // Si no hay origen seleccionado, mostrar todas las opciones de destino
+                    targetOptions.slice(1).forEach(option => {
+                        targetSelect.appendChild(option.cloneNode(true));
+                    });
+                    targetSelect.value = '';
+                    return;
+                }
+
+                // Obtener la fecha de inicio del ciclo origen
+                const sourceStartDate = parseInt(selectedSourceOption.dataset.startDate);
+
+                // Filtrar y agregar solo ciclos posteriores al origen
+                targetOptions.slice(1).forEach(option => {
+                    const targetStartDate = parseInt(option.dataset.startDate);
+                    const targetId = option.value;
+
+                    // Solo mostrar si:
+                    // 1. La fecha de inicio es posterior al origen
+                    // 2. No es el mismo ciclo que el origen
+                    if (targetStartDate > sourceStartDate && targetId !== selectedSourceId) {
+                        targetSelect.appendChild(option.cloneNode(true));
+                    }
+                });
+
+                // Limpiar selección anterior en destino
+                targetSelect.value = '';
+            });
+        });
+    </script>
 </x-app-layout>
