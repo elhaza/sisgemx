@@ -29,27 +29,63 @@
             <!-- Thread messages -->
             <div class="space-y-4">
                 @foreach($thread as $msg)
-                    <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                        <div class="border-b border-gray-200 px-4 py-4 sm:px-6">
+                    @php
+                        $isUserSender = $msg->sender_id === auth()->id();
+                        $recipients = $msg->recipients->pluck('recipient');
+                    @endphp
+                    <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg {{ $isUserSender ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-blue-500' }}">
+                        <!-- Header with Sender Info -->
+                        <div class="border-b border-gray-200 px-4 py-4 sm:px-6 {{ $isUserSender ? 'bg-green-50' : 'bg-blue-50' }}">
                             <div class="flex items-start justify-between gap-4">
-                                <div class="flex items-start gap-3">
+                                <div class="flex items-start gap-3 flex-1">
                                     <x-user-avatar :user="$msg->sender" size="md" />
-                                    <div class="min-w-0">
-                                        <p class="text-sm font-semibold text-gray-900">
-                                            {{ $msg->sender->name }}
-                                        </p>
-                                        <p class="text-xs text-gray-500">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <p class="text-sm font-semibold text-gray-900">
+                                                {{ $msg->sender->name }}
+                                            </p>
+                                            @if($isUserSender)
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700 flex-shrink-0">
+                                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                    </svg>
+                                                    Enviado por ti
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 flex-shrink-0">
+                                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19V5m0 0L5 12m7-7l7 7" />
+                                                    </svg>
+                                                    Recibido
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-1">
                                             {{ $msg->created_at->format('d \d\e F, Y \a \l\a\s H:i') }}
                                         </p>
                                     </div>
                                 </div>
-                                @if($msg->sender_id === auth()->id())
-                                    <span class="inline-flex flex-shrink-0 items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 whitespace-nowrap">
-                                        Tú
-                                    </span>
-                                @endif
                             </div>
+
+                            <!-- Recipients Info -->
+                            @if($recipients->count() > 0)
+                                <div class="mt-3 pt-3 border-t border-gray-200">
+                                    <p class="text-xs font-semibold text-gray-600 mb-2">
+                                        {{ $recipients->count() }} {{ $recipients->count() === 1 ? 'Destinatario' : 'Destinatarios' }}:
+                                    </p>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach($recipients as $recipient)
+                                            <div class="flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs text-gray-700 border border-gray-200">
+                                                <x-user-avatar :user="$recipient" size="xs" />
+                                                <span>{{ $recipient->name }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                         </div>
+
+                        <!-- Message Content -->
                         <div class="px-4 py-6 sm:px-6">
                             <div class="prose prose-sm max-w-none space-y-3 text-gray-700 break-words">
                                 {!! nl2br(e($msg->body)) !!}
