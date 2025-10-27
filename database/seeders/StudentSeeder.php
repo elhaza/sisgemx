@@ -21,7 +21,7 @@ class StudentSeeder extends Seeder
     {
         $activeSchoolYear = SchoolYear::where('is_active', true)->first();
         $schoolGrades = SchoolGrade::where('school_year_id', $activeSchoolYear->id)
-            ->orderBy('level')
+            ->orderBy('grade_level')
             ->orderBy('section')
             ->get();
 

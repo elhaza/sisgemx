@@ -11,11 +11,15 @@ class SchoolGrade extends Model
     /** @use HasFactory<SchoolGradeFactory> */
     use HasFactory;
 
+    protected $table = 'grade_sections';
+
     protected $fillable = [
-        'level',
+        'grade_level',
         'name',
         'section',
         'school_year_id',
+        'break_time_start',
+        'break_time_end',
     ];
 
     public function schoolYear()

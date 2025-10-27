@@ -19,7 +19,25 @@ class GradeSection extends Model
         'school_year_id',
         'break_time_start',
         'break_time_end',
+        'name',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (!$model->name && $model->grade_level && $model->section) {
+                $model->name = $model->grade_level.$model->section;
+            }
+        });
+
+        static::updating(function ($model) {
+            if ($model->isDirty(['grade_level', 'section']) && !$model->isDirty('name')) {
+                $model->name = $model->grade_level.$model->section;
+            }
+        });
+    }
 
     public function schoolYear()
     {
