@@ -21,17 +21,19 @@
                     </x-nav-link>
 
                     <!-- Messages Link -->
-                    <a href="{{ route('messages.inbox') }}" class="relative inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700 transition focus:outline-none focus:text-gray-700">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
+                    <div class="relative inline-flex items-center">
+                        <a href="{{ route('messages.inbox') }}" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700 transition focus:outline-none focus:text-gray-700">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                        </a>
                         @php $unreadCount = Auth::user()->unread_message_count; @endphp
                         @if($unreadCount > 0)
-                            <span class="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
+                            <span class="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-5 h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full">
                                 {{ $unreadCount > 99 ? '99+' : $unreadCount }}
                             </span>
                         @endif
-                    </a>
+                    </div>
                 </div>
             </div>
 
