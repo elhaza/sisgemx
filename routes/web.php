@@ -97,6 +97,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::resource('grades', GradeController::class);
         Route::resource('assignments', AssignmentController::class);
+    });
+
+    // Rutas para Anuncios (Teachers y Admins)
+    Route::middleware(['role:teacher,admin'])->prefix('teacher')->name('teacher.')->group(function () {
         Route::resource('announcements', AnnouncementController::class);
 
         Route::get('medical-justifications', [\App\Http\Controllers\Teacher\MedicalJustificationController::class, 'index'])->name('medical-justifications.index');

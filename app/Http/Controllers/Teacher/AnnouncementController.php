@@ -11,18 +11,30 @@ class AnnouncementController extends Controller
 {
     public function index()
     {
+        $user = auth()->user();
+        $isAdmin = $user->isAdmin();
+
+        // Admins can see all announcements, teachers only see their own
         $announcements = Announcement::query()
-            ->where('teacher_id', auth()->id())
+            ->when(! $isAdmin, function ($query) use ($user) {
+                $query->where('teacher_id', $user->id);
+            })
             ->latest()
             ->paginate(15);
 
-        $mySubjects = Subject::where('teacher_id', auth()->id())->count();
+        $mySubjects = $isAdmin
+            ? Subject::count()
+            : Subject::where('teacher_id', $user->id)->count();
 
-        $pendingAssignments = Assignment::whereHas('subject', function ($query) {
-            $query->where('teacher_id', auth()->id());
-        })->where('due_date', '>=', now())->count();
+        $pendingAssignments = $isAdmin
+            ? Assignment::where('due_date', '>=', now())->count()
+            : Assignment::whereHas('subject', function ($query) use ($user) {
+                $query->where('teacher_id', $user->id);
+            })->where('due_date', '>=', now())->count();
 
-        $totalAnnouncements = Announcement::where('teacher_id', auth()->id())->count();
+        $totalAnnouncements = $isAdmin
+            ? Announcement::count()
+            : Announcement::where('teacher_id', $user->id)->count();
 
         return view('teacher.announcements.index', compact(
             'announcements',
