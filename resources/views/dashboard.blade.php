@@ -457,6 +457,16 @@
                                     const announcements = @json($recentAnnouncements->values());
                                     let currentIndex = 0;
 
+                                    function formatDate(dateString) {
+                                        if (!dateString) return '';
+                                        // Parse ISO format: 2025-10-26T07:00:00.000000Z
+                                        const date = new Date(dateString);
+                                        const day = String(date.getDate()).padStart(2, '0');
+                                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                                        const year = date.getFullYear();
+                                        return `${day}/${month}/${year}`;
+                                    }
+
                                     function renderAnnouncement(index) {
                                         if (announcements.length === 0) return;
 
@@ -468,11 +478,11 @@
 
                                         // Renderizar anuncio actual
                                         const validityText = announcement.valid_from && announcement.valid_until
-                                            ? `${announcement.valid_from.split('-').reverse().join('/')} - ${announcement.valid_until.split('-').reverse().join('/')}`
+                                            ? `${formatDate(announcement.valid_from)} - ${formatDate(announcement.valid_until)}`
                                             : announcement.valid_from
-                                                ? `Desde ${announcement.valid_from.split('-').reverse().join('/')}`
+                                                ? `Desde ${formatDate(announcement.valid_from)}`
                                                 : announcement.valid_until
-                                                    ? `Hasta ${announcement.valid_until.split('-').reverse().join('/')}`
+                                                    ? `Hasta ${formatDate(announcement.valid_until)}`
                                                     : '';
 
                                         const createdDate = new Date(announcement.created_at);
