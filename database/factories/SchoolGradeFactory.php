@@ -31,7 +31,7 @@ class SchoolGradeFactory extends Factory
         }
 
         return [
-            'level' => $currentLevel,
+            'grade_level' => $currentLevel,
             'name' => "Grado {$currentLevel}",
             'section' => $currentSection,
             'school_year_id' => SchoolYear::factory(),

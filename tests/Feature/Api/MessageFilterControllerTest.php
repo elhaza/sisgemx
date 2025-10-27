@@ -46,8 +46,8 @@ it('returns correct filters for parent role', function () {
 
 it('returns filter data for teacher by level', function () {
     $admin = User::factory()->create(['role' => UserRole::Admin]);
-    SchoolGrade::factory()->create(['level' => 1, 'section' => 'A']);
-    SchoolGrade::factory()->create(['level' => 2, 'section' => 'A']);
+    SchoolGrade::factory()->create(['grade_level' => 1, 'section' => 'A']);
+    SchoolGrade::factory()->create(['grade_level' => 2, 'section' => 'A']);
 
     $response = $this->actingAs($admin)
         ->get('/api/messages/filter-data?role=teacher&filter_type=by_level');
@@ -86,7 +86,7 @@ it('returns teachers when filtering by school grade', function () {
     $admin = User::factory()->create(['role' => UserRole::Admin]);
     $teacher1 = User::factory()->create(['role' => UserRole::Teacher]);
     $teacher2 = User::factory()->create(['role' => UserRole::Teacher]);
-    $schoolGrade = SchoolGrade::factory()->create(['level' => 1, 'section' => 'A']);
+    $schoolGrade = SchoolGrade::factory()->create(['grade_level' => 1, 'section' => 'A']);
 
     // Create subjects for teachers
     $subject1 = \App\Models\Subject::factory()->create(['teacher_id' => $teacher1->id]);
