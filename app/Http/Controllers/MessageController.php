@@ -18,17 +18,40 @@ class MessageController extends Controller
     {
         $user = auth()->user();
         $searchQuery = $request->query('search', '');
+        $tab = $request->query('tab', 'all'); // 'all', 'sent', 'received'
 
-        // Get conversations (latest message from each unique sender/recipient pair)
-        $conversations = Message::where(function ($q) use ($user) {
-            $q->where('sender_id', $user->id)
-                ->orWhereHas('recipients', function ($q) use ($user) {
-                    $q->where('recipient_id', $user->id);
-                });
-        })
-            ->with(['sender', 'recipients' => function ($q) {
+        // Base query for conversations
+        $baseQuery = function ($q) {
+            return $q->with(['sender', 'recipients' => function ($q) {
                 $q->with('recipient');
             }]);
+        };
+
+        // Filter by tab
+        if ($tab === 'sent') {
+            $conversations = Message::where('sender_id', $user->id)
+                ->with(['sender', 'recipients' => function ($q) {
+                    $q->with('recipient');
+                }]);
+        } elseif ($tab === 'received') {
+            $conversations = Message::whereHas('recipients', function ($q) use ($user) {
+                $q->where('recipient_id', $user->id);
+            })
+                ->with(['sender', 'recipients' => function ($q) {
+                    $q->with('recipient');
+                }]);
+        } else {
+            // All messages
+            $conversations = Message::where(function ($q) use ($user) {
+                $q->where('sender_id', $user->id)
+                    ->orWhereHas('recipients', function ($q) use ($user) {
+                        $q->where('recipient_id', $user->id);
+                    });
+            })
+                ->with(['sender', 'recipients' => function ($q) {
+                    $q->with('recipient');
+                }]);
+        }
 
         // Apply search filter if provided
         if ($searchQuery) {
@@ -50,7 +73,15 @@ class MessageController extends Controller
                 ->whereNull('read_at');
         })->count();
 
-        return view('messages.inbox', compact('conversations', 'unreadCount', 'searchQuery'));
+        // Count sent messages
+        $sentCount = Message::where('sender_id', $user->id)->count();
+
+        // Count received messages
+        $receivedCount = Message::whereHas('recipients', function ($q) use ($user) {
+            $q->where('recipient_id', $user->id);
+        })->count();
+
+        return view('messages.inbox', compact('conversations', 'unreadCount', 'searchQuery', 'tab', 'sentCount', 'receivedCount'));
     }
 
     public function show(Message $message): View

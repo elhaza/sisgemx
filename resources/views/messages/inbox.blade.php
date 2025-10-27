@@ -5,7 +5,7 @@
                 <h2 class="text-xl font-semibold text-gray-900">
                     Mensajes
                 </h2>
-                @if($unreadCount > 0)
+                @if($unreadCount > 0 && $tab !== 'sent')
                     <p class="mt-1 text-sm text-gray-600">
                         Tienes <span class="font-semibold text-blue-600">{{ $unreadCount }}</span> mensaje(s) no leído(s)
                     </p>
@@ -30,6 +30,52 @@
                     {{ session('success') }}
                 </div>
             @endif
+
+            <!-- Tab Navigation -->
+            <div class="mb-6 border-b border-gray-200 bg-white sm:rounded-t-lg">
+                <nav class="flex gap-0" role="tablist">
+                    <a
+                        href="{{ route('messages.inbox', ['tab' => 'all']) }}"
+                        role="tab"
+                        class="flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors {{ $tab === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-700 hover:text-gray-900' }}"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Todos
+                    </a>
+                    <a
+                        href="{{ route('messages.inbox', ['tab' => 'received']) }}"
+                        role="tab"
+                        class="flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors {{ $tab === 'received' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-700 hover:text-gray-900' }}"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 0L5 12m7-7l7 7" />
+                        </svg>
+                        Recibidos
+                        @if($receivedCount > 0)
+                            <span class="inline-flex items-center justify-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                                {{ $receivedCount }}
+                            </span>
+                        @endif
+                    </a>
+                    <a
+                        href="{{ route('messages.inbox', ['tab' => 'sent']) }}"
+                        role="tab"
+                        class="flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors {{ $tab === 'sent' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-700 hover:text-gray-900' }}"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Enviados
+                        @if($sentCount > 0)
+                            <span class="inline-flex items-center justify-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                                {{ $sentCount }}
+                            </span>
+                        @endif
+                    </a>
+                </nav>
+            </div>
 
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 @if($conversations->count() > 0)
