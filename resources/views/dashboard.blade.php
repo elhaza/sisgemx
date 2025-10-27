@@ -453,98 +453,100 @@
                             @endif
 
                             <script>
-                                const announcements = @json($recentAnnouncements->values());
-                                let currentIndex = 0;
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const announcements = @json($recentAnnouncements->values());
+                                    let currentIndex = 0;
 
-                                function renderAnnouncement(index) {
-                                    if (announcements.length === 0) return;
+                                    function renderAnnouncement(index) {
+                                        if (announcements.length === 0) return;
 
-                                    const announcement = announcements[index];
-                                    const container = document.getElementById('announcement-container');
-                                    const counter = document.getElementById('announcement-counter');
-                                    const prevBtn = document.getElementById('prev-btn');
-                                    const nextBtn = document.getElementById('next-btn');
+                                        const announcement = announcements[index];
+                                        const container = document.getElementById('announcement-container');
+                                        const counter = document.getElementById('announcement-counter');
+                                        const prevBtn = document.getElementById('prev-btn');
+                                        const nextBtn = document.getElementById('next-btn');
 
-                                    // Renderizar anuncio actual
-                                    const validityText = announcement.valid_from && announcement.valid_until
-                                        ? `${announcement.valid_from.split('-').reverse().join('/')} - ${announcement.valid_until.split('-').reverse().join('/')}`
-                                        : announcement.valid_from
-                                            ? `Desde ${announcement.valid_from.split('-').reverse().join('/')}`
-                                            : announcement.valid_until
-                                                ? `Hasta ${announcement.valid_until.split('-').reverse().join('/')}`
-                                                : '';
+                                        // Renderizar anuncio actual
+                                        const validityText = announcement.valid_from && announcement.valid_until
+                                            ? `${announcement.valid_from.split('-').reverse().join('/')} - ${announcement.valid_until.split('-').reverse().join('/')}`
+                                            : announcement.valid_from
+                                                ? `Desde ${announcement.valid_from.split('-').reverse().join('/')}`
+                                                : announcement.valid_until
+                                                    ? `Hasta ${announcement.valid_until.split('-').reverse().join('/')}`
+                                                    : '';
 
-                                    const createdDate = new Date(announcement.created_at);
-                                    const now = new Date();
-                                    const diffTime = Math.abs(now - createdDate);
-                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                    let timeAgo = 'hace ' + diffDays + ' días';
-                                    if (diffDays === 0) timeAgo = 'hoy';
-                                    if (diffDays === 1) timeAgo = 'hace 1 día';
+                                        const createdDate = new Date(announcement.created_at);
+                                        const now = new Date();
+                                        const diffTime = Math.abs(now - createdDate);
+                                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                        let timeAgo = 'hace ' + diffDays + ' días';
+                                        if (diffDays === 0) timeAgo = 'hoy';
+                                        if (diffDays === 1) timeAgo = 'hace 1 día';
 
-                                    let html = `
-                                        <a href="/teacher/announcements/${announcement.id}" class="block group p-3 rounded-lg hover:bg-indigo-50 transition border border-gray-100">
-                                    `;
-
-                                    if (announcement.image_path) {
-                                        html += `
-                                            <div class="h-20 w-full mb-2 rounded overflow-hidden bg-gray-100">
-                                                <img
-                                                    src="/storage/${announcement.image_path}"
-                                                    alt="${announcement.title}"
-                                                    class="h-full w-full object-cover group-hover:scale-105 transition"
-                                                />
-                                            </div>
+                                        let html = `
+                                            <a href="/teacher/announcements/${announcement.id}" class="block group p-3 rounded-lg hover:bg-indigo-50 transition border border-gray-100">
                                         `;
+
+                                        if (announcement.image_path) {
+                                            html += `
+                                                <div class="h-20 w-full mb-2 rounded overflow-hidden bg-gray-100">
+                                                    <img
+                                                        src="/storage/${announcement.image_path}"
+                                                        alt="${announcement.title}"
+                                                        class="h-full w-full object-cover group-hover:scale-105 transition"
+                                                    />
+                                                </div>
+                                            `;
+                                        }
+
+                                        html += `
+                                                <h4 class="font-semibold text-gray-900 text-sm line-clamp-2 group-hover:text-indigo-600">
+                                                    ${announcement.title}
+                                                </h4>
+                                                <p class="text-xs text-gray-600 mt-1 line-clamp-1">
+                                                    ${announcement.content}
+                                                </p>
+                                                <div class="flex items-center justify-between mt-2 text-xs">
+                                                    <span class="text-gray-500">${announcement.teacher.name}</span>
+                                                    <span class="text-gray-400">${timeAgo}</span>
+                                                </div>
+                                        `;
+
+                                        if (validityText) {
+                                            html += `
+                                                <div class="mt-1 text-xs text-amber-600 flex items-center">
+                                                    <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h16V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM4 8h16v9a2 2 0 01-2 2H6a2 2 0 01-2-2V8z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                    ${validityText}
+                                                </div>
+                                            `;
+                                        }
+
+                                        html += `</a>`;
+
+                                        container.innerHTML = html;
+                                        counter.textContent = `${index + 1} de ${announcements.length}`;
+
+                                        // Actualizar estado de botones
+                                        prevBtn.disabled = index === 0;
+                                        nextBtn.disabled = index === announcements.length - 1;
+
+                                        currentIndex = index;
                                     }
 
-                                    html += `
-                                            <h4 class="font-semibold text-gray-900 text-sm line-clamp-2 group-hover:text-indigo-600">
-                                                ${announcement.title}
-                                            </h4>
-                                            <p class="text-xs text-gray-600 mt-1 line-clamp-1">
-                                                ${announcement.content}
-                                            </p>
-                                            <div class="flex items-center justify-between mt-2 text-xs">
-                                                <span class="text-gray-500">${announcement.teacher.name}</span>
-                                                <span class="text-gray-400">${timeAgo}</span>
-                                            </div>
-                                    `;
+                                    // Event listeners
+                                    document.getElementById('prev-btn').addEventListener('click', () => {
+                                        if (currentIndex > 0) renderAnnouncement(currentIndex - 1);
+                                    });
 
-                                    if (validityText) {
-                                        html += `
-                                            <div class="mt-1 text-xs text-amber-600 flex items-center">
-                                                <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h16V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM4 8h16v9a2 2 0 01-2 2H6a2 2 0 01-2-2V8z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                ${validityText}
-                                            </div>
-                                        `;
-                                    }
+                                    document.getElementById('next-btn').addEventListener('click', () => {
+                                        if (currentIndex < announcements.length - 1) renderAnnouncement(currentIndex + 1);
+                                    });
 
-                                    html += `</a>`;
-
-                                    container.innerHTML = html;
-                                    counter.textContent = `${index + 1} de ${announcements.length}`;
-
-                                    // Actualizar estado de botones
-                                    prevBtn.disabled = index === 0;
-                                    nextBtn.disabled = index === announcements.length - 1;
-
-                                    currentIndex = index;
-                                }
-
-                                // Event listeners
-                                document.getElementById('prev-btn').addEventListener('click', () => {
-                                    if (currentIndex > 0) renderAnnouncement(currentIndex - 1);
+                                    // Inicializar
+                                    renderAnnouncement(0);
                                 });
-
-                                document.getElementById('next-btn').addEventListener('click', () => {
-                                    if (currentIndex < announcements.length - 1) renderAnnouncement(currentIndex + 1);
-                                });
-
-                                // Inicializar
-                                renderAnnouncement(0);
                             </script>
                         @else
                             <div class="py-8 text-center">
