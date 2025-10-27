@@ -56,10 +56,17 @@ class AnnouncementController extends Controller
         $validated = request()->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'target_audience' => 'nullable|array',
+            'valid_from' => 'nullable|date',
+            'valid_until' => 'nullable|date|after_or_equal:valid_from',
         ]);
 
         $validated['teacher_id'] = auth()->id();
+
+        if (request()->hasFile('image')) {
+            $validated['image_path'] = request()->file('image')->store('announcements', 'public');
+        }
 
         Announcement::create($validated);
 
@@ -88,8 +95,18 @@ class AnnouncementController extends Controller
         $validated = request()->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'target_audience' => 'nullable|array',
+            'valid_from' => 'nullable|date',
+            'valid_until' => 'nullable|date|after_or_equal:valid_from',
         ]);
+
+        if (request()->hasFile('image')) {
+            if ($announcement->image_path) {
+                \Storage::disk('public')->delete($announcement->image_path);
+            }
+            $validated['image_path'] = request()->file('image')->store('announcements', 'public');
+        }
 
         $announcement->update($validated);
 
@@ -100,6 +117,10 @@ class AnnouncementController extends Controller
     public function destroy(Announcement $announcement): RedirectResponse
     {
         $this->authorize('delete', $announcement);
+
+        if ($announcement->image_path) {
+            \Storage::disk('public')->delete($announcement->image_path);
+        }
 
         $announcement->delete();
 

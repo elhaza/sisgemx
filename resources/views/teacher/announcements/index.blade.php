@@ -174,7 +174,7 @@
                     <div class="p-6">
                         <ul class="space-y-3">
                             <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
+                                <a href="{{ route('teacher.announcements.create') }}" class="flex items-center text-blue-600 hover:text-blue-800">
                                     <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                     </svg>
@@ -279,18 +279,76 @@
                     <div class="p-6">
                         <div class="space-y-4">
                             @foreach($announcements as $announcement)
-                                <div class="rounded-lg border border-gray-200 p-4">
-                                    <h4 class="font-semibold text-gray-900">{{ $announcement->title }}</h4>
-                                    <p class="mt-2 text-gray-600">{{ $announcement->content }}</p>
-                                    <p class="mt-2 text-sm text-gray-500">
-                                        Publicado: {{ $announcement->created_at->format('d/m/Y H:i') }}
-                                    </p>
+                                <div class="overflow-hidden rounded-lg border border-gray-200">
+                                    <div class="flex flex-col gap-4 p-4 md:flex-row">
+                                        @if($announcement->image_path)
+                                            <div class="flex-shrink-0 md:w-48">
+                                                <img
+                                                    src="{{ Storage::url($announcement->image_path) }}"
+                                                    alt="{{ $announcement->title }}"
+                                                    class="h-32 w-full rounded-md object-cover md:h-40"
+                                                />
+                                            </div>
+                                        @endif
+
+                                        <div class="flex-1">
+                                            <a href="{{ route('teacher.announcements.show', $announcement) }}" class="font-semibold text-blue-600 hover:text-blue-800">
+                                                {{ $announcement->title }}
+                                            </a>
+                                            <p class="mt-2 text-gray-600">{{ Str::limit($announcement->content, 150) }}</p>
+                                            <p class="mt-2 text-sm text-gray-500">
+                                                Publicado: {{ $announcement->created_at->format('d/m/Y H:i') }}
+                                            </p>
+                                        </div>
+                                        <div class="ml-4 flex gap-2">
+                                            @can('update', $announcement)
+                                                <a
+                                                    href="{{ route('teacher.announcements.edit', $announcement) }}"
+                                                    class="inline-flex items-center justify-center rounded-md bg-blue-100 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-200"
+                                                >
+                                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                    </svg>
+                                                </a>
+                                            @endcan
+                                            @can('delete', $announcement)
+                                                <form action="{{ route('teacher.announcements.destroy', $announcement) }}" method="POST" style="display: inline;">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button
+                                                        type="submit"
+                                                        onclick="return confirm('¿Estás seguro de que deseas eliminar este anuncio?')"
+                                                        class="inline-flex items-center justify-center rounded-md bg-red-100 px-3 py-1.5 text-sm text-red-700 hover:bg-red-200"
+                                                    >
+                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            @endcan
+                                        </div>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
                         <div class="mt-4">
                             {{ $announcements->links() }}
                         </div>
+                    </div>
+                </div>
+            @else
+                <div class="mt-6 overflow-hidden rounded-lg bg-white shadow-sm">
+                    <div class="p-6 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                        </svg>
+                        <p class="mt-4 text-gray-600">No hay anuncios aún</p>
+                        <a href="{{ route('teacher.announcements.create') }}" class="mt-4 inline-flex items-center text-blue-600 hover:text-blue-800">
+                            <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Crear el primer anuncio
+                        </a>
                     </div>
                 </div>
             @endif

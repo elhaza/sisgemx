@@ -328,10 +328,10 @@
                 </a>
             </div>
 
-            <!-- Secciones Principales - 4 Categorías -->
-            <div class="grid gap-6 md:grid-cols-2">
+            <!-- Secciones Principales - Académico y Anuncios -->
+            <div class="mb-8 grid gap-6 md:grid-cols-3">
                 <!-- 📚 Académico -->
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+                <div class="md:col-span-2 overflow-hidden rounded-lg bg-white shadow-sm">
                     <div class="border-b border-gray-200 bg-blue-50 px-6 py-4">
                         <h3 class="flex items-center text-lg font-semibold text-gray-900">
                             <span class="mr-2 text-xl">📚</span>
@@ -392,6 +392,174 @@
                     </div>
                 </div>
 
+                <!-- 📢 Anuncios Recientes (Derecha) -->
+                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+                    <div class="border-b border-gray-200 bg-indigo-50 px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="flex items-center text-lg font-semibold text-gray-900">
+                                <span class="mr-2 text-xl">📢</span>
+                                Anuncios Recientes
+                            </h3>
+                            @if($totalValidAnnouncements > 0)
+                                <span class="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-sm font-semibold text-indigo-800">
+                                    {{ $totalValidAnnouncements }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        @if($recentAnnouncements->count() > 0)
+                            <div id="announcement-container" class="space-y-3" style="min-height: 300px;">
+                                <!-- Anuncios se cargarán aquí con JavaScript -->
+                            </div>
+
+                            <!-- Navegación de Anuncios -->
+                            <div class="mt-4 flex items-center justify-between border-t pt-3">
+                                <button
+                                    id="prev-btn"
+                                    class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                    </svg>
+                                    Anterior
+                                </button>
+
+                                <span id="announcement-counter" class="text-sm font-medium text-gray-700">
+                                    <!-- Contador se actualiza con JavaScript -->
+                                </span>
+
+                                <button
+                                    id="next-btn"
+                                    class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Siguiente
+                                    <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Botón Ver todos -->
+                            @if($totalValidAnnouncements > 5)
+                                <div class="mt-3 border-t pt-3">
+                                    <a href="{{ route('announcements.index') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center">
+                                        Ver todos los {{ $totalValidAnnouncements }} anuncios
+                                        <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </a>
+                                </div>
+                            @endif
+
+                            <script>
+                                const announcements = @json($recentAnnouncements->values());
+                                let currentIndex = 0;
+
+                                function renderAnnouncement(index) {
+                                    if (announcements.length === 0) return;
+
+                                    const announcement = announcements[index];
+                                    const container = document.getElementById('announcement-container');
+                                    const counter = document.getElementById('announcement-counter');
+                                    const prevBtn = document.getElementById('prev-btn');
+                                    const nextBtn = document.getElementById('next-btn');
+
+                                    // Renderizar anuncio actual
+                                    const validityText = announcement.valid_from && announcement.valid_until
+                                        ? `${announcement.valid_from.split('-').reverse().join('/')} - ${announcement.valid_until.split('-').reverse().join('/')}`
+                                        : announcement.valid_from
+                                            ? `Desde ${announcement.valid_from.split('-').reverse().join('/')}`
+                                            : announcement.valid_until
+                                                ? `Hasta ${announcement.valid_until.split('-').reverse().join('/')}`
+                                                : '';
+
+                                    const createdDate = new Date(announcement.created_at);
+                                    const now = new Date();
+                                    const diffTime = Math.abs(now - createdDate);
+                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                    let timeAgo = 'hace ' + diffDays + ' días';
+                                    if (diffDays === 0) timeAgo = 'hoy';
+                                    if (diffDays === 1) timeAgo = 'hace 1 día';
+
+                                    let html = `
+                                        <a href="/teacher/announcements/${announcement.id}" class="block group p-3 rounded-lg hover:bg-indigo-50 transition border border-gray-100">
+                                    `;
+
+                                    if (announcement.image_path) {
+                                        html += `
+                                            <div class="h-20 w-full mb-2 rounded overflow-hidden bg-gray-100">
+                                                <img
+                                                    src="/storage/${announcement.image_path}"
+                                                    alt="${announcement.title}"
+                                                    class="h-full w-full object-cover group-hover:scale-105 transition"
+                                                />
+                                            </div>
+                                        `;
+                                    }
+
+                                    html += `
+                                            <h4 class="font-semibold text-gray-900 text-sm line-clamp-2 group-hover:text-indigo-600">
+                                                ${announcement.title}
+                                            </h4>
+                                            <p class="text-xs text-gray-600 mt-1 line-clamp-1">
+                                                ${announcement.content}
+                                            </p>
+                                            <div class="flex items-center justify-between mt-2 text-xs">
+                                                <span class="text-gray-500">${announcement.teacher.name}</span>
+                                                <span class="text-gray-400">${timeAgo}</span>
+                                            </div>
+                                    `;
+
+                                    if (validityText) {
+                                        html += `
+                                            <div class="mt-1 text-xs text-amber-600 flex items-center">
+                                                <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h16V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM4 8h16v9a2 2 0 01-2 2H6a2 2 0 01-2-2V8z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                ${validityText}
+                                            </div>
+                                        `;
+                                    }
+
+                                    html += `</a>`;
+
+                                    container.innerHTML = html;
+                                    counter.textContent = `${index + 1} de ${announcements.length}`;
+
+                                    // Actualizar estado de botones
+                                    prevBtn.disabled = index === 0;
+                                    nextBtn.disabled = index === announcements.length - 1;
+
+                                    currentIndex = index;
+                                }
+
+                                // Event listeners
+                                document.getElementById('prev-btn').addEventListener('click', () => {
+                                    if (currentIndex > 0) renderAnnouncement(currentIndex - 1);
+                                });
+
+                                document.getElementById('next-btn').addEventListener('click', () => {
+                                    if (currentIndex < announcements.length - 1) renderAnnouncement(currentIndex + 1);
+                                });
+
+                                // Inicializar
+                                renderAnnouncement(0);
+                            </script>
+                        @else
+                            <div class="py-8 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                                </svg>
+                                <p class="mt-4 text-gray-600">No hay anuncios vigentes en este momento</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secciones Principales - Estudiantes, Finanzas, Comunicación -->
+            <div class="grid gap-6 md:grid-cols-2">
                 <!-- 👥 Estudiantes -->
                 <div class="overflow-hidden rounded-lg bg-white shadow-sm">
                     <div class="border-b border-gray-200 bg-green-50 px-6 py-4">

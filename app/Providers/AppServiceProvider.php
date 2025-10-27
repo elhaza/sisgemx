@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Announcement;
 use App\Models\Message;
+use App\Policies\AnnouncementPolicy;
 use App\Policies\MessagePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -10,6 +12,7 @@ use Illuminate\Support\ServiceProvider;
 class AppServiceProvider extends ServiceProvider
 {
     protected $policies = [
+        Announcement::class => AnnouncementPolicy::class,
         Message::class => MessagePolicy::class,
     ];
 

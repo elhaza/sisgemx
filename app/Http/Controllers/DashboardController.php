@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Announcement;
 use App\Models\Payment;
 use App\Models\SchoolYear;
 use App\Models\Student;
@@ -31,12 +32,40 @@ class DashboardController extends Controller
             // Obtener estadísticas financieras
             $financialStats = $this->getFinancialStats();
 
+            // Obtener anuncios vigentes
+            $today = now()->toDateString();
+            $allValidAnnouncements = Announcement::query()
+                ->where(function ($query) use ($today) {
+                    // Si no tienen fechas de vigencia, mostrar siempre
+                    $query->whereNull('valid_from')
+                        ->whereNull('valid_until')
+                        // O si están dentro del rango de vigencia
+                        ->orWhere(function ($q) use ($today) {
+                            $q->where(function ($subQuery) use ($today) {
+                                $subQuery->whereNull('valid_from')
+                                    ->orWhere('valid_from', '<=', $today);
+                            })
+                                ->where(function ($subQuery) use ($today) {
+                                    $subQuery->whereNull('valid_until')
+                                        ->orWhere('valid_until', '>=', $today);
+                                });
+                        });
+                })
+                ->latest()
+                ->get();
+
+            // Mostrar solo los últimos 5 en el dashboard
+            $recentAnnouncements = $allValidAnnouncements->take(5);
+            $totalValidAnnouncements = $allValidAnnouncements->count();
+
             return view('dashboard', [
                 'user' => $user,
                 'activeSchoolYear' => $activeSchoolYear,
                 'isOutOfRange' => $isOutOfRange,
                 'unreadMessageCount' => $unreadMessageCount,
                 'financialStats' => $financialStats,
+                'recentAnnouncements' => $recentAnnouncements,
+                'totalValidAnnouncements' => $totalValidAnnouncements,
             ]);
         }
 

@@ -81,7 +81,7 @@
                                                     {{ $student->user->full_name }}
                                                 </td>
                                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                                    {{ $student->schoolGrade->level }}
+                                                    {{ $student->schoolGrade->grade_level }}
                                                 </td>
                                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                                                     {{ $student->schoolGrade->section }}
@@ -173,7 +173,7 @@
                                                     {{ $student->user->full_name }}
                                                 </td>
                                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                                    {{ $student->schoolGrade->level }}
+                                                    {{ $student->schoolGrade->grade_level }}
                                                 </td>
                                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                                                     {{ $student->schoolGrade->section }}

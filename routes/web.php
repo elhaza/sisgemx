@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\StudentTransferController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AnnouncementController as PublicAnnouncementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Finance\DashboardController as FinanceDashboardController;
 use App\Http\Controllers\Finance\PaymentReceiptController as FinancePaymentReceiptController;
@@ -40,6 +41,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Announcements routes
+    Route::get('/announcements', [PublicAnnouncementController::class, 'index'])->name('announcements.index');
 
     // Messages routes
     Route::get('/messages', [MessageController::class, 'inbox'])->name('messages.inbox');

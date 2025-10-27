@@ -169,9 +169,9 @@ class SchoolYearController extends Controller
         $students = Student::where('students.school_year_id', $previousSchoolYear->id)
             ->where('students.status', 'active')
             ->with(['user', 'schoolGrade'])
-            ->join('school_grades', 'students.school_grade_id', '=', 'school_grades.id')
-            ->orderBy('school_grades.level')
-            ->orderBy('school_grades.section')
+            ->join('grade_sections', 'students.school_grade_id', '=', 'grade_sections.id')
+            ->orderBy('grade_sections.grade_level')
+            ->orderBy('grade_sections.section')
             ->select('students.*')
             ->get();
 
