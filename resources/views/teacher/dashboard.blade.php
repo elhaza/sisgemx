@@ -97,12 +97,26 @@
                         <h3 class="text-lg font-semibold text-gray-900">Mis Materias</h3>
                     </div>
                     <div class="p-6">
-                        <ul class="space-y-3">
+                        <ul class="space-y-2">
                             @foreach($mySubjects as $subject)
-                                <li>
-                                    <div class="text-sm">
-                                        <p class="font-semibold text-gray-900">{{ $subject->name }}</p>
-                                        <p class="text-gray-600">{{ $subject->grade_level }}</p>
+                                <li class="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3 hover:bg-gray-100 transition">
+                                    <div>
+                                        <p class="font-semibold text-gray-900">
+                                            {{ $subject->name }}
+                                            <span class="font-bold text-blue-600">- {{ $subject->gradeSection?->name ?? $subject->grade_level }}</span>
+                                        </p>
+                                    </div>
+                                    <div class="flex gap-4 text-xs text-gray-500">
+                                        @if($subject->grades_count > 0)
+                                            <span class="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-purple-700 font-medium">
+                                                {{ $subject->grades_count }} 📊
+                                            </span>
+                                        @endif
+                                        @if($subject->assignments_count > 0)
+                                            <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-blue-700 font-medium">
+                                                {{ $subject->assignments_count }} 📋
+                                            </span>
+                                        @endif
                                     </div>
                                 </li>
                             @endforeach

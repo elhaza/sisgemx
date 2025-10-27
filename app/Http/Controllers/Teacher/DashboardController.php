@@ -25,6 +25,7 @@ class DashboardController extends Controller
                     ->where('is_active', true)
                     ->limit(1);
             })
+            ->with('gradeSection')
             ->withCount(['grades', 'assignments'])
             ->get();
 
