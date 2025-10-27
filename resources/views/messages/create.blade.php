@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        <h2 class="text-xl font-semibold text-gray-900">
             Redactar Mensaje
         </h2>
     </x-slot>
@@ -233,12 +233,12 @@
 
     <div class="py-12">
         <div class="mx-auto max-w-3xl sm:px-6 lg:px-8">
-            <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg dark:bg-gray-800">
-                <div class="border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 dark:border-gray-700 dark:from-gray-800 dark:to-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                <div class="border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-gray-900">
                         Redactar nuevo mensaje
                     </h3>
-                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    <p class="mt-1 text-sm text-gray-600">
                         Envía un mensaje a usuarios del sistema
                     </p>
                 </div>
@@ -250,21 +250,21 @@
                         @if(auth()->user()->isAdmin())
                             <div class="space-y-6">
                                 <!-- Step 1: Select Role -->
-                                <div class="rounded-lg border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-700/50">
-                                    <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+                                <div class="rounded-lg border border-gray-200 bg-gray-50 p-5">
+                                    <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900">
                                         <span class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">1</span>
                                         Selecciona a quién enviar
                                     </h4>
 
                                     <div class="mt-4">
-                                        <label for="recipientRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        <label for="recipientRole" class="block text-sm font-medium text-gray-700">
                                             Rol de destinatarios *
                                         </label>
                                         <select
                                             id="recipientRole"
                                             x-model="selectedRole"
                                             @change="onRoleChange()"
-                                            class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
+                                            class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                             <option value="">-- Selecciona un rol --</option>
                                             <option value="admin">Administradores</option>
                                             <option value="finance_admin">Finanzas</option>
@@ -273,27 +273,27 @@
                                             <option value="student">Estudiantes</option>
                                         </select>
                                         @error('recipient_ids')
-                                            <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                                         @enderror
                                     </div>
                                 </div>
 
                                 <!-- Step 2: Filter Selection -->
-                                <div class="rounded-lg border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-700/50" x-show="selectedRole" style="display: none;">
-                                    <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+                                <div class="rounded-lg border border-gray-200 bg-gray-50 p-5" x-show="selectedRole" style="display: none;">
+                                    <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900">
                                         <span class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">2</span>
                                         Refina tu selección
                                     </h4>
 
                                     <div class="mt-4">
-                                        <label for="filterType" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        <label for="filterType" class="block text-sm font-medium text-gray-700">
                                             Filtrar por *
                                         </label>
                                         <select
                                             id="filterType"
                                             x-model="selectedFilter"
                                             @change="onFilterChange()"
-                                            class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
+                                            class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                             <option value="">-- Selecciona una opción --</option>
                                             <template x-for="filter in availableFilters" :key="filter.type">
                                                 <option :value="filter.type" x-text="filter.label"></option>
@@ -303,21 +303,21 @@
                                 </div>
 
                                 <!-- Step 3: Secondary Filter -->
-                                <div class="rounded-lg border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-700/50" id="secondaryFilterContainer" style="display: none;">
-                                    <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+                                <div class="rounded-lg border border-gray-200 bg-gray-50 p-5" id="secondaryFilterContainer" style="display: none;">
+                                    <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900">
                                         <span class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">3</span>
                                         Especifica más
                                     </h4>
 
                                     <div class="mt-4">
-                                        <label for="secondaryFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        <label for="secondaryFilter" class="block text-sm font-medium text-gray-700">
                                             <span x-text="secondaryFilterLabel"></span>
                                         </label>
                                         <select
                                             id="secondaryFilter"
                                             x-model="selectedSecondaryFilter"
                                             @change="onSecondaryFilterChange()"
-                                            class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
+                                            class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                             <option value="">-- Selecciona una opción --</option>
                                             <template x-for="item in secondaryFilterOptions" :key="item.id">
                                                 <option :value="item.id" x-text="item.name"></option>
@@ -327,14 +327,14 @@
                                 </div>
 
                                 <!-- Step 4: Individual Search (for individual selections) -->
-                                <div class="rounded-lg border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-700/50" x-show="selectedFilter === 'individual'" style="display: none;">
-                                    <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+                                <div class="rounded-lg border border-gray-200 bg-gray-50 p-5" x-show="selectedFilter === 'individual'" style="display: none;">
+                                    <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900">
                                         <span class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">4</span>
                                         Busca usuarios individuales
                                     </h4>
 
                                     <div class="mt-4">
-                                        <label for="individualSearch" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        <label for="individualSearch" class="block text-sm font-medium text-gray-700">
                                             Buscar <span x-text="getRoleName()"></span>
                                         </label>
                                         <div class="relative mt-2">
@@ -346,22 +346,22 @@
                                         @focus="showSearchResults = true"
                                         @blur="setTimeout(() => showSearchResults = false, 200)"
                                         placeholder="Busca por nombre..."
-                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         autocomplete="off"
                                     >
                                     <div
                                         x-show="showSearchResults && searchResults.length > 0"
-                                        class="absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-96 overflow-y-auto">
+                                        class="absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-96 overflow-y-auto">
                                         <template x-for="result in searchResults" :key="result.id">
                                             <div
                                                 @click="selectUser(result)"
-                                                class="px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0 transition">
+                                                class="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition">
                                                 <div class="flex items-center justify-between">
                                                     <div class="flex-1 min-w-0">
-                                                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100" x-text="result.name"></p>
-                                                        <p class="text-xs text-gray-500 dark:text-gray-400" x-text="result.email"></p>
+                                                        <p class="text-sm font-medium text-gray-900" x-text="result.name"></p>
+                                                        <p class="text-xs text-gray-500" x-text="result.email"></p>
                                                     </div>
-                                                    <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300 whitespace-nowrap" x-text="result.role"></span>
+                                                    <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 whitespace-nowrap" x-text="result.role"></span>
                                                 </div>
                                             </div>
                                         </template>
@@ -374,7 +374,7 @@
                                     <button
                                         type="button"
                                         @click="loadRecipients()"
-                                        class="inline-flex items-center rounded-md bg-blue-100 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40">
+                                        class="inline-flex items-center rounded-md bg-blue-100 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                                         <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                         </svg>
@@ -384,7 +384,7 @@
                                         type="button"
                                         @click="clearAllRecipients()"
                                         :disabled="selectedRecipients.length === 0"
-                                        class="inline-flex items-center rounded-md bg-red-100 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/40">
+                                        class="inline-flex items-center rounded-md bg-red-100 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
                                         <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
@@ -396,10 +396,10 @@
                             <!-- Students have special UI for selecting teachers -->
                             @if(auth()->user()->isStudent())
                                 <div class="mb-6">
-                                    <label for="teacherSelection" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <label for="teacherSelection" class="block text-sm font-medium text-gray-700">
                                         Maestros *
                                     </label>
-                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <p class="mt-1 text-xs text-gray-500">
                                         Selecciona todos tus maestros o busca individuales
                                     </p>
 
@@ -408,7 +408,7 @@
                                         <button
                                             type="button"
                                             id="allTeachersBtn"
-                                            class="inline-flex items-center rounded-md bg-blue-100 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40">
+                                            class="inline-flex items-center rounded-md bg-blue-100 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                                             <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                             </svg>
@@ -418,7 +418,7 @@
 
                                     <!-- Individual Teacher Search -->
                                     <div class="mt-6">
-                                        <label for="teacherSearch" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <label for="teacherSearch" class="block text-sm font-medium text-gray-700 mb-2">
                                             O busca maestros individuales
                                         </label>
                                         <div id="teacherContainer" class="relative">
@@ -426,10 +426,10 @@
                                                 type="text"
                                                 id="teacherSearch"
                                                 placeholder="Buscar maestro por nombre..."
-                                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                                 autocomplete="off"
                                             >
-                                            <div id="teacherSuggestions" class="hidden absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-96 overflow-y-auto"></div>
+                                            <div id="teacherSuggestions" class="hidden absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-96 overflow-y-auto"></div>
                                         </div>
                                     </div>
 
@@ -439,10 +439,10 @@
                             @else
                                 <!-- Non-admin, non-student users use the original search -->
                                 <div class="mb-6">
-                                    <label for="recipients" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <label for="recipients" class="block text-sm font-medium text-gray-700">
                                         Para *
                                     </label>
-                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <p class="mt-1 text-xs text-gray-500">
                                         Busca por nombre, email o apellido
                                     </p>
                                     <div id="recipientsContainer" class="relative mt-3">
@@ -450,10 +450,10 @@
                                             type="text"
                                             id="recipientSearch"
                                             placeholder="Buscar destinatarios..."
-                                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             autocomplete="off"
                                         >
-                                        <div id="recipientSuggestions" class="hidden absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-96 overflow-y-auto"></div>
+                                        <div id="recipientSuggestions" class="hidden absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-96 overflow-y-auto"></div>
                                     </div>
                                     <div id="selectedRecipients" class="mt-3 flex flex-wrap gap-2"></div>
                                 </div>
@@ -466,22 +466,22 @@
                         <!-- Selected Recipients Display - Only for admin users -->
                         @if(auth()->user()->isAdmin())
                             <div class="mb-6" x-show="selectedRecipients.length > 0" style="display: none;">
-                                <div class="flex items-center gap-2 rounded-md bg-blue-50 p-3 dark:bg-blue-900/20">
-                                    <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="flex items-center gap-2 rounded-md bg-blue-50 p-3">
+                                    <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <span class="text-sm font-medium text-blue-900 dark:text-blue-300">
+                                    <span class="text-sm font-medium text-blue-900">
                                         <span x-text="selectedRecipients.length"></span> destinatario(s) seleccionado(s)
                                     </span>
                                 </div>
                                 <div class="mt-3 flex flex-wrap gap-2">
                                     <template x-for="recipient in selectedRecipients" :key="recipient.id">
-                                        <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-sm font-medium dark:bg-blue-900/30 dark:text-blue-300">
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-sm font-medium">
                                             <span x-text="recipient.name"></span>
                                             <button
                                                 type="button"
                                                 @click="removeRecipient(recipient.id)"
-                                                class="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100">
+                                                class="text-blue-700 hover:text-blue-900">
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                                 </svg>
@@ -493,12 +493,12 @@
                         @endif
 
                         <!-- Separator -->
-                        <div class="my-8 border-t border-gray-200 dark:border-gray-700"></div>
+                        <div class="my-8 border-t border-gray-200"></div>
 
                         <!-- Content Section -->
-                        <div class="rounded-lg border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-700/50">
-                            <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
-                                <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="rounded-lg border border-gray-200 bg-gray-50 p-5">
+                            <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                                <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 Contenido del mensaje
@@ -506,7 +506,7 @@
 
                             <!-- Asunto -->
                             <div class="mt-5">
-                                <label for="subject" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <label for="subject" class="block text-sm font-medium text-gray-700">
                                     Asunto *
                                 </label>
                                 <input
@@ -515,16 +515,16 @@
                                     id="subject"
                                     value="{{ old('subject') }}"
                                     placeholder="Asunto del mensaje"
-                                    class="mt-2 block w-full rounded-md border-gray-300 shadow-sm transition focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                                    class="mt-2 block w-full rounded-md border-gray-300 shadow-sm transition focus:border-blue-500 focus:ring-blue-500"
                                 >
                                 @error('subject')
-                                    <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <!-- Mensaje -->
                             <div class="mt-5">
-                                <label for="body" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <label for="body" class="block text-sm font-medium text-gray-700">
                                     Mensaje *
                                 </label>
                                 <textarea
@@ -532,10 +532,10 @@
                                     id="body"
                                     rows="8"
                                     placeholder="Escribe tu mensaje aquí..."
-                                    class="mt-2 block w-full rounded-md border-gray-300 shadow-sm transition focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                                    class="mt-2 block w-full rounded-md border-gray-300 shadow-sm transition focus:border-blue-500 focus:ring-blue-500"
                                 >{{ old('body') }}</textarea>
                                 @error('body')
-                                    <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -544,7 +544,7 @@
                         <div class="mt-8 flex gap-4 pt-6">
                             <button
                                 type="submit"
-                                class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:shadow-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                                class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:shadow-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                             >
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -553,7 +553,7 @@
                             </button>
                             <a
                                 href="{{ route('messages.inbox') }}"
-                                class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:focus:ring-offset-gray-900"
+                                class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                             >
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -597,9 +597,9 @@
         function renderSelectedTeachers() {
             selectedTeachersContainer.innerHTML = Array.from(selectedTeachers.entries()).map(([id, name]) => {
                 return `
-                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-sm font-medium dark:bg-blue-900/30 dark:text-blue-300">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-sm font-medium">
                         ${name}
-                        <button type="button" onclick="removeTeacher('${id}')" class="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100">
+                        <button type="button" onclick="removeTeacher('${id}')" class="text-blue-700 hover:text-blue-900">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -669,12 +669,12 @@
                         const encodedSubject = encodeURIComponent(JSON.stringify(subject));
 
                         return `
-                            <div class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition" data-user-id="${item.id}" data-user-name="${encodedFullName}" data-user-subject="${encodedSubject}">
+                            <div class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition" data-user-id="${item.id}" data-user-name="${encodedFullName}" data-user-subject="${encodedSubject}">
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${fullName}</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">${subject}</p>
+                                    <p class="text-sm font-medium text-gray-900">${fullName}</p>
+                                    <p class="text-xs text-gray-500">${subject}</p>
                                 </div>
-                                <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300 whitespace-nowrap">${item.role}</span>
+                                <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 whitespace-nowrap">${item.role}</span>
                             </div>
                         `;
                     }).join('');
@@ -713,9 +713,9 @@
             function renderSelectedRecipients() {
                 selectedRecipientsContainer.innerHTML = Array.from(selectedRecipients.entries()).map(([id, name]) => {
                     return `
-                        <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-sm font-medium dark:bg-blue-900/30 dark:text-blue-300">
+                        <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-sm font-medium">
                             ${name}
-                            <button type="button" onclick="removeRecipient('${id}')" class="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100">
+                            <button type="button" onclick="removeRecipient('${id}')" class="text-blue-700 hover:text-blue-900">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -770,12 +770,12 @@
                         const encodedFullName = encodeURIComponent(JSON.stringify(fullName));
 
                         return `
-                            <div class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition" data-user-id="${item.id}" data-user-name="${encodedFullName}">
+                            <div class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition" data-user-id="${item.id}" data-user-name="${encodedFullName}">
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${fullName}</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">${item.email || ''}</p>
+                                    <p class="text-sm font-medium text-gray-900">${fullName}</p>
+                                    <p class="text-xs text-gray-500">${item.email || ''}</p>
                                 </div>
-                                <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300 whitespace-nowrap">${item.role}</span>
+                                <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 whitespace-nowrap">${item.role}</span>
                             </div>
                         `;
                     }).join('');

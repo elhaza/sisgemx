@@ -37,3 +37,4 @@
      title="{{ $user->name }}">
     {{ $initials ?: '?' }}
 </div>
+
