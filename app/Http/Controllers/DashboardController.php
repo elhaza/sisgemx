@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PaymentHelper;
 use App\Models\Announcement;
 use App\Models\Payment;
 use App\Models\SchoolYear;
@@ -269,6 +270,16 @@ class DashboardController extends Controller
                 return ! $tuition->isPaid();
             });
 
+        // Recalculate late fees for all overdue tuitions
+        foreach ($overdueTuitions as $tuition) {
+            if ($tuition->late_fee_amount == 0 && $tuition->days_late > 0) {
+                $lateFee = PaymentHelper::calculateLateFee((float) $tuition->final_amount, $tuition->days_late);
+                if ($lateFee > 0) {
+                    $tuition->update(['late_fee_amount' => $lateFee]);
+                }
+            }
+        }
+
         $parentsOverdue = Student::whereIn('id', $overdueTuitions->pluck('student_id'))
             ->distinct('user_id')
             ->count('user_id');
@@ -287,8 +298,17 @@ class DashboardController extends Controller
             })
             ->sum('final_amount');
 
-        // Calcular total de recargos por mora
-        $lateFees = $overdueTuitions->sum('late_fee_amount');
+        // Calcular total de recargos por mora (refresh after updates)
+        $overdueTuitionsRefreshed = StudentTuition::where('due_date', '<', $now->toDateString())
+            ->whereHas('student', function ($query) {
+                $query->where('status', 'active');
+            })
+            ->get()
+            ->filter(function ($tuition) {
+                return ! $tuition->isPaid();
+            });
+
+        $lateFees = $overdueTuitionsRefreshed->sum('late_fee_amount');
 
         return [
             'monthly_payments' => $monthlyPayments,

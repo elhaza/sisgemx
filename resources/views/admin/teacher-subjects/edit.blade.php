@@ -49,10 +49,14 @@
                             <select name="subject_id" id="subject_id" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="">Seleccionar materia</option>
-                                @foreach ($subjects as $subject)
-                                    <option value="{{ $subject->id }}" {{ old('subject_id', $teacherSubject->subject_id) == $subject->id ? 'selected' : '' }}>
-                                        {{ $subject->name }}
-                                    </option>
+                                @foreach ($subjects as $gradeLevel => $subjectsInGrade)
+                                    <optgroup label="Grado {{ $gradeLevel }}">
+                                        @foreach ($subjectsInGrade as $subjectName => $subject)
+                                            <option value="{{ $subject->id }}" {{ old('subject_id', $teacherSubject->subject_id) == $subject->id ? 'selected' : '' }}>
+                                                {{ $subject->name }} {{ $gradeLevel }}
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
                                 @endforeach
                             </select>
                             @error('subject_id')

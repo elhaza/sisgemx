@@ -100,7 +100,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('dashboard', [TeacherDashboardController::class, 'index'])->name('dashboard');
 
         Route::resource('grades', GradeController::class);
+        Route::get('grades/api/students/{subject}', [GradeController::class, 'getStudentsBySubject'])->name('grades.api.students');
+        Route::get('grades/bulk/{subject}', [GradeController::class, 'bulkGradeView'])->name('grades.bulk');
+        Route::post('grades/bulk/store', [GradeController::class, 'storeBulkGrades'])->name('grades.bulk.store');
         Route::resource('assignments', AssignmentController::class);
+        Route::get('assignments/{assignment}/download', [AssignmentController::class, 'download'])->name('assignments.download');
     });
 
     // Rutas para Anuncios (Teachers y Admins)

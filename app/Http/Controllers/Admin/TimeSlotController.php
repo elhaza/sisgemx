@@ -55,7 +55,7 @@ class TimeSlotController extends Controller
         // Calculate duration in minutes
         $startTime = \Carbon\Carbon::createFromFormat('H:i', $validated['start_time']);
         $endTime = \Carbon\Carbon::createFromFormat('H:i', $validated['end_time']);
-        $durationMinutes = $endTime->diffInMinutes($startTime);
+        $durationMinutes = abs($endTime->diffInMinutes($startTime));
 
         // Create a TimeSlot for each selected day
         foreach ($validated['days_of_week'] as $day) {
@@ -100,7 +100,7 @@ class TimeSlotController extends Controller
         // Calculate duration in minutes
         $startTime = \Carbon\Carbon::createFromFormat('H:i', $validated['start_time']);
         $endTime = \Carbon\Carbon::createFromFormat('H:i', $validated['end_time']);
-        $durationMinutes = $endTime->diffInMinutes($startTime);
+        $durationMinutes = abs($endTime->diffInMinutes($startTime));
 
         $validated['duration_minutes'] = $durationMinutes;
 

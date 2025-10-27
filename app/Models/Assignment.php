@@ -18,12 +18,16 @@ class Assignment extends Model
         'description',
         'due_date',
         'max_points',
+        'attachment_path',
+        'attachment_type',
+        'is_active',
     ];
 
     protected function casts(): array
     {
         return [
             'due_date' => 'date',
+            'is_active' => 'boolean',
         ];
     }
 

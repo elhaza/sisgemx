@@ -18,6 +18,7 @@ class Subject extends Model
         'teacher_id',
         'grade_level',
         'school_year_id',
+        'grade_section_id',
         'default_hours_per_week',
     ];
 
@@ -36,6 +37,11 @@ class Subject extends Model
     public function schoolYear(): BelongsTo
     {
         return $this->belongsTo(SchoolYear::class);
+    }
+
+    public function gradeSection(): BelongsTo
+    {
+        return $this->belongsTo(GradeSection::class);
     }
 
     public function grades(): HasMany

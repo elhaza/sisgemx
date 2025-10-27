@@ -398,13 +398,45 @@ class SchoolYearController extends Controller
             'is_active' => $validated['is_active'],
         ]);
 
-        // Update monthly tuitions
+        // Update monthly tuitions and sync student tuition amounts
         foreach ($validated['monthly_tuitions'] as $monthlyData) {
             if (! empty($monthlyData['id'])) {
                 // Update existing monthly tuition
-                MonthlyTuition::findOrFail($monthlyData['id'])->update([
-                    'amount' => $monthlyData['amount'],
+                $monthlyTuition = MonthlyTuition::findOrFail($monthlyData['id']);
+                $oldAmount = $monthlyTuition->amount;
+                $newAmount = $monthlyData['amount'];
+
+                // Update the monthly tuition
+                $monthlyTuition->update([
+                    'amount' => $newAmount,
                 ]);
+
+                // Update all student tuitions for this month/year in this school year
+                if ($oldAmount != $newAmount) {
+                    StudentTuition::where('school_year_id', $schoolYear->id)
+                        ->where('year', $monthlyData['year'])
+                        ->where('month', $monthlyData['month'])
+                        ->where('discount_percentage', 0) // Only update those without discount
+                        ->update([
+                            'monthly_amount' => $newAmount,
+                            'final_amount' => $newAmount,
+                        ]);
+
+                    // Also update those with discount, recalculating final_amount
+                    $studentTuitions = StudentTuition::where('school_year_id', $schoolYear->id)
+                        ->where('year', $monthlyData['year'])
+                        ->where('month', $monthlyData['month'])
+                        ->where('discount_percentage', '>', 0)
+                        ->get();
+
+                    foreach ($studentTuitions as $studentTuition) {
+                        $discount = ($newAmount * $studentTuition->discount_percentage) / 100;
+                        $studentTuition->update([
+                            'monthly_amount' => $newAmount,
+                            'final_amount' => $newAmount - $discount,
+                        ]);
+                    }
+                }
             } else {
                 // Create new monthly tuition if it doesn't exist
                 MonthlyTuition::firstOrCreate(
@@ -421,7 +453,7 @@ class SchoolYearController extends Controller
         // Create/update student tuitions for all students in this school year
         $this->createStudentTuitions($schoolYear);
 
-        return redirect()->route('admin.school-years.index')->with('success', 'Ciclo escolar actualizado exitosamente. Las colegiaturas de los estudiantes han sido creadas/actualizadas.');
+        return redirect()->route('admin.school-years.index')->with('success', 'Ciclo escolar actualizado exitosamente. Las colegiaturas de los estudiantes han sido actualizadas con los nuevos montos.');
     }
 
     public function destroy(Request $request, SchoolYear $schoolYear)

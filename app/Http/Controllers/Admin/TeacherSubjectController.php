@@ -23,7 +23,19 @@ class TeacherSubjectController extends Controller
     public function create()
     {
         $teachers = User::where('role', 'teacher')->orderBy('name')->get();
-        $subjects = Subject::orderBy('name')->get();
+
+        // Get unique subjects grouped by name and grade_level
+        $subjects = Subject::select('name', 'grade_level', 'id')
+            ->distinct('name', 'grade_level')
+            ->orderBy('grade_level')
+            ->orderBy('name')
+            ->get()
+            ->groupBy(function ($subject) {
+                return $subject->grade_level;
+            })
+            ->map(function ($subjectsInGrade) {
+                return $subjectsInGrade->keyBy('name');
+            });
 
         return view('admin.teacher-subjects.create', compact('teachers', 'subjects'));
     }
@@ -51,7 +63,19 @@ class TeacherSubjectController extends Controller
     public function edit(TeacherSubject $teacherSubject)
     {
         $teachers = User::where('role', 'teacher')->orderBy('name')->get();
-        $subjects = Subject::orderBy('name')->get();
+
+        // Get unique subjects grouped by name and grade_level
+        $subjects = Subject::select('name', 'grade_level', 'id')
+            ->distinct('name', 'grade_level')
+            ->orderBy('grade_level')
+            ->orderBy('name')
+            ->get()
+            ->groupBy(function ($subject) {
+                return $subject->grade_level;
+            })
+            ->map(function ($subjectsInGrade) {
+                return $subjectsInGrade->keyBy('name');
+            });
 
         return view('admin.teacher-subjects.edit', compact('teacherSubject', 'teachers', 'subjects'));
     }

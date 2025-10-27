@@ -112,13 +112,16 @@
 
                 <!-- Calificaciones -->
                 <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Calificaciones</h3>
+                    <div class="border-b border-gray-200 bg-purple-50 px-6 py-4">
+                        <h3 class="flex items-center text-lg font-semibold text-gray-900">
+                            <span class="mr-2 text-xl">📊</span>
+                            Calificaciones
+                        </h3>
                     </div>
                     <div class="p-6">
                         <ul class="space-y-3">
                             <li>
-                                <a href="{{ route('teacher.grades.create') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                <a href="{{ route('teacher.grades.create') }}" class="flex items-center text-blue-600 hover:text-blue-800 font-medium transition">
                                     <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                     </svg>
@@ -126,7 +129,7 @@
                                 </a>
                             </li>
                             <li>
-                                <a href="{{ route('teacher.grades.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                <a href="{{ route('teacher.grades.index') }}" class="flex items-center text-blue-600 hover:text-blue-800 font-medium transition">
                                     <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                     </svg>
@@ -139,13 +142,16 @@
 
                 <!-- Tareas -->
                 <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Tareas</h3>
+                    <div class="border-b border-gray-200 bg-blue-50 px-6 py-4">
+                        <h3 class="flex items-center text-lg font-semibold text-gray-900">
+                            <span class="mr-2 text-xl">📋</span>
+                            Tareas
+                        </h3>
                     </div>
                     <div class="p-6">
                         <ul class="space-y-3">
                             <li>
-                                <a href="{{ route('teacher.assignments.create') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                <a href="{{ route('teacher.assignments.create') }}" class="flex items-center text-blue-600 hover:text-blue-800 font-medium transition">
                                     <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                     </svg>
@@ -153,11 +159,19 @@
                                 </a>
                             </li>
                             <li>
-                                <a href="{{ route('teacher.assignments.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                <a href="{{ route('teacher.assignments.index') }}" class="flex items-center text-blue-600 hover:text-blue-800 font-medium transition">
                                     <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                     </svg>
                                     Ver Tareas Activas
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('teacher.assignments.index', ['archive' => true]) }}" class="flex items-center text-green-600 hover:text-green-800 font-medium transition">
+                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Historial de Tareas
                                 </a>
                             </li>
                         </ul>

@@ -125,6 +125,10 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Nombre</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Rol</th>
+                                    @if(request('role') === 'teacher')
+                                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Horas/Semana</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Horas/Día</th>
+                                    @endif
                                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Acciones</th>
                                 </tr>
                             </thead>
@@ -138,6 +142,18 @@
                                                 {{ ucfirst($user->role->value) }}
                                             </span>
                                         </td>
+                                        @if(request('role') === 'teacher')
+                                            <td class="whitespace-nowrap px-6 py-4 text-sm">
+                                                <span class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                                                    {{ $user->max_hours_per_week ?? 40 }} hrs
+                                                </span>
+                                            </td>
+                                            <td class="whitespace-nowrap px-6 py-4 text-sm">
+                                                <span class="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-800">
+                                                    {{ $user->max_hours_per_day ?? 8 }} hrs
+                                                </span>
+                                            </td>
+                                        @endif
                                         <td class="whitespace-nowrap px-6 py-4 text-sm">
                                             <a href="{{ route('admin.users.edit', $user) }}" class="text-blue-600 hover:text-blue-900">Editar</a>
                                             @if($user->id !== auth()->id())
@@ -151,7 +167,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">No hay usuarios registrados.</td>
+                                        <td colspan="{{ request('role') === 'teacher' ? 6 : 4 }}" class="px-6 py-4 text-center text-gray-500">No hay usuarios registrados.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

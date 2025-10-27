@@ -93,7 +93,7 @@
                                                 </a>
                                             </li>
                                             <li>
-                                                <a href="{{ route('admin.users.index') }}"
+                                                <a href="{{ route('admin.users.index', ['role' => 'teacher', 'per_page' => 100]) }}"
                                                    class="underline hover:text-blue-900 font-medium">
                                                     Disponibilidad de docentes registrada (en edición de usuarios)
                                                 </a>

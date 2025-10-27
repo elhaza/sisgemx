@@ -30,6 +30,7 @@ class User extends Authenticatable
         'parent_id',
         'max_hours_per_day',
         'max_hours_per_week',
+        'profile_photo_path',
     ];
 
     /**

@@ -3,8 +3,12 @@
 namespace App\Providers;
 
 use App\Models\Announcement;
+use App\Models\Assignment;
+use App\Models\Grade;
 use App\Models\Message;
 use App\Policies\AnnouncementPolicy;
+use App\Policies\AssignmentPolicy;
+use App\Policies\GradePolicy;
 use App\Policies\MessagePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -13,6 +17,8 @@ class AppServiceProvider extends ServiceProvider
 {
     protected $policies = [
         Announcement::class => AnnouncementPolicy::class,
+        Assignment::class => AssignmentPolicy::class,
+        Grade::class => GradePolicy::class,
         Message::class => MessagePolicy::class,
     ];
 

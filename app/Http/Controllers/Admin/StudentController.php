@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\PaymentHelper;
 use App\Http\Controllers\Controller;
 use App\Models\GradeSection;
 use App\Models\Payment;
@@ -263,6 +264,19 @@ class StudentController extends Controller
                 $query->orderBy('year')->orderBy('month');
             },
         ]);
+
+        // Calculate late fees for all unpaid tuitions
+        foreach ($student->tuitions as $tuition) {
+            if (! $tuition->isPaid() && $tuition->late_fee_amount == 0 && $tuition->days_late > 0) {
+                $lateFee = PaymentHelper::calculateLateFee((float) $tuition->final_amount, $tuition->days_late);
+                if ($lateFee > 0) {
+                    $tuition->update(['late_fee_amount' => $lateFee]);
+                }
+            }
+        }
+
+        // Reload tuitions to reflect updated late fees
+        $student->load('tuitions');
 
         return view('admin.students.show', compact('student'));
     }
