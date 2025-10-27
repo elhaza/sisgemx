@@ -3,7 +3,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-2xl font-bold text-gray-900">
-                    Bienvenido, {{ auth()->user()->name }}
+                    ¡Hola, {{ auth()->user()->name }}! 👋
                 </h2>
                 <p class="mt-1 text-sm text-gray-600">
                     {{ \Carbon\Carbon::now()->format('l, d \\d\\e F \\d\\e Y') }}
@@ -23,7 +23,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>
                         </div>
-                        <div class="ml-3">
+                        <div class="ml-3 flex-1">
                             <p class="text-sm font-medium text-blue-800">
                                 Tienes <span class="font-bold">{{ $unreadMessageCount }}</span> mensaje(s) sin leer
                             </p>
@@ -35,91 +35,63 @@
                 </div>
             @endif
 
-            <!-- Status Cards Grid -->
-            <div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <!-- Current/Next Class Card -->
-                @if($currentClass || $nextClass)
-                    <div class="overflow-hidden rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-                        <div class="p-6 text-white">
-                            @if($currentClass)
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm font-medium opacity-90">Clase en curso</p>
-                                        <h3 class="mt-2 text-xl font-bold">{{ $currentClass->subject->name }}</h3>
-                                        <p class="mt-1 text-sm opacity-75">
-                                            {{ $currentClass->start_time }} - {{ $currentClass->end_time }}
-                                        </p>
-                                        <p class="mt-2 text-sm">
-                                            👨‍🏫 {{ $currentClass->subject->teacher->user->name }}
-                                        </p>
-                                    </div>
-                                    <div class="text-4xl">🎓</div>
+            <!-- Main Grid Layout -->
+            <div class="grid gap-6 lg:grid-cols-3">
+                <!-- Left Column - Main Content (2 columns on desktop) -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Summary Stats - Only show if there are meaningful data -->
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="rounded-lg bg-white p-4 shadow-md border-l-4 border-yellow-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-medium text-gray-600">Tareas Pendientes</p>
+                                    <p class="mt-1 text-3xl font-bold text-gray-900">{{ $pendingAssignments }}</p>
                                 </div>
-                            @elseif($nextClass)
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm font-medium opacity-90">Próxima clase</p>
-                                        <h3 class="mt-2 text-xl font-bold">{{ $nextClass->subject->name }}</h3>
-                                        <p class="mt-1 text-sm opacity-75">
-                                            {{ $nextClass->start_time }} - {{ $nextClass->end_time }}
-                                        </p>
-                                        <p class="mt-2 text-sm">
-                                            👨‍🏫 {{ $nextClass->subject->teacher->user->name }}
-                                        </p>
-                                    </div>
-                                    <div class="text-4xl">⏰</div>
+                                <span class="text-3xl">📋</span>
+                            </div>
+                            @if($pendingAssignments > 0)
+                                <a href="{{ route('student.assignments') }}" class="mt-3 inline-block text-xs font-medium text-yellow-600 hover:text-yellow-700">
+                                    Ver tareas →
+                                </a>
+                            @endif
+                        </div>
+
+                        <div class="rounded-lg bg-white p-4 shadow-md border-l-4 border-red-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-medium text-gray-600">Tareas Vencidas</p>
+                                    <p class="mt-1 text-3xl font-bold text-gray-900">{{ $overdueAssignments }}</p>
                                 </div>
+                                <span class="text-3xl">⚠️</span>
+                            </div>
+                            @if($overdueAssignments > 0)
+                                <a href="{{ route('student.assignments') }}" class="mt-3 inline-block text-xs font-medium text-red-600 hover:text-red-700">
+                                    Atender ya →
+                                </a>
+                            @endif
+                        </div>
+
+                        <div class="rounded-lg bg-white p-4 shadow-md border-l-4 border-green-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-medium text-gray-600">Calificaciones</p>
+                                    <p class="mt-1 text-3xl font-bold text-gray-900">{{ $totalGrades }}</p>
+                                </div>
+                                <span class="text-3xl">📊</span>
+                            </div>
+                            @if($totalGrades > 0)
+                                <a href="{{ route('student.grades') }}" class="mt-3 inline-block text-xs font-medium text-green-600 hover:text-green-700">
+                                    Ver calificaciones →
+                                </a>
                             @endif
                         </div>
                     </div>
-                @endif
 
-                <!-- Pending Assignments Card -->
-                <div class="overflow-hidden rounded-lg bg-gradient-to-br from-yellow-500 to-orange-600 shadow-lg">
-                    <div class="p-6 text-white">
-                        <p class="text-sm font-medium opacity-90">Tareas Pendientes</p>
-                        <h3 class="mt-2 text-4xl font-bold">{{ $pendingAssignments }}</h3>
-                        <p class="mt-2 text-sm opacity-75">por entregar próximamente</p>
-                        <a href="{{ route('student.assignments') }}" class="mt-4 inline-flex text-sm font-medium hover:opacity-80">
-                            Ver tareas →
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Overdue Assignments Card -->
-                <div class="overflow-hidden rounded-lg bg-gradient-to-br from-red-500 to-pink-600 shadow-lg">
-                    <div class="p-6 text-white">
-                        <p class="text-sm font-medium opacity-90">Tareas Vencidas</p>
-                        <h3 class="mt-2 text-4xl font-bold">{{ $overdueAssignments }}</h3>
-                        <p class="mt-2 text-sm opacity-75">que debes entregar ya</p>
-                        <a href="{{ route('student.assignments') }}" class="mt-4 inline-flex text-sm font-medium hover:opacity-80">
-                            Ver tareas →
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Grades Card -->
-                <div class="overflow-hidden rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg">
-                    <div class="p-6 text-white">
-                        <p class="text-sm font-medium opacity-90">Calificaciones</p>
-                        <h3 class="mt-2 text-4xl font-bold">{{ $totalGrades }}</h3>
-                        <p class="mt-2 text-sm opacity-75">registradas</p>
-                        <a href="{{ route('student.grades') }}" class="mt-4 inline-flex text-sm font-medium hover:opacity-80">
-                            Ver calificaciones →
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Main Content Grid -->
-            <div class="grid gap-6 lg:grid-cols-3">
-                <!-- Left Column - Schedule and Assignments -->
-                <div class="lg:col-span-2 space-y-6">
-                    <!-- Today's Schedule -->
+                    <!-- Today's Schedule (only if there are classes today) -->
                     @if($todaySchedules->count() > 0)
-                        <div class="overflow-hidden rounded-lg bg-white shadow-lg">
-                            <div class="border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
-                                <h3 class="text-lg font-bold text-gray-900">📅 Horario de Hoy</h3>
+                        <div class="rounded-lg bg-white shadow-md overflow-hidden">
+                            <div class="border-b border-gray-200 bg-blue-50 px-6 py-4">
+                                <h3 class="text-lg font-bold text-gray-900">📅 Clases de Hoy</h3>
                             </div>
                             <div class="divide-y divide-gray-200">
                                 @foreach($todaySchedules as $schedule)
@@ -127,9 +99,9 @@
                                         $isCurrentClass = $currentClass && $currentClass->id === $schedule->id;
                                         $isNextClass = $nextClass && $nextClass->id === $schedule->id;
                                     @endphp
-                                    <div class="p-4 transition-colors {{ $isCurrentClass ? 'bg-blue-50' : ($isNextClass ? 'bg-amber-50' : 'hover:bg-gray-50') }}">
+                                    <div class="p-4 {{ $isCurrentClass ? 'bg-blue-50 border-l-4 border-blue-500' : ($isNextClass ? 'bg-amber-50 border-l-4 border-amber-500' : '') }}">
                                         <div class="flex items-start gap-4">
-                                            <div class="flex-shrink-0 text-2xl">
+                                            <div class="text-2xl flex-shrink-0">
                                                 @if($isCurrentClass)
                                                     🔴
                                                 @elseif($isNextClass)
@@ -140,21 +112,21 @@
                                             </div>
                                             <div class="flex-1 min-w-0">
                                                 <h4 class="text-sm font-semibold text-gray-900">{{ $schedule->subject->name }}</h4>
-                                                <p class="mt-1 text-sm text-gray-500">
+                                                <p class="mt-1 text-xs text-gray-600">
                                                     🕐 {{ $schedule->start_time }} - {{ $schedule->end_time }}
                                                     @if($schedule->classroom)
                                                         • Salón {{ $schedule->classroom }}
                                                     @endif
                                                 </p>
-                                                <p class="mt-1 text-sm text-gray-600">
+                                                <p class="mt-1 text-xs text-gray-600">
                                                     👨‍🏫 {{ $schedule->subject->teacher->user->name }}
                                                 </p>
                                                 @if($isCurrentClass)
-                                                    <span class="mt-2 inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                                                    <span class="mt-2 inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700">
                                                         En curso
                                                     </span>
                                                 @elseif($isNextClass)
-                                                    <span class="mt-2 inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                                                    <span class="mt-2 inline-block rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700">
                                                         Próxima
                                                     </span>
                                                 @endif
@@ -163,135 +135,141 @@
                                     </div>
                                 @endforeach
                             </div>
-                            <div class="bg-gray-50 px-6 py-3">
-                                <a href="{{ route('student.schedule') }}" class="text-sm font-medium text-blue-600 hover:text-blue-500">
-                                    Ver horario completo →
+                        </div>
+                    @else
+                        <div class="rounded-lg bg-gradient-to-br from-purple-50 to-indigo-50 p-8 text-center">
+                            <p class="text-lg font-semibold text-gray-800">📭 No hay clases hoy</p>
+                            <p class="mt-2 text-sm text-gray-600">
+                                <a href="{{ route('student.schedule') }}" class="font-medium text-indigo-600 hover:text-indigo-700">
+                                    Ver tu horario completo →
                                 </a>
-                            </div>
+                            </p>
                         </div>
                     @endif
 
                     <!-- Upcoming Assignments -->
-                    <div class="overflow-hidden rounded-lg bg-white shadow-lg">
-                        <div class="border-b border-gray-200 bg-gradient-to-r from-orange-50 to-red-50 px-6 py-4">
-                            <h3 class="text-lg font-bold text-gray-900">📋 Próximas Tareas</h3>
-                        </div>
-                        @if($upcomingAssignments->count() > 0)
-                            <div class="divide-y divide-gray-200">
-                                @foreach($upcomingAssignments as $assignment)
-                                    @php
-                                        $daysUntilDue = $assignment->due_date->diffInDays(now(), false);
-                                        $isUrgent = $daysUntilDue <= 2;
-                                        $isDueSoon = $daysUntilDue <= 7;
-                                    @endphp
-                                    <div class="p-4 hover:bg-gray-50 transition-colors {{ $isUrgent ? 'bg-red-50' : ($isDueSoon ? 'bg-amber-50' : '') }}">
-                                        <div class="flex items-start justify-between gap-4">
-                                            <div class="flex-1 min-w-0">
-                                                <h4 class="text-sm font-semibold text-gray-900">{{ $assignment->title }}</h4>
-                                                <p class="mt-1 text-sm text-gray-500">
-                                                    Materia: <span class="font-medium">{{ $assignment->subject->name }}</span>
-                                                </p>
-                                                <p class="mt-1 text-xs text-gray-500 line-clamp-2">
-                                                    {{ $assignment->description }}
-                                                </p>
-                                            </div>
-                                            <div class="flex-shrink-0 text-right">
-                                                @if($isUrgent)
-                                                    <span class="inline-block rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">
-                                                        Urgente
-                                                    </span>
-                                                @elseif($isDueSoon)
-                                                    <span class="inline-block rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700">
-                                                        Pronto
-                                                    </span>
-                                                @endif
-                                                <p class="mt-2 text-sm font-medium text-gray-900">
-                                                    {{ $assignment->due_date->format('d/m') }}
-                                                </p>
-                                                <p class="text-xs text-gray-500">
-                                                    {{ $assignment->due_date->format('H:i') }}
-                                                </p>
+                    @if($upcomingAssignments->count() > 0 || $pendingAssignments > 0)
+                        <div class="rounded-lg bg-white shadow-md overflow-hidden">
+                            <div class="border-b border-gray-200 bg-orange-50 px-6 py-4">
+                                <h3 class="text-lg font-bold text-gray-900">📋 Próximas Tareas</h3>
+                            </div>
+                            @if($upcomingAssignments->count() > 0)
+                                <div class="divide-y divide-gray-200">
+                                    @foreach($upcomingAssignments as $assignment)
+                                        @php
+                                            $daysUntilDue = $assignment->due_date->diffInDays(now(), false);
+                                            $isUrgent = $daysUntilDue <= 2;
+                                            $isDueSoon = $daysUntilDue <= 7;
+                                        @endphp
+                                        <div class="p-4 hover:bg-gray-50 transition-colors {{ $isUrgent ? 'bg-red-50 border-l-4 border-red-500' : ($isDueSoon ? 'bg-amber-50 border-l-4 border-amber-500' : '') }}">
+                                            <div class="flex items-start justify-between gap-4">
+                                                <div class="flex-1 min-w-0">
+                                                    <h4 class="text-sm font-semibold text-gray-900">{{ $assignment->title }}</h4>
+                                                    <p class="mt-1 text-xs text-gray-600">
+                                                        📚 {{ $assignment->subject->name }}
+                                                    </p>
+                                                    <p class="mt-1 text-xs text-gray-500 line-clamp-2">
+                                                        {{ Str::limit($assignment->description, 80) }}
+                                                    </p>
+                                                </div>
+                                                <div class="flex-shrink-0 text-right">
+                                                    @if($isUrgent)
+                                                        <span class="inline-block rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-700 mb-2">
+                                                            🔴 Urgente
+                                                        </span>
+                                                    @elseif($isDueSoon)
+                                                        <span class="inline-block rounded-full bg-amber-100 px-2 py-1 text-xs font-bold text-amber-700 mb-2">
+                                                            🟡 Pronto
+                                                        </span>
+                                                    @endif
+                                                    <div class="text-sm font-semibold text-gray-900">
+                                                        {{ $assignment->due_date->format('d/m') }}
+                                                    </div>
+                                                    <div class="text-xs text-gray-600">
+                                                        {{ $assignment->due_date->format('H:i') }}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                            <div class="bg-gray-50 px-6 py-3">
-                                <a href="{{ route('student.assignments') }}" class="text-sm font-medium text-blue-600 hover:text-blue-500">
-                                    Ver todas las tareas →
-                                </a>
-                            </div>
-                        @else
-                            <div class="p-8 text-center">
-                                <p class="text-gray-500">¡No tienes tareas pendientes! 🎉</p>
-                            </div>
-                        @endif
-                    </div>
+                                    @endforeach
+                                </div>
+                                <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
+                                    <a href="{{ route('student.assignments') }}" class="text-sm font-medium text-orange-600 hover:text-orange-700">
+                                        Ver todas las tareas →
+                                    </a>
+                                </div>
+                            @else
+                                <div class="p-8 text-center">
+                                    <p class="text-gray-700 font-medium">¡Excelente! No tienes tareas pendientes 🎉</p>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Right Column - Sidebar -->
                 <div class="space-y-6">
                     <!-- Student Info Card -->
                     @if($student)
-                        <div class="overflow-hidden rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg text-white">
-                            <div class="p-6">
-                                <div class="flex items-center gap-4">
-                                    <div class="flex-shrink-0 text-4xl">👤</div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium opacity-75">Mi Información</p>
-                                        <h3 class="mt-1 text-lg font-bold truncate">{{ auth()->user()->full_name }}</h3>
-                                        <p class="mt-1 text-sm opacity-75">
-                                            Matrícula: {{ $student->enrollment_number }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg text-white p-6">
+                            <p class="text-sm font-medium opacity-80">Mi Información</p>
+                            <h3 class="mt-2 text-lg font-bold">{{ auth()->user()->full_name }}</h3>
+                            <p class="mt-1 text-sm opacity-80">
+                                📋 {{ $student->enrollment_number }}
+                            </p>
                         </div>
                     @endif
 
                     <!-- Recent Announcements -->
-                    <div class="overflow-hidden rounded-lg bg-white shadow-lg">
-                        <div class="border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4">
+                    <div class="rounded-lg bg-white shadow-md overflow-hidden">
+                        <div class="border-b border-gray-200 bg-purple-50 px-6 py-4">
                             <h3 class="text-lg font-bold text-gray-900">📢 Anuncios</h3>
                         </div>
                         @if($recentAnnouncements->count() > 0)
-                            <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                            <div class="divide-y divide-gray-200 max-h-80 overflow-y-auto">
                                 @foreach($recentAnnouncements->take(5) as $announcement)
                                     <div class="p-4 hover:bg-gray-50 transition-colors">
                                         <h4 class="text-sm font-semibold text-gray-900">{{ $announcement->title }}</h4>
-                                        <p class="mt-2 text-xs text-gray-600 line-clamp-2">{{ $announcement->content }}</p>
+                                        <p class="mt-1 text-xs text-gray-600 line-clamp-2">{{ $announcement->content }}</p>
                                         <p class="mt-2 text-xs text-gray-400">
-                                            {{ $announcement->created_at->format('d/m/Y H:i') }}
+                                            {{ $announcement->created_at->format('d/m H:i') }}
                                         </p>
                                     </div>
                                 @endforeach
                             </div>
                         @else
-                            <div class="p-4 text-center text-gray-500 text-sm">
-                                No hay anuncios recientes
+                            <div class="p-6 text-center text-gray-500">
+                                <p class="text-sm">No hay anuncios recientes</p>
                             </div>
                         @endif
                     </div>
 
                     <!-- Quick Links -->
-                    <div class="overflow-hidden rounded-lg bg-white shadow-lg">
+                    <div class="rounded-lg bg-white shadow-md overflow-hidden">
                         <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                            <h3 class="text-lg font-bold text-gray-900">⚡ Accesos Rápidos</h3>
+                            <h3 class="font-bold text-gray-900">⚡ Accesos Rápidos</h3>
                         </div>
                         <div class="divide-y divide-gray-200">
                             <a href="{{ route('messages.inbox') }}" class="block p-4 hover:bg-blue-50 transition-colors">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-xl">✉️</span>
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-900">Mensajes</p>
-                                        <p class="text-xs text-gray-500">
-                                            @if($unreadMessageCount > 0)
-                                                {{ $unreadMessageCount }} sin leer
-                                            @else
-                                                Todo actualizado
-                                            @endif
-                                        </p>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-xl">✉️</span>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">Mensajes</p>
+                                            <p class="text-xs text-gray-500">
+                                                @if($unreadMessageCount > 0)
+                                                    {{ $unreadMessageCount }} sin leer
+                                                @else
+                                                    Actualizado
+                                                @endif
+                                            </p>
+                                        </div>
                                     </div>
+                                    @if($unreadMessageCount > 0)
+                                        <span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-500 text-xs font-bold text-white">
+                                            {{ $unreadMessageCount > 9 ? '9+' : $unreadMessageCount }}
+                                        </span>
+                                    @endif
                                 </div>
                             </a>
                             <a href="{{ route('student.grades') }}" class="block p-4 hover:bg-green-50 transition-colors">
@@ -310,9 +288,9 @@
                                         <p class="text-sm font-medium text-gray-900">Tareas</p>
                                         <p class="text-xs text-gray-500">
                                             @if($pendingAssignments > 0)
-                                                {{ $pendingAssignments }} pendientes
+                                                {{ $pendingAssignments }} por hacer
                                             @else
-                                                Todas entregadas
+                                                Completas
                                             @endif
                                         </p>
                                     </div>
@@ -323,7 +301,7 @@
                                     <span class="text-xl">📅</span>
                                     <div>
                                         <p class="text-sm font-medium text-gray-900">Horario</p>
-                                        <p class="text-xs text-gray-500">Ver semana completa</p>
+                                        <p class="text-xs text-gray-500">Ver semana</p>
                                     </div>
                                 </div>
                             </a>
@@ -332,7 +310,7 @@
                                     <span class="text-xl">⚙️</span>
                                     <div>
                                         <p class="text-sm font-medium text-gray-900">Perfil</p>
-                                        <p class="text-xs text-gray-500">Editar información</p>
+                                        <p class="text-xs text-gray-500">Editar datos</p>
                                     </div>
                                 </div>
                             </a>
