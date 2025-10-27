@@ -455,16 +455,10 @@
                             <script>
                                 document.addEventListener('DOMContentLoaded', function() {
                                     const announcements = @json($recentAnnouncements->values());
-                                    console.log('Announcements data:', announcements);
-                                    console.log('Announcements length:', announcements.length);
                                     let currentIndex = 0;
 
                                     function renderAnnouncement(index) {
-                                        console.log('Rendering announcement at index:', index);
-                                        if (announcements.length === 0) {
-                                            console.log('No announcements to render');
-                                            return;
-                                        }
+                                        if (announcements.length === 0) return;
 
                                         const announcement = announcements[index];
                                         const container = document.getElementById('announcement-container');
