@@ -35,6 +35,7 @@ class DashboardController extends Controller
             // Obtener anuncios vigentes
             $today = now()->toDateString();
             $allValidAnnouncements = Announcement::query()
+                ->with('teacher')
                 ->where(function ($query) use ($today) {
                     // Si no tienen fechas de vigencia, mostrar siempre
                     $query->whereNull('valid_from')

@@ -15,6 +15,7 @@ class AnnouncementController extends Controller
 
         // Get all valid announcements with pagination
         $announcements = Announcement::query()
+            ->with('teacher')
             ->where(function ($query) use ($today) {
                 // If no dates, always show
                 $query->whereNull('valid_from')
