@@ -10,7 +10,7 @@ it('allows admin users to access the message create form', function () {
 
     $response->assertSuccessful()
         ->assertSee('Redactar Mensaje')
-        ->assertSee('Enviar a (Rol)');
+        ->assertSee('Rol de destinatarios');
 });
 
 it('allows non-admin users to access the message create form', function () {
