@@ -211,15 +211,19 @@
                 <div class="space-y-6">
                     <!-- Student Info Card -->
                     @if($student)
-                        <div class="rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 shadow-lg text-white p-6">
-                            <p class="text-xs font-semibold uppercase tracking-wider opacity-90">Mi Información</p>
-                            <h3 class="mt-3 text-xl font-bold text-white">{{ auth()->user()->full_name }}</h3>
-                            <p class="mt-3 text-sm font-medium text-blue-100">
-                                📋 Matrícula
-                            </p>
-                            <p class="text-lg font-bold text-white">
-                                {{ $student->enrollment_number }}
-                            </p>
+                        <div class="overflow-hidden rounded-lg shadow-lg">
+                            <div class="bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-700 px-6 py-8 text-white">
+                                <p class="text-xs font-semibold uppercase tracking-wider opacity-90">Mi Información</p>
+                                <h3 class="mt-4 text-2xl font-bold text-white leading-tight">{{ auth()->user()->full_name }}</h3>
+                                <div class="mt-6 pt-6 border-t border-blue-400 border-opacity-30">
+                                    <p class="text-sm font-medium text-blue-100">
+                                        📋 Matrícula
+                                    </p>
+                                    <p class="mt-2 text-lg font-bold text-white tracking-wide">
+                                        {{ $student->enrollment_number }}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     @endif
 
