@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\Assignment;
 use App\Models\Subject;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class AnnouncementController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $user = auth()->user();
         $isAdmin = $user->isAdmin();
@@ -42,5 +44,66 @@ class AnnouncementController extends Controller
             'pendingAssignments',
             'totalAnnouncements'
         ));
+    }
+
+    public function create(): View
+    {
+        return view('teacher.announcements.create');
+    }
+
+    public function store(): RedirectResponse
+    {
+        $validated = request()->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'target_audience' => 'nullable|array',
+        ]);
+
+        $validated['teacher_id'] = auth()->id();
+
+        Announcement::create($validated);
+
+        return redirect()->route('teacher.announcements.index')
+            ->with('success', 'Anuncio creado exitosamente.');
+    }
+
+    public function show(Announcement $announcement): View
+    {
+        $this->authorize('view', $announcement);
+
+        return view('teacher.announcements.show', compact('announcement'));
+    }
+
+    public function edit(Announcement $announcement): View
+    {
+        $this->authorize('update', $announcement);
+
+        return view('teacher.announcements.edit', compact('announcement'));
+    }
+
+    public function update(Announcement $announcement): RedirectResponse
+    {
+        $this->authorize('update', $announcement);
+
+        $validated = request()->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'target_audience' => 'nullable|array',
+        ]);
+
+        $announcement->update($validated);
+
+        return redirect()->route('teacher.announcements.index')
+            ->with('success', 'Anuncio actualizado exitosamente.');
+    }
+
+    public function destroy(Announcement $announcement): RedirectResponse
+    {
+        $this->authorize('delete', $announcement);
+
+        $announcement->delete();
+
+        return redirect()->route('teacher.announcements.index')
+            ->with('success', 'Anuncio eliminado exitosamente.');
     }
 }
