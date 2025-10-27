@@ -1,359 +1,345 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">
-            Dashboard de Estudiante
-        </h2>
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">
+                    Bienvenido, {{ auth()->user()->name }}
+                </h2>
+                <p class="mt-1 text-sm text-gray-600">
+                    {{ \Carbon\Carbon::now()->format('l, d \\d\\e F \\d\\e Y') }}
+                </p>
+            </div>
+        </div>
     </x-slot>
 
     <div class="py-12">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <!-- Mensajes no leídos -->
+            <!-- Unread Messages Alert -->
             @if($unreadMessageCount > 0)
-                <div class="mb-6">
-                    <x-unread-messages-card :unreadMessageCount="$unreadMessageCount" />
-                </div>
-            @endif
-
-            <div class="mb-6 grid gap-6 md:grid-cols-3">
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt class="truncate text-sm font-medium text-gray-500">Calificaciones Registradas</dt>
-                                    <dd class="text-3xl font-semibold text-gray-900">{{ $totalGrades }}</dd>
-                                </dl>
-                            </div>
+                <div class="mb-6 rounded-lg bg-blue-50 p-4 border-l-4 border-blue-500">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
                         </div>
-                    </div>
-                </div>
-
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt class="truncate text-sm font-medium text-gray-500">Tareas Pendientes</dt>
-                                    <dd class="text-3xl font-semibold text-gray-900">{{ $pendingAssignments }}</dd>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt class="truncate text-sm font-medium text-gray-500">Tareas Vencidas</dt>
-                                    <dd class="text-3xl font-semibold text-gray-900">{{ $overdueAssignments }}</dd>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            @if($student)
-                <div class="mb-6 overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Mi Información</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="grid gap-4 md:grid-cols-3">
-                            <div>
-                                <p class="text-sm font-medium text-gray-500">Nombre</p>
-                                <p class="mt-1 text-gray-900">{{ auth()->user()->name }}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-gray-500">Matrícula</p>
-                                <p class="mt-1 text-gray-900">{{ $student->enrollment_number }}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-gray-500">Grado y Grupo</p>
-                                <p class="mt-1 text-gray-900">{{ $student->grade_level }} - Grupo {{ $student->group }}</p>
-                            </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-blue-800">
+                                Tienes <span class="font-bold">{{ $unreadMessageCount }}</span> mensaje(s) sin leer
+                            </p>
+                            <a href="{{ route('messages.inbox') }}" class="mt-2 inline-block text-sm font-medium text-blue-600 hover:text-blue-500">
+                                Ver mensajes →
+                            </a>
                         </div>
                     </div>
                 </div>
             @endif
 
-            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Mi Horario</h3>
-                    </div>
-                    <div class="p-6">
-                        <ul class="space-y-3">
-                            <li>
-                                <a href="{{ route('student.schedule') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
-                                    Ver Horario Completo
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Clases de Hoy
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                    </svg>
-                                    Mis Materias
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Calificaciones</h3>
-                    </div>
-                    <div class="p-6">
-                        <ul class="space-y-3">
-                            <li>
-                                <a href="{{ route('student.grades') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    Ver Todas Mis Calificaciones
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                    </svg>
-                                    Calificaciones por Materia
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
-                                    </svg>
-                                    Mi Promedio General
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Tareas</h3>
-                    </div>
-                    <div class="p-6">
-                        <ul class="space-y-3">
-                            <li>
-                                <a href="{{ route('student.assignments') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                                    </svg>
-                                    Ver Todas Mis Tareas
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('student.assignments') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Tareas Vencidas
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('student.assignments') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Tareas Pendientes
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Anuncios</h3>
-                    </div>
-                    <div class="p-6">
-                        <ul class="space-y-3">
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
-                                    </svg>
-                                    Ver Anuncios Recientes
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                                    </svg>
-                                    Notificaciones
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                                    </svg>
-                                    Archivo de Anuncios
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Asistencia</h3>
-                    </div>
-                    <div class="p-6">
-                        <ul class="space-y-3">
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                                    </svg>
-                                    Ver Mi Asistencia
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    Justificantes Médicos
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    Estadísticas de Asistencia
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Mi Perfil</h3>
-                    </div>
-                    <div class="p-6">
-                        <ul class="space-y-3">
-                            <li>
-                                <a href="{{ route('profile.edit') }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                    </svg>
-                                    Editar Perfil
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    Mis Documentos
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                    </svg>
-                                    Contactar a mis Maestros
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            @if($recentAnnouncements->count() > 0)
-                <div class="mt-6 overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Anuncios Recientes</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="space-y-4">
-                            @foreach($recentAnnouncements as $announcement)
-                                <div class="rounded-lg border border-gray-200 p-4">
-                                    <h4 class="font-semibold text-gray-900">{{ $announcement->title }}</h4>
-                                    <p class="mt-2 text-gray-600">{{ $announcement->content }}</p>
-                                    <p class="mt-2 text-sm text-gray-500">
-                                        Por: {{ $announcement->teacher->name }} - {{ $announcement->created_at->format('d/m/Y H:i') }}
-                                    </p>
+            <!-- Status Cards Grid -->
+            <div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <!-- Current/Next Class Card -->
+                @if($currentClass || $nextClass)
+                    <div class="overflow-hidden rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
+                        <div class="p-6 text-white">
+                            @if($currentClass)
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-medium opacity-90">Clase en curso</p>
+                                        <h3 class="mt-2 text-xl font-bold">{{ $currentClass->subject->name }}</h3>
+                                        <p class="mt-1 text-sm opacity-75">
+                                            {{ $currentClass->start_time }} - {{ $currentClass->end_time }}
+                                        </p>
+                                        <p class="mt-2 text-sm">
+                                            👨‍🏫 {{ $currentClass->subject->teacher->user->name }}
+                                        </p>
+                                    </div>
+                                    <div class="text-4xl">🎓</div>
                                 </div>
-                            @endforeach
+                            @elseif($nextClass)
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-medium opacity-90">Próxima clase</p>
+                                        <h3 class="mt-2 text-xl font-bold">{{ $nextClass->subject->name }}</h3>
+                                        <p class="mt-1 text-sm opacity-75">
+                                            {{ $nextClass->start_time }} - {{ $nextClass->end_time }}
+                                        </p>
+                                        <p class="mt-2 text-sm">
+                                            👨‍🏫 {{ $nextClass->subject->teacher->user->name }}
+                                        </p>
+                                    </div>
+                                    <div class="text-4xl">⏰</div>
+                                </div>
+                            @endif
                         </div>
                     </div>
-                </div>
-            @endif
+                @endif
 
-            @if($schedules->count() > 0)
-                <div class="mt-6 overflow-hidden rounded-lg bg-white shadow-sm">
-                    <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Mi Horario de Clases</h3>
+                <!-- Pending Assignments Card -->
+                <div class="overflow-hidden rounded-lg bg-gradient-to-br from-yellow-500 to-orange-600 shadow-lg">
+                    <div class="p-6 text-white">
+                        <p class="text-sm font-medium opacity-90">Tareas Pendientes</p>
+                        <h3 class="mt-2 text-4xl font-bold">{{ $pendingAssignments }}</h3>
+                        <p class="mt-2 text-sm opacity-75">por entregar próximamente</p>
+                        <a href="{{ route('student.assignments') }}" class="mt-4 inline-flex text-sm font-medium hover:opacity-80">
+                            Ver tareas →
+                        </a>
                     </div>
-                    <div class="p-6">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left text-gray-500">Día</th>
-                                        <th class="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left text-gray-500">Materia</th>
-                                        <th class="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left text-gray-500">Hora Inicio</th>
-                                        <th class="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left text-gray-500">Hora Fin</th>
-                                        <th class="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left text-gray-500">Salón</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200 bg-white">
-                                    @foreach($schedules as $schedule)
-                                        <tr>
-                                            <td class="whitespace-nowrap px-6 py-4">{{ ucfirst($schedule->day_of_week->value) }}</td>
-                                            <td class="whitespace-nowrap px-6 py-4">{{ $schedule->subject->name }}</td>
-                                            <td class="whitespace-nowrap px-6 py-4">{{ $schedule->start_time }}</td>
-                                            <td class="whitespace-nowrap px-6 py-4">{{ $schedule->end_time }}</td>
-                                            <td class="whitespace-nowrap px-6 py-4">{{ $schedule->classroom }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                </div>
+
+                <!-- Overdue Assignments Card -->
+                <div class="overflow-hidden rounded-lg bg-gradient-to-br from-red-500 to-pink-600 shadow-lg">
+                    <div class="p-6 text-white">
+                        <p class="text-sm font-medium opacity-90">Tareas Vencidas</p>
+                        <h3 class="mt-2 text-4xl font-bold">{{ $overdueAssignments }}</h3>
+                        <p class="mt-2 text-sm opacity-75">que debes entregar ya</p>
+                        <a href="{{ route('student.assignments') }}" class="mt-4 inline-flex text-sm font-medium hover:opacity-80">
+                            Ver tareas →
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Grades Card -->
+                <div class="overflow-hidden rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg">
+                    <div class="p-6 text-white">
+                        <p class="text-sm font-medium opacity-90">Calificaciones</p>
+                        <h3 class="mt-2 text-4xl font-bold">{{ $totalGrades }}</h3>
+                        <p class="mt-2 text-sm opacity-75">registradas</p>
+                        <a href="{{ route('student.grades') }}" class="mt-4 inline-flex text-sm font-medium hover:opacity-80">
+                            Ver calificaciones →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="grid gap-6 lg:grid-cols-3">
+                <!-- Left Column - Schedule and Assignments -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Today's Schedule -->
+                    @if($todaySchedules->count() > 0)
+                        <div class="overflow-hidden rounded-lg bg-white shadow-lg">
+                            <div class="border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
+                                <h3 class="text-lg font-bold text-gray-900">📅 Horario de Hoy</h3>
+                            </div>
+                            <div class="divide-y divide-gray-200">
+                                @foreach($todaySchedules as $schedule)
+                                    @php
+                                        $isCurrentClass = $currentClass && $currentClass->id === $schedule->id;
+                                        $isNextClass = $nextClass && $nextClass->id === $schedule->id;
+                                    @endphp
+                                    <div class="p-4 transition-colors {{ $isCurrentClass ? 'bg-blue-50' : ($isNextClass ? 'bg-amber-50' : 'hover:bg-gray-50') }}">
+                                        <div class="flex items-start gap-4">
+                                            <div class="flex-shrink-0 text-2xl">
+                                                @if($isCurrentClass)
+                                                    🔴
+                                                @elseif($isNextClass)
+                                                    🟡
+                                                @else
+                                                    ⚪
+                                                @endif
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <h4 class="text-sm font-semibold text-gray-900">{{ $schedule->subject->name }}</h4>
+                                                <p class="mt-1 text-sm text-gray-500">
+                                                    🕐 {{ $schedule->start_time }} - {{ $schedule->end_time }}
+                                                    @if($schedule->classroom)
+                                                        • Salón {{ $schedule->classroom }}
+                                                    @endif
+                                                </p>
+                                                <p class="mt-1 text-sm text-gray-600">
+                                                    👨‍🏫 {{ $schedule->subject->teacher->user->name }}
+                                                </p>
+                                                @if($isCurrentClass)
+                                                    <span class="mt-2 inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                                                        En curso
+                                                    </span>
+                                                @elseif($isNextClass)
+                                                    <span class="mt-2 inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                                                        Próxima
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <div class="bg-gray-50 px-6 py-3">
+                                <a href="{{ route('student.schedule') }}" class="text-sm font-medium text-blue-600 hover:text-blue-500">
+                                    Ver horario completo →
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Upcoming Assignments -->
+                    <div class="overflow-hidden rounded-lg bg-white shadow-lg">
+                        <div class="border-b border-gray-200 bg-gradient-to-r from-orange-50 to-red-50 px-6 py-4">
+                            <h3 class="text-lg font-bold text-gray-900">📋 Próximas Tareas</h3>
+                        </div>
+                        @if($upcomingAssignments->count() > 0)
+                            <div class="divide-y divide-gray-200">
+                                @foreach($upcomingAssignments as $assignment)
+                                    @php
+                                        $daysUntilDue = $assignment->due_date->diffInDays(now(), false);
+                                        $isUrgent = $daysUntilDue <= 2;
+                                        $isDueSoon = $daysUntilDue <= 7;
+                                    @endphp
+                                    <div class="p-4 hover:bg-gray-50 transition-colors {{ $isUrgent ? 'bg-red-50' : ($isDueSoon ? 'bg-amber-50' : '') }}">
+                                        <div class="flex items-start justify-between gap-4">
+                                            <div class="flex-1 min-w-0">
+                                                <h4 class="text-sm font-semibold text-gray-900">{{ $assignment->title }}</h4>
+                                                <p class="mt-1 text-sm text-gray-500">
+                                                    Materia: <span class="font-medium">{{ $assignment->subject->name }}</span>
+                                                </p>
+                                                <p class="mt-1 text-xs text-gray-500 line-clamp-2">
+                                                    {{ $assignment->description }}
+                                                </p>
+                                            </div>
+                                            <div class="flex-shrink-0 text-right">
+                                                @if($isUrgent)
+                                                    <span class="inline-block rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">
+                                                        Urgente
+                                                    </span>
+                                                @elseif($isDueSoon)
+                                                    <span class="inline-block rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700">
+                                                        Pronto
+                                                    </span>
+                                                @endif
+                                                <p class="mt-2 text-sm font-medium text-gray-900">
+                                                    {{ $assignment->due_date->format('d/m') }}
+                                                </p>
+                                                <p class="text-xs text-gray-500">
+                                                    {{ $assignment->due_date->format('H:i') }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <div class="bg-gray-50 px-6 py-3">
+                                <a href="{{ route('student.assignments') }}" class="text-sm font-medium text-blue-600 hover:text-blue-500">
+                                    Ver todas las tareas →
+                                </a>
+                            </div>
+                        @else
+                            <div class="p-8 text-center">
+                                <p class="text-gray-500">¡No tienes tareas pendientes! 🎉</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Right Column - Sidebar -->
+                <div class="space-y-6">
+                    <!-- Student Info Card -->
+                    @if($student)
+                        <div class="overflow-hidden rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg text-white">
+                            <div class="p-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="flex-shrink-0 text-4xl">👤</div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium opacity-75">Mi Información</p>
+                                        <h3 class="mt-1 text-lg font-bold truncate">{{ auth()->user()->full_name }}</h3>
+                                        <p class="mt-1 text-sm opacity-75">
+                                            Matrícula: {{ $student->enrollment_number }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Recent Announcements -->
+                    <div class="overflow-hidden rounded-lg bg-white shadow-lg">
+                        <div class="border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4">
+                            <h3 class="text-lg font-bold text-gray-900">📢 Anuncios</h3>
+                        </div>
+                        @if($recentAnnouncements->count() > 0)
+                            <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                                @foreach($recentAnnouncements->take(5) as $announcement)
+                                    <div class="p-4 hover:bg-gray-50 transition-colors">
+                                        <h4 class="text-sm font-semibold text-gray-900">{{ $announcement->title }}</h4>
+                                        <p class="mt-2 text-xs text-gray-600 line-clamp-2">{{ $announcement->content }}</p>
+                                        <p class="mt-2 text-xs text-gray-400">
+                                            {{ $announcement->created_at->format('d/m/Y H:i') }}
+                                        </p>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="p-4 text-center text-gray-500 text-sm">
+                                No hay anuncios recientes
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Quick Links -->
+                    <div class="overflow-hidden rounded-lg bg-white shadow-lg">
+                        <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
+                            <h3 class="text-lg font-bold text-gray-900">⚡ Accesos Rápidos</h3>
+                        </div>
+                        <div class="divide-y divide-gray-200">
+                            <a href="{{ route('messages.inbox') }}" class="block p-4 hover:bg-blue-50 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xl">✉️</span>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">Mensajes</p>
+                                        <p class="text-xs text-gray-500">
+                                            @if($unreadMessageCount > 0)
+                                                {{ $unreadMessageCount }} sin leer
+                                            @else
+                                                Todo actualizado
+                                            @endif
+                                        </p>
+                                    </div>
+                                </div>
+                            </a>
+                            <a href="{{ route('student.grades') }}" class="block p-4 hover:bg-green-50 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xl">📊</span>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">Calificaciones</p>
+                                        <p class="text-xs text-gray-500">{{ $totalGrades }} registradas</p>
+                                    </div>
+                                </div>
+                            </a>
+                            <a href="{{ route('student.assignments') }}" class="block p-4 hover:bg-orange-50 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xl">📝</span>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">Tareas</p>
+                                        <p class="text-xs text-gray-500">
+                                            @if($pendingAssignments > 0)
+                                                {{ $pendingAssignments }} pendientes
+                                            @else
+                                                Todas entregadas
+                                            @endif
+                                        </p>
+                                    </div>
+                                </div>
+                            </a>
+                            <a href="{{ route('student.schedule') }}" class="block p-4 hover:bg-purple-50 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xl">📅</span>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">Horario</p>
+                                        <p class="text-xs text-gray-500">Ver semana completa</p>
+                                    </div>
+                                </div>
+                            </a>
+                            <a href="{{ route('profile.edit') }}" class="block p-4 hover:bg-indigo-50 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xl">⚙️</span>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">Perfil</p>
+                                        <p class="text-xs text-gray-500">Editar información</p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </div>
                 </div>
-            @endif
+            </div>
         </div>
     </div>
 </x-app-layout>

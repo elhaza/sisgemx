@@ -57,6 +57,32 @@ class DashboardController extends Controller
         $currentDay = $dayMapping[$currentDayOfWeek] ?? null;
         $currentTime = $now->format('H:i');
 
+        // Get today's schedule
+        $todaySchedules = $schedules->filter(function ($schedule) use ($currentDay) {
+            return strtolower($schedule->day_of_week) === $currentDay;
+        })->sortBy('start_time')->values();
+
+        // Find current and next class
+        $currentClass = null;
+        $nextClass = null;
+        foreach ($todaySchedules as $schedule) {
+            if ($schedule->start_time <= $currentTime && $schedule->end_time > $currentTime) {
+                $currentClass = $schedule;
+            }
+            if ($schedule->start_time > $currentTime && ! $nextClass) {
+                $nextClass = $schedule;
+            }
+        }
+
+        // Get pending assignments (upcoming and overdue)
+        $upcomingAssignments = Assignment::whereHas('subject.schedules', function ($query) use ($student) {
+            $query->where('school_grade_id', $student->school_grade_id);
+        })
+            ->where('due_date', '>=', now())
+            ->orderBy('due_date')
+            ->take(5)
+            ->get();
+
         return view('student.dashboard', compact(
             'unreadMessageCount',
             'student',
@@ -66,7 +92,11 @@ class DashboardController extends Controller
             'recentAnnouncements',
             'schedules',
             'currentDay',
-            'currentTime'
+            'currentTime',
+            'todaySchedules',
+            'currentClass',
+            'nextClass',
+            'upcomingAssignments'
         ));
     }
 
