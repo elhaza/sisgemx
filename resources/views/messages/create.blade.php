@@ -55,6 +55,8 @@
                     this.searchQuery = '';
                     this.searchResults = [];
                     this.secondaryFilterOptions = [];
+                    this.selectedRecipients = [];
+                    this.updateRecipientInput();
 
                     const secondaryContainer = document.getElementById('secondaryFilterContainer');
 
@@ -128,6 +130,8 @@
                 },
 
                 onSecondaryFilterChange() {
+                    this.selectedRecipients = [];
+                    this.updateRecipientInput();
                     if (this.selectedSecondaryFilter) {
                         this.loadRecipients();
                     }
