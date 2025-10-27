@@ -163,9 +163,26 @@
                                 <a href="{{ route('messages.show', $conversation) }}" class="flex-1 min-w-0">
                                     <div class="flex items-center justify-between gap-4">
                                         <div class="flex-1 min-w-0">
-                                            <p class="text-sm {{ $isUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-700' }} truncate">
-                                                {{ $otherUser->name ?? 'Desconocido' }}
-                                            </p>
+                                            <div class="flex items-center gap-2">
+                                                <p class="text-sm {{ $isUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-700' }} truncate">
+                                                    {{ $otherUser->name ?? 'Desconocido' }}
+                                                </p>
+                                                @if($isUserSender)
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700 flex-shrink-0">
+                                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8m0 8l-4-2m4 2l4-2" />
+                                                        </svg>
+                                                        Enviado
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 flex-shrink-0">
+                                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l-9-2 9-18 9 18-9 2zm0 0v-8m0 8l4-2m-4 2l-4-2" />
+                                                        </svg>
+                                                        Recibido
+                                                    </span>
+                                                @endif
+                                            </div>
 
                                             <p class="mt-0.5 text-sm {{ $isUnread ? 'font-semibold text-gray-900' : 'font-normal text-gray-700' }} truncate">
                                                 {{ $conversation->subject }}
