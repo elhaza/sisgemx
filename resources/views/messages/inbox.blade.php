@@ -116,12 +116,28 @@
                     <div class="divide-y divide-gray-200">
                         @foreach($conversations as $conversation)
                             @php
-                                $messageRecipient = $conversation->recipients->first();
-                                $isRead = $messageRecipient && $messageRecipient->isRead();
-                                $otherUser = $conversation->sender_id === auth()->id()
-                                    ? ($conversation->recipients->first()?->recipient)
-                                    : $conversation->sender;
-                                $isUnread = !$isRead && $conversation->sender_id !== auth()->id();
+                                $isUserSender = $conversation->sender_id === auth()->id();
+
+                                // Get the other user in the conversation
+                                if ($isUserSender) {
+                                    // If user is sender, get the first recipient
+                                    $otherUser = $conversation->recipients->first()?->recipient;
+                                } else {
+                                    // If user is recipient, get the sender
+                                    $otherUser = $conversation->sender;
+                                }
+
+                                // Get read status from the user's perspective
+                                if ($isUserSender) {
+                                    // Sender's messages are always read
+                                    $isRead = true;
+                                } else {
+                                    // For recipients, check if marked as read
+                                    $messageRecipient = $conversation->recipients->first();
+                                    $isRead = $messageRecipient && $messageRecipient->isRead();
+                                }
+
+                                $isUnread = !$isRead && !$isUserSender;
                             @endphp
 
                             <div class="message-row group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-gray-50 {{ $isUnread ? 'bg-blue-50' : 'bg-white' }}">

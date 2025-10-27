@@ -26,8 +26,8 @@ class MessageController extends Controller
                     $q->where('recipient_id', $user->id);
                 });
         })
-            ->with(['sender', 'recipients' => function ($q) use ($user) {
-                $q->where('recipient_id', $user->id);
+            ->with(['sender', 'recipients' => function ($q) {
+                $q->with('recipient');
             }]);
 
         // Apply search filter if provided
