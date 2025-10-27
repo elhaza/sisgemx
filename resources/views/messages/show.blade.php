@@ -30,26 +30,29 @@
             <div class="space-y-4">
                 @foreach($thread as $msg)
                     <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg dark:bg-gray-800">
-                        <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-700 sm:px-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                        {{ $msg->sender->name }}
-                                    </p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                                        {{ $msg->created_at->format('d de F \d\e Y \a \l\a\s H:i') }}
-                                    </p>
+                        <div class="border-b border-gray-200 px-4 py-4 dark:border-gray-700 sm:px-6">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="flex items-start gap-3">
+                                    <x-user-avatar :user="$msg->sender" size="md" />
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                            {{ $msg->sender->name }}
+                                        </p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                                            {{ $msg->created_at->format('d \d\e F, Y \a \l\a\s H:i') }}
+                                        </p>
+                                    </div>
                                 </div>
                                 @if($msg->sender_id === auth()->id())
-                                    <span class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                    <span class="inline-flex flex-shrink-0 items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 whitespace-nowrap">
                                         Tú
                                     </span>
                                 @endif
                             </div>
                         </div>
                         <div class="px-4 py-6 sm:px-6">
-                            <div class="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
-                                {{ $msg->body }}
+                            <div class="prose prose-sm dark:prose-invert max-w-none space-y-3 text-gray-700 dark:text-gray-300 break-words">
+                                {!! nl2br(e($msg->body)) !!}
                             </div>
                         </div>
                     </div>

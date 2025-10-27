@@ -21,9 +21,12 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="mx-auto max-w-4xl sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-5xl sm:px-6 lg:px-8">
             @if(session('success'))
-                <div class="mb-4 rounded-lg bg-green-50 p-4 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                <div class="mb-4 flex items-center gap-3 rounded-lg bg-green-50 p-4 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                    <svg class="h-5 w-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
                     {{ session('success') }}
                 </div>
             @endif
@@ -31,7 +34,7 @@
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg dark:bg-gray-800">
                 @if($conversations->count() > 0)
                     <!-- Search Bar -->
-                    <div class="border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-700/50">
+                    <div class="border-b border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-700 dark:bg-gray-700/50">
                         <div class="relative">
                             <svg class="absolute left-3 top-3.5 h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -42,10 +45,13 @@
                                     name="search"
                                     placeholder="Buscar por asunto, contenido o remitente..."
                                     value="{{ $searchQuery }}"
-                                    class="w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+                                    class="w-full rounded-md border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-500 transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
                                 >
                                 @if($searchQuery)
-                                    <a href="{{ route('messages.inbox') }}" class="inline-flex items-center rounded-md bg-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
+                                    <a href="{{ route('messages.inbox') }}" class="inline-flex items-center gap-2 rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
                                         Limpiar
                                     </a>
                                 @endif
@@ -115,11 +121,12 @@
                                 $otherUser = $conversation->sender_id === auth()->id()
                                     ? ($conversation->recipients->first()?->recipient)
                                     : $conversation->sender;
+                                $isUnread = !$isRead && $conversation->sender_id !== auth()->id();
                             @endphp
 
-                            <div class="message-row group flex items-start gap-3 bg-white px-4 py-3 transition hover:bg-blue-50 dark:bg-gray-800 dark:hover:bg-gray-700/50 {{ !$isRead && $conversation->sender_id !== auth()->id() ? 'bg-blue-50 dark:bg-gray-700/30' : '' }}">
+                            <div class="message-row group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 {{ $isUnread ? 'bg-blue-50 dark:bg-gray-700/30' : 'bg-white dark:bg-gray-800' }}">
                                 <!-- Checkbox -->
-                                <div class="flex-shrink-0 pt-1">
+                                <div class="flex-shrink-0">
                                     <input
                                         type="checkbox"
                                         class="message-checkbox h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
@@ -128,58 +135,59 @@
                                     >
                                 </div>
 
-                                <!-- Unread Indicator -->
-                                <div class="flex-shrink-0">
-                                    @if(!$isRead && $conversation->sender_id !== auth()->id())
-                                        <div class="h-3 w-3 rounded-full bg-blue-600"></div>
-                                    @else
-                                        <div class="h-3 w-3 rounded-full bg-transparent"></div>
+                                <!-- Avatar + Unread Indicator -->
+                                <div class="relative flex-shrink-0">
+                                    <x-user-avatar :user="$otherUser" size="md" />
+                                    @if($isUnread)
+                                        <span class="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-blue-600 ring-2 ring-white dark:ring-gray-800"></span>
                                     @endif
                                 </div>
 
                                 <!-- Message Content (Clickable) -->
                                 <a href="{{ route('messages.show', $conversation) }}" class="flex-1 min-w-0">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <p class="text-sm {{ !$isRead && $conversation->sender_id !== auth()->id() ? 'font-bold' : 'font-medium' }} text-gray-900 dark:text-gray-100 truncate">
-                                            {{ $otherUser->name ?? 'Desconocido' }}
-                                        </p>
-                                        <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                    <div class="flex items-center justify-between gap-4">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm {{ $isUnread ? 'font-bold text-gray-900 dark:text-gray-100' : 'font-medium text-gray-700 dark:text-gray-300' }} truncate">
+                                                {{ $otherUser->name ?? 'Desconocido' }}
+                                            </p>
+
+                                            <p class="mt-0.5 text-sm {{ $isUnread ? 'font-semibold text-gray-900 dark:text-gray-100' : 'font-normal text-gray-700 dark:text-gray-300' }} truncate">
+                                                {{ $conversation->subject }}
+                                            </p>
+
+                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                                                {{ Str::limit(strip_tags($conversation->body), 100) }}
+                                            </p>
+                                        </div>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap flex-shrink-0">
                                             {{ $conversation->created_at->format('d M') }}
                                         </span>
                                     </div>
-
-                                    <p class="mt-1 text-sm {{ !$isRead && $conversation->sender_id !== auth()->id() ? 'font-semibold' : 'font-normal' }} text-gray-900 dark:text-gray-100 truncate">
-                                        {{ $conversation->subject }}
-                                    </p>
-
-                                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                                        {{ Str::limit(strip_tags($conversation->body), 100) }}
-                                    </p>
                                 </a>
 
                                 <!-- Status Badge and Actions -->
                                 <div class="flex flex-shrink-0 items-center gap-2">
-                                    @if(!$isRead && $conversation->sender_id !== auth()->id())
-                                        <span class="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                                    @if($isUnread)
+                                        <span class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                                             Nuevo
                                         </span>
                                     @endif
 
                                     <!-- Action Buttons (appear on hover) -->
                                     <div class="hidden gap-1 group-hover:flex">
-                                        @if(!$isRead && $conversation->sender_id !== auth()->id())
-                                            <form action="{{ route('messages.mark-as-read', $conversation) }}" method="POST" class="inline" onsubmit="return true;">
+                                        @if($isUnread)
+                                            <form action="{{ route('messages.mark-as-read', $conversation) }}" method="POST" class="inline" onsubmit="event.stopPropagation(); return true;">
                                                 @csrf
-                                                <button type="submit" title="Marcar como leído" class="rounded p-1 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600">
+                                                <button type="submit" title="Marcar como leído" class="rounded-md p-2 text-gray-500 transition hover:bg-gray-200 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-300">
                                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                                     </svg>
                                                 </button>
                                             </form>
                                         @else
-                                            <form action="{{ route('messages.mark-as-unread', $conversation) }}" method="POST" class="inline" onsubmit="return true;">
+                                            <form action="{{ route('messages.mark-as-unread', $conversation) }}" method="POST" class="inline" onsubmit="event.stopPropagation(); return true;">
                                                 @csrf
-                                                <button type="submit" title="Marcar como no leído" class="rounded p-1 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600">
+                                                <button type="submit" title="Marcar como no leído" class="rounded-md p-2 text-gray-500 transition hover:bg-gray-200 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-300">
                                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                                     </svg>
@@ -187,10 +195,10 @@
                                             </form>
                                         @endif
 
-                                        <form action="{{ route('messages.delete', $conversation) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este mensaje?');">
+                                        <form action="{{ route('messages.delete', $conversation) }}" method="POST" class="inline" onsubmit="event.stopPropagation(); return confirm('¿Estás seguro de que deseas eliminar este mensaje?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" title="Eliminar" class="rounded p-1 text-red-500 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30">
+                                            <button type="submit" title="Eliminar" class="rounded-md p-2 text-red-500 transition hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300">
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                 </svg>
