@@ -99,6 +99,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:teacher'])->prefix('teacher')->name('teacher.')->group(function () {
         Route::get('dashboard', [TeacherDashboardController::class, 'index'])->name('dashboard');
 
+        Route::get('subjects/{subject}/students', [\App\Http\Controllers\Teacher\SubjectStudentsController::class, 'show'])->name('subject.students');
+
         Route::resource('grades', GradeController::class);
         Route::get('grades/api/students/{subject}', [GradeController::class, 'getStudentsBySubject'])->name('grades.api.students');
         Route::get('grades/bulk/{subject}', [GradeController::class, 'bulkGradeView'])->name('grades.bulk');

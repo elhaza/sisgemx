@@ -65,6 +65,30 @@ class DashboardController extends Controller
             });
         })->latest()->take(5)->get();
 
+        // Get valid announcements for all teachers
+        $today = now()->toDateString();
+        $allValidAnnouncements = Announcement::query()
+            ->with('teacher')
+            ->where(function ($query) use ($today) {
+                $query->whereNull('valid_from')
+                    ->whereNull('valid_until')
+                    ->orWhere(function ($q) use ($today) {
+                        $q->where(function ($subQuery) use ($today) {
+                            $subQuery->whereNull('valid_from')
+                                ->orWhere('valid_from', '<=', $today);
+                        })
+                            ->where(function ($subQuery) use ($today) {
+                                $subQuery->whereNull('valid_until')
+                                    ->orWhere('valid_until', '>=', $today);
+                            });
+                    });
+            })
+            ->latest()
+            ->get();
+
+        $recentAnnouncements = $allValidAnnouncements->take(5);
+        $totalValidAnnouncements = $allValidAnnouncements->count();
+
         return view('teacher.dashboard', compact(
             'unreadMessageCount',
             'mySubjects',
@@ -73,7 +97,9 @@ class DashboardController extends Controller
             'activeAssignments',
             'myAnnouncements',
             'todaySchedule',
-            'medicalJustifications'
+            'medicalJustifications',
+            'recentAnnouncements',
+            'totalValidAnnouncements'
         ));
     }
 }

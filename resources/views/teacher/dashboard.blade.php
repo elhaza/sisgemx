@@ -89,6 +89,38 @@
                 </div>
             </div>
 
+            <!-- Anuncios Vigentes -->
+            @if($recentAnnouncements->count() > 0)
+                <div class="mb-6">
+                    <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+                        <div class="border-b border-gray-200 bg-blue-50 px-6 py-4">
+                            <h3 class="flex items-center text-lg font-semibold text-gray-900">
+                                <span class="mr-2 text-xl">📢</span>
+                                Anuncios Vigentes
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="space-y-4">
+                                @foreach($recentAnnouncements as $announcement)
+                                    <div class="border-l-4 border-blue-500 bg-blue-50 p-4 rounded">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1">
+                                                <h4 class="font-semibold text-gray-900">{{ $announcement->title }}</h4>
+                                                <p class="text-sm text-gray-600 mt-1">{{ Str::limit($announcement->content, 100) }}</p>
+                                                <div class="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                                    <span>Por: {{ $announcement->teacher?->full_name ?? 'Sistema' }}</span>
+                                                    <span>{{ $announcement->created_at->format('d/m/Y H:i') }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <!-- Secciones Principales -->
             <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <!-- Mis Materias -->
@@ -99,13 +131,13 @@
                     <div class="p-6">
                         <ul class="space-y-2">
                             @foreach($mySubjects as $subject)
-                                <li class="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3 hover:bg-gray-100 transition">
-                                    <div>
-                                        <p class="font-semibold text-gray-900">
+                                <li class="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3 hover:bg-gray-100 transition cursor-pointer">
+                                    <a href="{{ route('teacher.subject.students', $subject->id) }}" class="flex-1">
+                                        <p class="font-semibold text-gray-900 hover:text-blue-600">
                                             {{ $subject->name }}
                                             <span class="font-bold text-blue-600">- {{ $subject->gradeSection?->name ?? $subject->grade_level }}</span>
                                         </p>
-                                    </div>
+                                    </a>
                                     <div class="flex gap-4 text-xs text-gray-500">
                                         @if($subject->grades_count > 0)
                                             <span class="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-purple-700 font-medium">
