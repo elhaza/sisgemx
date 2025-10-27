@@ -28,7 +28,9 @@ class DashboardController extends Controller
             ->withCount(['grades', 'assignments'])
             ->get();
 
-        $totalStudents = Student::whereIn('grade_level', $mySubjects->pluck('grade_level')->unique())
+        $totalStudents = Student::whereHas('schoolGrade', function ($query) use ($mySubjects) {
+            $query->whereIn('grade_level', $mySubjects->pluck('grade_level')->unique());
+        })
             ->where('school_year_id', function ($query) {
                 $query->select('id')
                     ->from('school_years')
@@ -57,7 +59,9 @@ class DashboardController extends Controller
             ->get();
 
         $medicalJustifications = MedicalJustification::whereHas('student', function ($query) use ($mySubjects) {
-            $query->whereIn('grade_level', $mySubjects->pluck('grade_level')->unique());
+            $query->whereHas('schoolGrade', function ($subQuery) use ($mySubjects) {
+                $subQuery->whereIn('grade_level', $mySubjects->pluck('grade_level')->unique());
+            });
         })->latest()->take(5)->get();
 
         return view('teacher.dashboard', compact(
