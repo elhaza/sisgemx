@@ -99,12 +99,6 @@ class GradeSectionController extends Controller
 
     public function destroy(GradeSection $gradeSection)
     {
-        // Check if there are students in this section
-        if ($gradeSection->students()->exists()) {
-            return redirect()->route('admin.grade-sections.index')
-                ->with('error', 'No se puede eliminar una sección que tiene estudiantes inscritos.');
-        }
-
         // Check if there are schedules in this section
         if ($gradeSection->schedules()->exists()) {
             return redirect()->route('admin.grade-sections.index')
@@ -115,5 +109,64 @@ class GradeSectionController extends Controller
 
         return redirect()->route('admin.grade-sections.index')
             ->with('success', 'Sección de grado eliminada exitosamente.');
+    }
+
+    /**
+     * Get available grade sections for transferring students
+     */
+    public function getTransferOptions(GradeSection $gradeSection)
+    {
+        $studentCount = $gradeSection->students()->count();
+
+        // Get other sections at the same grade level with student counts
+        $availableSections = GradeSection::withCount('students')
+            ->where('grade_level', $gradeSection->grade_level)
+            ->where('school_year_id', $gradeSection->school_year_id)
+            ->where('id', '!=', $gradeSection->id)
+            ->orderBy('section')
+            ->get()
+            ->map(function ($section) {
+                return [
+                    'id' => $section->id,
+                    'name' => $section->name,
+                    'section' => $section->section,
+                    'students_count' => $section->students_count,
+                ];
+            });
+
+        return response()->json([
+            'gradeSection' => $gradeSection,
+            'studentCount' => $studentCount,
+            'availableSections' => $availableSections,
+        ]);
+    }
+
+    /**
+     * Transfer students to another section and delete the current one
+     */
+    public function transferAndDelete(Request $request, GradeSection $gradeSection)
+    {
+        $targetSectionId = $request->input('target_section_id');
+
+        if (! $targetSectionId) {
+            return redirect()->route('admin.grade-sections.index')
+                ->with('error', 'Debe seleccionar una sección de destino.');
+        }
+
+        $targetSection = GradeSection::find($targetSectionId);
+        if (! $targetSection) {
+            return redirect()->route('admin.grade-sections.index')
+                ->with('error', 'Sección de destino no encontrada.');
+        }
+
+        // Transfer all students
+        $studentCount = $gradeSection->students()->count();
+        $gradeSection->students()->update(['school_grade_id' => $targetSectionId]);
+
+        // Delete the section
+        $gradeSection->delete();
+
+        return redirect()->route('admin.grade-sections.index')
+            ->with('success', "Sección eliminada exitosamente. {$studentCount} estudiante(s) transferido(s) a {$targetSection->section}.");
     }
 }

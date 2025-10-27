@@ -80,11 +80,7 @@
                                         <td class="whitespace-nowrap px-6 py-4 text-sm">
                                             <a href="{{ route('admin.students.index', ['grade_level' => $gradeSection->grade_level, 'group' => $gradeSection->section, 'school_year_id' => $gradeSection->school_year_id]) }}" class="text-green-600 hover:text-green-900">Ver</a>
                                             <a href="{{ route('admin.grade-sections.edit', $gradeSection) }}" class="ml-3 text-blue-600 hover:text-blue-900">Editar</a>
-                                            <form action="{{ route('admin.grade-sections.destroy', $gradeSection) }}" method="POST" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="ml-3 text-red-600 hover:text-red-900" onclick="return confirm('¿Estás seguro?')">Eliminar</button>
-                                            </form>
+                                            <button type="button" onclick="handleDelete({{ $gradeSection->id }}, '{{ $gradeSection->name }}')" class="ml-3 text-red-600 hover:text-red-900">Eliminar</button>
                                         </td>
                                     </tr>
                                 @empty
@@ -103,4 +99,136 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal para transferir estudiantes -->
+    <div id="transferModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900" id="modalTitle">Transferir Estudiantes</h3>
+                <button type="button" onclick="closeTransferModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <p class="text-gray-700 mb-4">
+                    Se van a eliminar <span id="studentCount" class="font-semibold"></span> estudiante(s).
+                    Por favor, selecciona una sección para transferirlos:
+                </p>
+
+                <form id="transferForm" method="POST">
+                    @csrf
+                    <div class="mb-6">
+                        <label for="target_section_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            Sección Destino
+                        </label>
+                        <select name="target_section_id" id="target_section_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">-- Selecciona una sección --</option>
+                        </select>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeTransferModal()" class="flex-1 rounded-md bg-gray-300 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-400">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="flex-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                            Transferir y Eliminar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSectionId = null;
+
+        async function handleDelete(sectionId, sectionName) {
+            currentSectionId = sectionId;
+
+            try {
+                const response = await fetch(`/admin/grade-sections/${sectionId}/transfer-options`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await response.json();
+
+                // If there are no students, delete directly
+                if (data.studentCount === 0) {
+                    if (confirm('¿Estás seguro de que deseas eliminar esta sección?')) {
+                        deleteGradeSection(sectionId);
+                    }
+                    return;
+                }
+
+                // If there are students but no available sections
+                if (data.availableSections.length === 0) {
+                    alert('No se puede eliminar esta sección porque tiene estudiantes inscritos y no hay otras secciones en el mismo nivel a las que transferirlos.');
+                    return;
+                }
+
+                // Show modal with transfer options
+                document.getElementById('studentCount').textContent = data.studentCount;
+                document.getElementById('modalTitle').textContent = `Eliminar sección "${sectionName}"`;
+
+                // Populate target sections dropdown
+                const select = document.getElementById('target_section_id');
+                select.innerHTML = '<option value="">-- Selecciona una sección --</option>';
+
+                data.availableSections.forEach(section => {
+                    const option = document.createElement('option');
+                    option.value = section.id;
+                    option.textContent = `${section.name} (${section.students_count || 0} estudiantes)`;
+                    select.appendChild(option);
+                });
+
+                // Update form action
+                document.getElementById('transferForm').action = `/admin/grade-sections/${sectionId}/transfer-and-delete`;
+
+                // Show modal
+                document.getElementById('transferModal').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Ocurrió un error al procesar la solicitud.');
+            }
+        }
+
+        function deleteGradeSection(sectionId) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/grade-sections/${sectionId}`;
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = document.querySelector('meta[name="csrf-token"]').content;
+
+            const methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            methodInput.value = 'DELETE';
+
+            form.appendChild(csrfInput);
+            form.appendChild(methodInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function closeTransferModal() {
+            document.getElementById('transferModal').classList.add('hidden');
+            currentSectionId = null;
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('transferModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeTransferModal();
+            }
+        });
+    </script>
 </x-app-layout>

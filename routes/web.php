@@ -124,6 +124,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('users/{user}/availabilities/{availabilityId}', [UserController::class, 'deleteAvailability'])->name('users.delete-availability');
 
         Route::resource('grade-sections', GradeSectionController::class);
+        Route::get('grade-sections/{gradeSection}/transfer-options', [GradeSectionController::class, 'getTransferOptions'])->name('grade-sections.transfer-options');
+        Route::post('grade-sections/{gradeSection}/transfer-and-delete', [GradeSectionController::class, 'transferAndDelete'])->name('grade-sections.transfer-and-delete');
+
         Route::resource('school-years', SchoolYearController::class);
         Route::get('school-years/{schoolYear}/assign-students', [SchoolYearController::class, 'assignStudents'])->name('school-years.assign-students');
         Route::post('school-years/{schoolYear}/assign-students', [SchoolYearController::class, 'storeStudentAssignments'])->name('school-years.store-student-assignments');

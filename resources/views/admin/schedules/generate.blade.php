@@ -93,9 +93,9 @@
                                                 </a>
                                             </li>
                                             <li>
-                                                <a href="{{ route('admin.teacher-availabilities.index') }}"
+                                                <a href="{{ route('admin.users.index') }}"
                                                    class="underline hover:text-blue-900 font-medium">
-                                                    Disponibilidad de docentes registrada
+                                                    Disponibilidad de docentes registrada (en edición de usuarios)
                                                 </a>
                                             </li>
                                             <li>

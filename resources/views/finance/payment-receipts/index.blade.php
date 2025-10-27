@@ -49,7 +49,7 @@
                     </div>
                 </div>
 
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+                <div class="overflow-hidden rounded-lg bg-white shadow-sm cursor-pointer hover:shadow-md transition-shadow" onclick="openValidatedReceiptsModal()">
                     <div class="p-6">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
@@ -295,6 +295,62 @@
         </div>
     </div>
 
+    <!-- Modal para ver comprobantes validados -->
+    <div id="validatedReceiptsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4">
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Comprobantes Validados</h3>
+                <button type="button" onclick="closeValidatedReceiptsModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 max-h-96 overflow-y-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left font-medium text-gray-700">Fecha</th>
+                            <th class="px-4 py-2 text-left font-medium text-gray-700">Estudiante</th>
+                            <th class="px-4 py-2 text-left font-medium text-gray-700">Tipo</th>
+                            <th class="px-4 py-2 text-right font-medium text-gray-700">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        @forelse($allValidatedReceipts as $receipt)
+                            <tr class="{{ isset($receipt->type) && $receipt->type === 'admin_payment' ? 'bg-blue-50' : 'hover:bg-gray-50' }}">
+                                <td class="px-4 py-2">{{ $receipt->payment_date?->format('d/m/Y') ?? 'N/A' }}</td>
+                                <td class="px-4 py-2">
+                                    @if(isset($receipt->student) && $receipt->student)
+                                        {{ $receipt->student->user->full_name }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </td>
+                                <td class="px-4 py-2">
+                                    @if(isset($receipt->type) && $receipt->type === 'admin_payment')
+                                        <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
+                                            Aplicado por Admin
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
+                                            Validado
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-2 text-right font-semibold">${{ number_format($receipt->amount_paid, 2) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="px-4 py-3 text-center text-gray-500">No hay comprobantes validados</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script>
         function openImageModal(imageSrc) {
             document.getElementById('modalImage').src = imageSrc;
@@ -324,6 +380,21 @@
         document.getElementById('incomeDetailsModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeIncomeDetailsModal();
+            }
+        });
+
+        function openValidatedReceiptsModal() {
+            document.getElementById('validatedReceiptsModal').classList.remove('hidden');
+        }
+
+        function closeValidatedReceiptsModal() {
+            document.getElementById('validatedReceiptsModal').classList.add('hidden');
+        }
+
+        // Close validated receipts modal when clicking outside
+        document.getElementById('validatedReceiptsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeValidatedReceiptsModal();
             }
         });
     </script>

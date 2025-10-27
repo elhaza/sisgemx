@@ -202,11 +202,11 @@
                             <div class="mb-4">
                                 <label for="discount_percentage" class="block text-sm font-medium text-gray-700">Porcentaje de Descuento (%)</label>
                                 <input type="number" name="discount_percentage" id="discount_percentage"
-                                    value="{{ old('discount_percentage', $student->tuitions()->where('school_year_id', $student->school_year_id)->first()->discount_percentage ?? 0) }}"
+                                    value="{{ old('discount_percentage', $student->discount_percentage ?? 0) }}"
                                     min="0" max="100" step="0.01"
                                     placeholder="0.00"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <p class="mt-1 text-xs text-gray-500">Este descuento se aplicará a las colegiaturas mensuales del ciclo escolar seleccionado.</p>
+                                <p class="mt-1 text-xs text-gray-500">Este descuento se aplicará a las colegiaturas mensuales de los meses actuales y futuros.</p>
                                 @error('discount_percentage')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror

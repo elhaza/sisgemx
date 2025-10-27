@@ -145,7 +145,7 @@
                                 <thead>
                                     <tr class="border-b border-gray-200 bg-gray-50">
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700">Período</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Mensualidad</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Monto Base / Descuento</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700">Recargos</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700">Total a Pagar</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700">Vencimiento</th>
@@ -159,11 +159,11 @@
                                             <td class="px-4 py-3">
                                                 {{ $tuition->month_name }} {{ $tuition->year }}
                                             </td>
-                                            <td class="px-4 py-3 text-center font-semibold">
-                                                ${{ number_format($tuition->final_amount, 2) }}
+                                            <td class="px-4 py-3 text-center">
+                                                <div class="font-semibold">${{ number_format($tuition->monthly_amount, 2) }}</div>
                                                 @if($tuition->discount_percentage > 0)
                                                     <div class="text-xs text-green-600 mt-1">
-                                                        ({{ number_format($tuition->discount_percentage, 2) }}% desc.)
+                                                        -{{ number_format($tuition->discount_percentage, 2) }}%
                                                     </div>
                                                 @endif
                                             </td>

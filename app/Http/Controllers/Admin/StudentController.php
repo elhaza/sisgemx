@@ -176,10 +176,21 @@ class StudentController extends Controller
 
     public function store(Request $request)
     {
+        // Convert empty strings to null for nullable fields
+        $request->merge([
+            'tutor_2_id' => $request->input('tutor_2_id') ?: null,
+            'billing_name' => $request->input('billing_name') ?: null,
+            'billing_zip_code' => $request->input('billing_zip_code') ?: null,
+            'billing_rfc' => $request->input('billing_rfc') ?: null,
+            'billing_tax_regime' => $request->input('billing_tax_regime') ?: null,
+            'billing_cfdi_use' => $request->input('billing_cfdi_use') ?: null,
+            'discount_percentage' => $request->input('discount_percentage') ?: null,
+        ]);
+
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'school_year_id' => 'required|exists:school_years,id',
-            'school_grade_id' => 'required|exists:school_grades,id',
+            'school_grade_id' => 'required|exists:grade_sections,id',
             'enrollment_number' => 'nullable|string|unique:students',
             'curp' => 'nullable|string|size:18|unique:students',
             'gender' => 'nullable|string|in:male,female,unspecified',
@@ -229,7 +240,7 @@ class StudentController extends Controller
 
         $student = Student::create($validated);
 
-        // Apply discount to existing student tuitions for this school year
+        // Apply discount to existing student tuitions for this school year (copy from students table)
         $discountPercentage = $validated['discount_percentage'] ?? 0;
         if ($discountPercentage > 0) {
             StudentTuition::where('student_id', $student->id)
@@ -267,9 +278,20 @@ class StudentController extends Controller
 
     public function update(Request $request, Student $student)
     {
+        // Convert empty strings to null for nullable fields
+        $request->merge([
+            'tutor_2_id' => $request->input('tutor_2_id') ?: null,
+            'billing_name' => $request->input('billing_name') ?: null,
+            'billing_zip_code' => $request->input('billing_zip_code') ?: null,
+            'billing_rfc' => $request->input('billing_rfc') ?: null,
+            'billing_tax_regime' => $request->input('billing_tax_regime') ?: null,
+            'billing_cfdi_use' => $request->input('billing_cfdi_use') ?: null,
+            'discount_percentage' => $request->input('discount_percentage') ?: null,
+        ]);
+
         $validated = $request->validate([
             'school_year_id' => 'required|exists:school_years,id',
-            'school_grade_id' => 'required|exists:school_grades,id',
+            'school_grade_id' => 'required|exists:grade_sections,id',
             'enrollment_number' => 'required|string|unique:students,enrollment_number,'.$student->id,
             'curp' => 'nullable|string|size:18|unique:students,curp,'.$student->id,
             'gender' => 'nullable|string|in:male,female,unspecified',
@@ -304,13 +326,16 @@ class StudentController extends Controller
             }
         }
 
+        // Store old discount to detect if it changed
+        $oldDiscount = $student->discount_percentage;
+        $newDiscount = $validated['discount_percentage'] ?? 0;
+
         $student->update($validated);
 
-        // Update discount for student tuitions in this school year
-        $discountPercentage = $validated['discount_percentage'] ?? 0;
-        StudentTuition::where('student_id', $student->id)
-            ->where('school_year_id', $validated['school_year_id'])
-            ->update(['discount_percentage' => $discountPercentage]);
+        // If discount changed, update student_tuitions and pending payments for current and future months only
+        if ((float) $oldDiscount !== (float) $newDiscount) {
+            $this->updateDiscountForFutureMonths($student, $validated['school_year_id'], $newDiscount);
+        }
 
         return redirect()->route('admin.students.index')->with('success', 'Estudiante actualizado exitosamente.');
     }
@@ -425,6 +450,50 @@ class StudentController extends Controller
 
         return redirect()->route('admin.students.show', $student)
             ->with('success', 'Mensualidad de $'.number_format($totalAmount, 2).' liquidada exitosamente.');
+    }
+
+    /**
+     * Update discount for student tuitions and payments for current and future months only
+     */
+    protected function updateDiscountForFutureMonths(Student $student, int $schoolYearId, float $newDiscount): void
+    {
+        $currentMonth = (int) now()->month;
+        $currentYear = (int) now()->year;
+
+        // Get all future tuitions (current month and onwards)
+        $futureTuitions = StudentTuition::where('student_id', $student->id)
+            ->where('school_year_id', $schoolYearId)
+            ->where(function ($query) use ($currentYear, $currentMonth) {
+                $query->where('year', '>', $currentYear)
+                    ->orWhere(function ($q) use ($currentYear, $currentMonth) {
+                        $q->where('year', $currentYear)
+                            ->where('month', '>=', $currentMonth);
+                    });
+            })
+            ->get();
+
+        // Update student_tuitions discount_percentage
+        foreach ($futureTuitions as $tuition) {
+            $tuition->update(['discount_percentage' => $newDiscount]);
+        }
+
+        // Update pending payments (is_paid = false) for these tuitions
+        if ($futureTuitions->isNotEmpty()) {
+            $tuitionIds = $futureTuitions->pluck('id');
+
+            Payment::whereIn('student_tuition_id', $tuitionIds)
+                ->where('is_paid', false)
+                ->get()
+                ->each(function (Payment $payment) use ($newDiscount) {
+                    // Recalculate payment amount based on new discount
+                    $tuition = $payment->studentTuition;
+                    if ($tuition && $tuition->monthly_amount) {
+                        $discountAmount = ($tuition->monthly_amount * $newDiscount) / 100;
+                        $newAmount = $tuition->monthly_amount - $discountAmount;
+                        $payment->update(['amount' => $newAmount]);
+                    }
+                });
+        }
     }
 
     /**

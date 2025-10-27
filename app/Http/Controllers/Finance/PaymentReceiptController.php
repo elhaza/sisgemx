@@ -279,6 +279,41 @@ class PaymentReceiptController extends Controller
 
         $rejectedReceiptsCount = PaymentReceipt::where('status', ReceiptStatus::Rejected)->count();
 
+        // Get all validated receipts (both validated and admin payments) for the modal
+        $validatedReceiptsList = PaymentReceipt::where('status', ReceiptStatus::Validated)
+            ->with(['student.user', 'parent', 'registeredBy']);
+
+        if ($view === 'month') {
+            $monthToDisplay = $month ?? now()->month;
+            $yearToDisplay = $year ?? now()->year;
+            $validatedReceiptsList = $validatedReceiptsList
+                ->whereMonth('payment_date', $monthToDisplay)
+                ->whereYear('payment_date', $yearToDisplay);
+        } elseif ($activeSchoolYear && $view === 'school_year') {
+            $validatedReceiptsList = $validatedReceiptsList->whereBetween('payment_date', [
+                $activeSchoolYear->start_date,
+                $activeSchoolYear->end_date,
+            ]);
+        }
+
+        $validatedReceiptsList = $validatedReceiptsList->get()->map(function ($receipt) {
+            $receipt->receipt_image_url = $receipt->receipt_image ? Storage::url($receipt->receipt_image) : null;
+            $receipt->type = 'validated_receipt';
+
+            return $receipt;
+        })->toArray();
+
+        // Add admin payments to the list
+        $allValidatedReceipts = array_merge($validatedReceiptsList, $adminPaymentReceipts->toArray());
+
+        // Sort by date descending
+        usort($allValidatedReceipts, function ($a, $b) {
+            $dateA = $a->payment_date ?? $a->created_at ?? now();
+            $dateB = $b->payment_date ?? $b->created_at ?? now();
+
+            return $dateB->getTimestamp() - $dateA->getTimestamp();
+        });
+
         return view('finance.payment-receipts.index', compact(
             'receipts',
             'pendingReceiptsCount',
@@ -290,7 +325,8 @@ class PaymentReceiptController extends Controller
             'incomeLabel',
             'rejectedReceiptsCount',
             'monthLabel',
-            'view'
+            'view',
+            'allValidatedReceipts'
         ));
     }
 

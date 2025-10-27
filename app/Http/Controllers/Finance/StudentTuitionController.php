@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
-use App\Models\MonthlyTuition;
 use App\Models\SchoolYear;
+use App\Models\Student;
 use App\Models\StudentTuition;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
@@ -117,36 +117,24 @@ class StudentTuitionController extends Controller
             ]);
         }
 
-        // Get all student tuitions for the selected school year
-        $allStudentTuitions = StudentTuition::with(['student.user', 'schoolYear'])
+        // Get all students with discount_percentage > 0 for this school year
+        $studentsWithDiscount = Student::with(['user', 'tuitions' => function ($query) use ($selectedSchoolYearId) {
+            $query->where('school_year_id', $selectedSchoolYearId)
+                ->where('discount_percentage', '>', 0)
+                ->orderBy('year')
+                ->orderBy('month');
+        }])
             ->where('school_year_id', $selectedSchoolYearId)
-            ->get();
-
-        // Get all monthly tuitions for reference
-        $monthlyTuitions = MonthlyTuition::where('school_year_id', $selectedSchoolYearId)
+            ->where('discount_percentage', '>', 0)
             ->get()
-            ->keyBy(function ($item) {
-                return $item->year.'-'.$item->month;
-            });
+            ->flatMap(function ($student) {
+                // Flatten the tuitions collection to show one row per tuition with discount
+                return $student->tuitions->map(function ($tuition) use ($student) {
+                    $tuition->student_name = $student->user->full_name;
+                    $tuition->student_discount = $student->discount_percentage;
 
-        // Filter students with discounts by comparing against their specific month's tuition
-        $studentsWithDiscount = $allStudentTuitions
-            ->filter(function ($tuition) use ($monthlyTuitions) {
-                $key = $tuition->year.'-'.$tuition->month;
-
-                return isset($monthlyTuitions[$key]) && $tuition->monthly_amount < $monthlyTuitions[$key]->amount;
-            })
-            ->map(function ($tuition) use ($monthlyTuitions) {
-                $key = $tuition->year.'-'.$tuition->month;
-                $monthlyTuition = $monthlyTuitions[$key] ?? null;
-
-                if ($monthlyTuition) {
-                    $tuition->default_amount = $monthlyTuition->amount;
-                    $tuition->discount_amount = $monthlyTuition->amount - $tuition->monthly_amount;
-                    $tuition->discount_percentage = ($tuition->discount_amount / $monthlyTuition->amount) * 100;
-                }
-
-                return $tuition;
+                    return $tuition;
+                });
             })
             ->values();
 

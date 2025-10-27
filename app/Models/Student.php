@@ -33,6 +33,7 @@ class Student extends Model
         'parent_email',
         'tutor_1_id',
         'tutor_2_id',
+        'discount_percentage',
         'requires_invoice',
         'billing_name',
         'billing_zip_code',
