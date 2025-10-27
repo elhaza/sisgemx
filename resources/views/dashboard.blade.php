@@ -468,6 +468,36 @@
                     </div>
                 </div>
 
+                <!-- 📢 Anuncios -->
+                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+                    <div class="border-b border-gray-200 bg-indigo-50 px-6 py-4">
+                        <h3 class="flex items-center text-lg font-semibold text-gray-900">
+                            <span class="mr-2 text-xl">📢</span>
+                            Anuncios
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <ul class="space-y-3">
+                            <li>
+                                <a href="{{ route('teacher.announcements.create') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                    Crear Nuevo Anuncio
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('teacher.announcements.index') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                    </svg>
+                                    Ver Todos los Anuncios
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
                 <!-- ⚙️ Administración -->
                 <div class="overflow-hidden rounded-lg bg-white shadow-sm">
                     <div class="border-b border-gray-200 bg-red-50 px-6 py-4">
