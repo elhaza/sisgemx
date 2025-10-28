@@ -490,10 +490,34 @@
                                             </button>
                                         </div>
 
+                                        <!-- Filter by Group/Subject -->
+                                        <div class="mt-4 grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label for="parentFilterByGroup" class="block text-sm font-medium text-gray-700 mb-1">
+                                                    Filtrar por Grupo
+                                                </label>
+                                                <select
+                                                    id="parentFilterByGroup"
+                                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                                    <option value="">Todos los grupos</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label for="parentFilterBySubject" class="block text-sm font-medium text-gray-700 mb-1">
+                                                    Filtrar por Materia
+                                                </label>
+                                                <select
+                                                    id="parentFilterBySubject"
+                                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                                    <option value="">Todas las materias</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
                                         <!-- Search Teachers -->
                                         <div class="mt-4">
                                             <label for="parentTeacherSearch" class="block text-sm font-medium text-gray-700 mb-2">
-                                                O busca maestros individuales
+                                                O busca maestros por nombre
                                             </label>
                                             <div id="parentTeacherContainer" class="relative">
                                                 <input
@@ -884,17 +908,23 @@
         let parentTeacherSearch = null;
         let parentTeacherSuggestions = null;
         let parentSelectedRecipientsContainer = null;
+        let parentFilterByGroup = null;
+        let parentFilterBySubject = null;
         let recipientIds = null;
         let allTeachers = [];
+        let availableGroups = new Set();
+        let availableSubjects = new Set();
 
         // Load all teachers for this parent
         async function addAllParentTeachers() {
             try {
-                const response = await fetch('{{ route("api.messages.parent-teachers") }}');
-                const teachers = await response.json();
+                if (allTeachers.length === 0) {
+                    const response = await fetch('{{ route("api.messages.parent-teachers") }}');
+                    allTeachers = await response.json();
+                    populateFilters();
+                }
 
-                allTeachers = teachers;
-                teachers.forEach(teacher => {
+                allTeachers.forEach(teacher => {
                     const subjectsStr = teacher.subjects.map(s => s.subject_name).join(', ');
                     const displayName = `${teacher.name} - ${subjectsStr}`;
                     selectedParentRecipients.set(teacher.id, displayName);
@@ -905,6 +935,42 @@
                 console.error('Error loading teachers:', error);
                 alert('Error al cargar los maestros');
             }
+        }
+
+        function populateFilters() {
+            // Collect unique groups and subjects from all teachers
+            availableGroups.clear();
+            availableSubjects.clear();
+
+            allTeachers.forEach(teacher => {
+                teacher.subjects.forEach(subject => {
+                    availableGroups.add(subject.group);
+                    availableSubjects.add(subject.subject_name);
+                });
+            });
+
+            // Populate group dropdown
+            const groupOptions = Array.from(availableGroups).sort();
+            parentFilterByGroup.innerHTML = '<option value="">Todos los grupos</option>' +
+                groupOptions.map(group => `<option value="${group}">${group}</option>`).join('');
+
+            // Populate subject dropdown
+            const subjectOptions = Array.from(availableSubjects).sort();
+            parentFilterBySubject.innerHTML = '<option value="">Todas las materias</option>' +
+                subjectOptions.map(subject => `<option value="${subject}">${subject}</option>`).join('');
+        }
+
+        function getFilteredTeachers() {
+            const selectedGroup = parentFilterByGroup.value;
+            const selectedSubject = parentFilterBySubject.value;
+
+            return allTeachers.filter(teacher => {
+                return teacher.subjects.some(subject => {
+                    const groupMatch = !selectedGroup || subject.group === selectedGroup;
+                    const subjectMatch = !selectedSubject || subject.subject_name === selectedSubject;
+                    return groupMatch && subjectMatch;
+                });
+            });
         }
 
         function addParentAdmin() {
@@ -955,10 +1021,44 @@
             }
         }
 
+        function displayFilteredTeachers() {
+            const filtered = getFilteredTeachers();
+
+            if (filtered.length === 0) {
+                parentTeacherSuggestions.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500">No hay maestros que coincidan con los filtros</div>';
+                parentTeacherSuggestions.classList.remove('hidden');
+                return;
+            }
+
+            parentTeacherSuggestions.innerHTML = filtered.map(teacher => {
+                const subjectsStr = teacher.subjects
+                    .filter(s => {
+                        const groupMatch = !parentFilterByGroup.value || s.group === parentFilterByGroup.value;
+                        const subjectMatch = !parentFilterBySubject.value || s.subject_name === parentFilterBySubject.value;
+                        return groupMatch && subjectMatch;
+                    })
+                    .map(s => `${s.subject_name} (${s.group})`)
+                    .join(', ');
+
+                return `
+                    <div class="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition" onclick="addParentTeacher(${teacher.id}, '${teacher.name.replace(/'/g, "\\'")}', '${subjectsStr.replace(/'/g, "\\'")}')">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900">${teacher.name}</p>
+                            <p class="text-xs text-gray-500">${subjectsStr}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            parentTeacherSuggestions.classList.remove('hidden');
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             parentTeacherSearch = document.getElementById('parentTeacherSearch');
             parentTeacherSuggestions = document.getElementById('parentTeacherSuggestions');
             parentSelectedRecipientsContainer = document.getElementById('parentSelectedRecipients');
+            parentFilterByGroup = document.getElementById('parentFilterByGroup');
+            parentFilterBySubject = document.getElementById('parentFilterBySubject');
             recipientIds = document.getElementById('recipientIds');
 
             // Admin and Finance buttons
@@ -993,26 +1093,53 @@
                 });
             }
 
+            // Filter change events
+            if (parentFilterByGroup) {
+                parentFilterByGroup.addEventListener('change', async function() {
+                    if (allTeachers.length === 0) {
+                        const response = await fetch('{{ route("api.messages.parent-teachers") }}');
+                        allTeachers = await response.json();
+                        populateFilters();
+                    }
+                    displayFilteredTeachers();
+                });
+            }
+
+            if (parentFilterBySubject) {
+                parentFilterBySubject.addEventListener('change', async function() {
+                    if (allTeachers.length === 0) {
+                        const response = await fetch('{{ route("api.messages.parent-teachers") }}');
+                        allTeachers = await response.json();
+                        populateFilters();
+                    }
+                    displayFilteredTeachers();
+                });
+            }
+
             // Teacher search
             parentTeacherSearch.addEventListener('input', async (e) => {
                 const query = e.target.value.trim().toLowerCase();
-
-                if (query.length < 1) {
-                    parentTeacherSuggestions.classList.add('hidden');
-                    return;
-                }
 
                 try {
                     // Load all teachers if not already loaded
                     if (allTeachers.length === 0) {
                         const response = await fetch('{{ route("api.messages.parent-teachers") }}');
                         allTeachers = await response.json();
+                        populateFilters();
                     }
 
-                    // Filter teachers by name or subject
+                    if (query.length === 0) {
+                        parentTeacherSuggestions.classList.add('hidden');
+                        return;
+                    }
+
+                    // Filter teachers by name, subject or group
                     const filtered = allTeachers.filter(teacher =>
                         teacher.name.toLowerCase().includes(query) ||
-                        teacher.subjects.some(s => s.subject_name.toLowerCase().includes(query))
+                        teacher.subjects.some(s =>
+                            s.subject_name.toLowerCase().includes(query) ||
+                            s.group.toLowerCase().includes(query)
+                        )
                     );
 
                     if (filtered.length === 0) {
@@ -1023,7 +1150,7 @@
                     parentTeacherSuggestions.innerHTML = filtered.map(teacher => {
                         const subjectsStr = teacher.subjects.map(s => `${s.subject_name} (${s.group})`).join(', ');
                         return `
-                            <div class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition" onclick="addParentTeacher(${teacher.id}, '${teacher.name}', '${subjectsStr.replace(/'/g, "\\'")}')">
+                            <div class="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition" onclick="addParentTeacher(${teacher.id}, '${teacher.name.replace(/'/g, "\\'")}', '${subjectsStr.replace(/'/g, "\\'")}')">
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-900">${teacher.name}</p>
                                     <p class="text-xs text-gray-500">${subjectsStr}</p>
