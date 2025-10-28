@@ -7,12 +7,12 @@
 
     <div class="py-12">
         <div class="mx-auto max-w-6xl sm:px-6 lg:px-8 space-y-6">
-            <!-- Tabla de Adeudos -->
+            <!-- Tabla de Estudiantes con sus Adeudos -->
             @if($allPendingTuitions->count() > 0)
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4">
-                        <h3 class="text-lg font-bold text-gray-900">📋 Adeudos Pendientes</h3>
-                        <p class="mt-1 text-sm text-gray-600">Ordenados del más antiguo al más nuevo</p>
+                        <h3 class="text-lg font-bold text-gray-900">👨‍👩‍👧‍👦 Mis Estudiantes - Adeudos Pendientes</h3>
+                        <p class="mt-1 text-sm text-gray-600">Selecciona un estudiante para subir comprobante de pago</p>
                     </div>
                     <div class="p-6">
                         <div class="overflow-x-auto">
@@ -20,76 +20,74 @@
                                 <thead class="bg-gray-50">
                                     <tr>
                                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Estudiante</th>
-                                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Período</th>
-                                        <th class="px-6 py-3 text-right text-sm font-semibold text-gray-900">Colegiatura</th>
-                                        <th class="px-6 py-3 text-right text-sm font-semibold text-gray-900">Recargo por Mora</th>
-                                        <th class="px-6 py-3 text-right text-sm font-semibold text-gray-900">Total</th>
-                                        <th class="px-6 py-3 text-center text-sm font-semibold text-gray-900">Días Atraso</th>
+                                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Colegiaturas Pendientes</th>
+                                        <th class="px-6 py-3 text-right text-sm font-semibold text-gray-900">Total Adeudado</th>
+                                        <th class="px-6 py-3 text-right text-sm font-semibold text-gray-900">Recargos</th>
+                                        <th class="px-6 py-3 text-center text-sm font-semibold text-gray-900">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
                                     @php
-                                        $totalAmount = 0;
-                                        $totalLateFees = 0;
+                                        $studentsByName = [];
+                                        foreach ($allPendingTuitions as $tuition) {
+                                            $studentId = $tuition->student_id;
+                                            if (!isset($studentsByName[$studentId])) {
+                                                $studentsByName[$studentId] = [
+                                                    'student' => $tuition->student,
+                                                    'tuitions' => collect(),
+                                                    'total' => 0,
+                                                    'totalFees' => 0,
+                                                ];
+                                            }
+                                            $studentsByName[$studentId]['tuitions']->push($tuition);
+                                            $studentsByName[$studentId]['total'] += $tuition->final_amount;
+                                            $studentsByName[$studentId]['totalFees'] += $tuition->calculated_late_fee_amount;
+                                        }
                                         $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
                                     @endphp
-                                    @foreach($allPendingTuitions as $tuition)
+                                    @foreach($studentsByName as $studentId => $data)
                                         @php
-                                            $totalAmount += $tuition->final_amount;
-                                            $totalLateFees += $tuition->calculated_late_fee_amount;
-                                            $rowClass = $tuition->days_late > 0 ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50';
+                                            $rowClass = $data['totalFees'] > 0 ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50';
                                         @endphp
                                         <tr class="{{ $rowClass }}">
                                             <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                                                {{ $tuition->student->user->full_name }}
+                                                {{ $data['student']->user->full_name }}
+                                                <span class="ml-2 text-xs text-gray-500">({{ $data['student']->enrollment_number }})</span>
                                             </td>
-                                            <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
-                                                {{ $monthNames[$tuition->month] }} {{ $tuition->year }}
+                                            <td class="px-6 py-4 text-sm text-gray-700">
+                                                <div class="space-y-1">
+                                                    @foreach($data['tuitions'] as $tuition)
+                                                        <div class="text-xs">
+                                                            {{ $monthNames[$tuition->month] }} {{ $tuition->year }}
+                                                            @if($tuition->days_late > 0)
+                                                                <span class="text-red-600 font-semibold">({{ $tuition->days_late }} días)</span>
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
+                                                </div>
                                             </td>
-                                            <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-700">
-                                                ${{ number_format($tuition->final_amount, 2) }}
+                                            <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-bold text-gray-900">
+                                                ${{ number_format($data['total'], 2) }}
                                             </td>
                                             <td class="whitespace-nowrap px-6 py-4 text-right text-sm">
-                                                @if($tuition->calculated_late_fee_amount > 0)
+                                                @if($data['totalFees'] > 0)
                                                     <span class="inline-flex rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
-                                                        ${{ number_format($tuition->calculated_late_fee_amount, 2) }}
+                                                        ${{ number_format($data['totalFees'], 2) }}
                                                     </span>
                                                 @else
                                                     <span class="text-gray-500">-</span>
                                                 @endif
                                             </td>
-                                            <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-bold text-gray-900">
-                                                ${{ number_format($tuition->calculated_total_amount, 2) }}
-                                            </td>
-                                            <td class="whitespace-nowrap px-6 py-4 text-center text-sm">
-                                                @if($tuition->days_late > 0)
-                                                    <span class="inline-flex rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
-                                                        {{ $tuition->days_late }} días
-                                                    </span>
-                                                @else
-                                                    <span class="text-gray-500">0 días</span>
-                                                @endif
+                                            <td class="whitespace-nowrap px-6 py-4 text-center">
+                                                <button
+                                                    onclick="selectStudent({{ $studentId }}, '{{ $data['student']->user->full_name }}')"
+                                                    class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 transition">
+                                                    📤 Subir Comprobante
+                                                </button>
                                             </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
-                                <tfoot class="bg-gray-50 font-semibold">
-                                    <tr>
-                                        <td colspan="2" class="px-6 py-4 text-sm text-gray-900">
-                                            TOTAL A PAGAR
-                                        </td>
-                                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-900">
-                                            ${{ number_format($totalAmount, 2) }}
-                                        </td>
-                                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-red-800">
-                                            ${{ number_format($totalLateFees, 2) }}
-                                        </td>
-                                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-lg text-gray-900">
-                                            ${{ number_format($totalAmount + $totalLateFees, 2) }}
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
                             </table>
                         </div>
                     </div>
@@ -108,36 +106,54 @@
                 </div>
             @endif
 
-            <!-- Formulario de Carga de Comprobante -->
-            <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                <div class="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4">
+            <!-- Formulario de Carga de Comprobante (Hidden by default) -->
+            <div id="formContainer" style="display: none;" class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                <div class="border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4">
                     <h3 class="text-lg font-bold text-gray-900">📤 Subir Comprobante de Pago</h3>
+                    <p id="selectedStudentInfo" class="mt-1 text-sm text-gray-600"></p>
                 </div>
                 <div class="p-6">
-                    <p class="mb-6 text-sm text-gray-600">
-                        Por favor complete el formulario con los datos de su transferencia. El comprobante será revisado por el área de finanzas.
-                    </p>
+                    <!-- Tabla de colegiaturas pendientes del estudiante seleccionado -->
+                    <div class="mb-6" id="tuitionDetailsContainer" style="display: none;">
+                        <h4 class="mb-3 text-sm font-semibold text-gray-900">Colegiaturas Pendientes a Pagar:</h4>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 bg-gray-50 rounded-lg">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-900">Período</th>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-gray-900">Colegiatura</th>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-gray-900">Recargo</th>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-gray-900">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tuitionTableBody" class="divide-y divide-gray-200">
+                                </tbody>
+                                <tfoot class="bg-gray-100 font-semibold">
+                                    <tr>
+                                        <td class="px-4 py-2 text-sm text-gray-900">TOTAL</td>
+                                        <td class="px-4 py-2 text-right text-sm text-gray-900" id="totalTuitionAmount">$0.00</td>
+                                        <td class="px-4 py-2 text-right text-sm text-red-800" id="totalLateFeeAmount">$0.00</td>
+                                        <td class="px-4 py-2 text-right text-sm text-lg font-bold text-gray-900" id="totalDueAmount">$0.00</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
 
                     <form action="{{ route('parent.payment-receipts.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
 
-                        <div class="mb-4">
-                            <label for="student_id" class="block text-sm font-medium text-gray-700">Estudiante</label>
-                            <select name="student_id" id="student_id" required onchange="updatePendingTuitions()"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">Seleccionar estudiante</option>
-                                @foreach($students as $student)
-                                    <option value="{{ $student->id }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
-                                        {{ $student->user->full_name }} - {{ $student->enrollment_number }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('student_id')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                        <input type="hidden" name="student_id" id="student_id" value="">
+
+                        <!-- Información del Estudiante (Read-only) -->
+                        <div class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <p class="text-sm text-gray-700">
+                                <strong>Estudiante Seleccionado:</strong> <span id="studentNameDisplay" class="font-semibold"></span>
+                            </p>
                         </div>
 
-                        <div class="mb-4" id="tuition_select_container" style="display: none;">
+                        <!-- Mes a Pagar -->
+                        <div class="mb-4">
                             <label for="tuition_id" class="block text-sm font-medium text-gray-700">Mes a Pagar *</label>
                             <select name="tuition_id" id="tuition_id" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
@@ -153,6 +169,7 @@
                             @enderror
                         </div>
 
+                        <!-- Fecha de Pago -->
                         <div class="mb-4">
                             <label for="payment_date" class="block text-sm font-medium text-gray-700">Fecha de Pago</label>
                             <input type="date" name="payment_date" id="payment_date" value="{{ old('payment_date', now()->format('Y-m-d')) }}" required
@@ -162,6 +179,7 @@
                             @enderror
                         </div>
 
+                        <!-- Monto Pagado -->
                         <div class="mb-4">
                             <label for="amount_paid" class="block text-sm font-medium text-gray-700">Monto Pagado</label>
                             <input type="number" step="0.01" name="amount_paid" id="amount_paid" value="{{ old('amount_paid') }}" required
@@ -172,6 +190,7 @@
                             @enderror
                         </div>
 
+                        <!-- Referencia / No. de Transacción -->
                         <div class="mb-4">
                             <label for="reference" class="block text-sm font-medium text-gray-700">Referencia / No. de Transacción</label>
                             <input type="text" name="reference" id="reference" value="{{ old('reference') }}" required
@@ -182,9 +201,10 @@
                             @enderror
                         </div>
 
+                        <!-- Nombre del Titular -->
                         <div class="mb-4">
                             <label for="account_holder_name" class="block text-sm font-medium text-gray-700">Nombre del Titular</label>
-                            <input type="text" name="account_holder_name" id="account_holder_name" value="{{ old('account_holder_name') }}" required
+                            <input type="text" name="account_holder_name" id="account_holder_name" value="{{ old('account_holder_name', auth()->user()->full_name) }}" required
                                 placeholder="Nombre completo de quien realizó el pago"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             @error('account_holder_name')
@@ -192,6 +212,7 @@
                             @enderror
                         </div>
 
+                        <!-- Banco Emisor -->
                         <div class="mb-4">
                             <label for="issuing_bank" class="block text-sm font-medium text-gray-700">Banco Emisor</label>
                             <input type="text" name="issuing_bank" id="issuing_bank" value="{{ old('issuing_bank') }}" required
@@ -202,6 +223,7 @@
                             @enderror
                         </div>
 
+                        <!-- Método de Pago -->
                         <div class="mb-4">
                             <label for="payment_method" class="block text-sm font-medium text-gray-700">Método de Pago</label>
                             <select name="payment_method" id="payment_method" required
@@ -216,24 +238,27 @@
                             @enderror
                         </div>
 
+                        <!-- Comprobante (Imagen) con Compresión -->
                         <div class="mb-4">
                             <label for="receipt_image" class="block text-sm font-medium text-gray-700">Comprobante (Imagen)</label>
                             <input type="file" name="receipt_image" id="receipt_image" accept="image/*" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <p class="mt-1 text-xs text-gray-500">Formatos permitidos: JPG, PNG. Tamaño máximo: 2MB</p>
-                            @error('receipt_image')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <p class="mt-1 text-xs text-gray-500">Formatos permitidos: JPG, PNG. Tamaño máximo: 200KB (se comprime automáticamente)</p>
+                            <div id="imageSizeWarning" class="mt-2 hidden">
+                                <p id="imageSizeText" class="text-xs font-semibold text-orange-600"></p>
+                            </div>
                         </div>
 
+                        <!-- Nota -->
                         <div class="mb-4 rounded-lg bg-yellow-50 p-4">
                             <p class="text-sm text-yellow-800">
                                 <strong>Nota:</strong> Su comprobante quedará en estado "Pendiente de Validación" hasta que sea revisado por el área de finanzas.
                             </p>
                         </div>
 
+                        <!-- Botones de Acción -->
                         <div class="flex items-center justify-end gap-4">
-                            <a href="{{ route('parent.payment-receipts.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Cancelar</a>
+                            <button type="button" onclick="closeForm()" class="text-sm text-gray-600 hover:text-gray-900">Cancelar</button>
                             <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
                                 Subir Comprobante
                             </button>
@@ -256,30 +281,53 @@
             9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
         };
 
-        function updatePendingTuitions() {
-            const studentId = document.getElementById('student_id').value;
+        function selectStudent(studentId, studentName) {
+            // Set form values
+            document.getElementById('student_id').value = studentId;
+            document.getElementById('studentNameDisplay').value = studentName;
+            document.getElementById('selectedStudentInfo').textContent = 'Estudiante: ' + studentName;
+
+            // Show form
+            document.getElementById('formContainer').style.display = 'block';
+            document.getElementById('tuitionDetailsContainer').style.display = 'block';
+
+            // Scroll to form
+            document.getElementById('formContainer').scrollIntoView({ behavior: 'smooth' });
+
+            // Update tuition select
+            updatePendingTuitions(studentId);
+
+            // Update tuition details table
+            updateTuitionDetailsTable(studentId);
+        }
+
+        function closeForm() {
+            document.getElementById('formContainer').style.display = 'none';
+            document.getElementById('student_id').value = '';
+            document.getElementById('tuition_id').value = '';
+            document.getElementById('amount_paid').value = '';
+            document.getElementById('payment_year').value = '';
+            document.getElementById('payment_month').value = '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updatePendingTuitions(studentId) {
             const tuitionSelect = document.getElementById('tuition_id');
-            const container = document.getElementById('tuition_select_container');
             const amountField = document.getElementById('amount_paid');
 
             // Clear existing options
             tuitionSelect.innerHTML = '<option value="">Seleccionar mes</option>';
 
             if (!studentId || !pendingTuitionsByStudent[studentId]) {
-                container.style.display = 'none';
                 return;
             }
 
             const pendingTuitions = pendingTuitionsByStudent[studentId];
 
             if (pendingTuitions.length === 0) {
-                container.style.display = 'none';
                 alert('Este estudiante no tiene colegiaturas pendientes.');
                 return;
             }
-
-            // Show container
-            container.style.display = 'block';
 
             // Add options for each pending tuition
             pendingTuitions.forEach((tuition, index) => {
@@ -318,6 +366,39 @@
             updateAmount();
         }
 
+        function updateTuitionDetailsTable(studentId) {
+            const tbody = document.getElementById('tuitionTableBody');
+            tbody.innerHTML = '';
+
+            let totalTuition = 0;
+            let totalFees = 0;
+
+            if (pendingTuitionsByStudent[studentId]) {
+                pendingTuitionsByStudent[studentId].forEach(tuition => {
+                    const row = document.createElement('tr');
+                    const monthName = monthNames[tuition.month];
+                    const lateFeeAmount = tuition.calculated_late_fee_amount || 0;
+                    const totalAmount = tuition.final_amount + lateFeeAmount;
+
+                    totalTuition += tuition.final_amount;
+                    totalFees += lateFeeAmount;
+
+                    row.innerHTML = `
+                        <td class="px-4 py-2 text-sm text-gray-900">${monthName} ${tuition.year}</td>
+                        <td class="px-4 py-2 text-right text-sm text-gray-900">$${parseFloat(tuition.final_amount).toFixed(2)}</td>
+                        <td class="px-4 py-2 text-right text-sm text-red-600">${lateFeeAmount > 0 ? '$' + parseFloat(lateFeeAmount).toFixed(2) : '-'}</td>
+                        <td class="px-4 py-2 text-right text-sm font-bold text-gray-900">$${parseFloat(totalAmount).toFixed(2)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            // Update totals
+            document.getElementById('totalTuitionAmount').textContent = '$' + parseFloat(totalTuition).toFixed(2);
+            document.getElementById('totalLateFeeAmount').textContent = '$' + parseFloat(totalFees).toFixed(2);
+            document.getElementById('totalDueAmount').textContent = '$' + parseFloat(totalTuition + totalFees).toFixed(2);
+        }
+
         function updateAmount() {
             const tuitionSelect = document.getElementById('tuition_id');
             const selectedOption = tuitionSelect.options[tuitionSelect.selectedIndex];
@@ -339,13 +420,78 @@
         // Add event listener to tuition select
         document.getElementById('tuition_id').addEventListener('change', updateAmount);
 
-        // Auto-select first student if only one
-        document.addEventListener('DOMContentLoaded', function() {
-            const studentSelect = document.getElementById('student_id');
-            if (studentSelect.options.length === 2) { // Only "Seleccionar" + 1 student
-                studentSelect.selectedIndex = 1;
-                updatePendingTuitions();
+        // Image compression
+        document.getElementById('receipt_image').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const maxSizeKB = 200;
+            const maxSizeBytes = maxSizeKB * 1024;
+
+            if (file.size <= maxSizeBytes) {
+                // File is already small enough
+                document.getElementById('imageSizeWarning').classList.add('hidden');
+                return;
             }
+
+            // Need to compress
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    // Calculate new dimensions maintaining aspect ratio
+                    let width = img.width;
+                    let height = img.height;
+                    let quality = 0.9;
+
+                    // Try compression with quality reduction
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    // Reduce quality until under 200KB
+                    let compressedBlob;
+                    let attempts = 0;
+                    const maxAttempts = 10;
+
+                    function attemptCompress() {
+                        canvas.toBlob(
+                            function(blob) {
+                                if (blob.size <= maxSizeBytes || attempts >= maxAttempts) {
+                                    // Create new File object
+                                    const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
+
+                                    // Replace file in input
+                                    const dataTransfer = new DataTransfer();
+                                    dataTransfer.items.add(compressedFile);
+                                    document.getElementById('receipt_image').files = dataTransfer.files;
+
+                                    // Show success message
+                                    const warningDiv = document.getElementById('imageSizeWarning');
+                                    warningDiv.classList.remove('hidden');
+                                    const sizeText = document.getElementById('imageSizeText');
+                                    sizeText.textContent = `✓ Imagen comprimida: ${(blob.size / 1024).toFixed(2)} KB (de ${(file.size / 1024).toFixed(2)} KB)`;
+                                    sizeText.classList.remove('text-orange-600');
+                                    sizeText.classList.add('text-green-600');
+                                } else {
+                                    // Try again with lower quality
+                                    quality -= 0.1;
+                                    attempts++;
+                                    attemptCompress();
+                                }
+                            },
+                            'image/jpeg',
+                            quality
+                        );
+                    }
+
+                    attemptCompress();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
         });
     </script>
 </x-app-layout>
