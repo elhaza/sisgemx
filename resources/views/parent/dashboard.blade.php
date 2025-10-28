@@ -281,20 +281,29 @@
                     @if($recentReceipts->count() > 0)
                         <div class="space-y-3">
                             @foreach($recentReceipts as $receipt)
-                                <div class="flex items-center justify-between rounded-lg border border-gray-200 p-4 hover:shadow-md transition">
-                                    <div class="flex-1">
-                                        <p class="font-semibold text-gray-900">{{ $receipt->student->user->full_name }}</p>
-                                        <p class="text-xs text-gray-500">{{ $receipt->payment_date->format('d/m/Y') }}</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="font-bold text-gray-900">${{ number_format($receipt->amount_paid, 2) }}</p>
-                                        @if($receipt->status->value === 'pending')
-                                            <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800">⏳ Pendiente</span>
-                                        @elseif($receipt->status->value === 'approved')
-                                            <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">✅ Aprobado</span>
-                                        @elseif($receipt->status->value === 'rejected')
-                                            <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">❌ Rechazado</span>
-                                        @endif
+                                <div class="rounded-lg border border-gray-200 hover:border-blue-400 hover:shadow-md transition overflow-hidden">
+                                    <div class="flex items-start justify-between p-4 cursor-pointer hover:bg-gray-50" onclick="openReceiptModal({{ $receipt->id }}, '{{ $receipt->student->user->full_name }}', '{{ \Carbon\Carbon::create($receipt->payment_year, $receipt->payment_month)->locale('es')->isoFormat('MMMM YYYY') }}', {{ $receipt->amount_paid }}, '{{ $receipt->payment_date->format('d/m/Y') }}', '{{ $receipt->reference }}', '{{ $receipt->account_holder_name }}', '{{ $receipt->issuing_bank }}', '{{ $receipt->payment_method }}', '{{ $receipt->receipt_image }}', '{{ $receipt->status->value }}')">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-3">
+                                                <div>
+                                                    <p class="font-semibold text-gray-900">{{ $receipt->student->user->full_name }}</p>
+                                                    <p class="text-xs text-gray-500">{{ \Carbon\Carbon::create($receipt->payment_year, $receipt->payment_month)->locale('es')->isoFormat('MMMM YYYY') }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-bold text-gray-900">${{ number_format($receipt->amount_paid, 2) }}</p>
+                                            <p class="text-xs text-gray-500 mt-1">{{ $receipt->payment_date->format('d/m/Y') }}</p>
+                                        </div>
+                                        <div class="ml-4">
+                                            @if($receipt->status->value === 'pending')
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800">⏳ Pendiente</span>
+                                            @elseif($receipt->status->value === 'approved')
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">✅ Aprobado</span>
+                                            @elseif($receipt->status->value === 'rejected')
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">❌ Rechazado</span>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             @endforeach
@@ -406,6 +415,73 @@
                     <p class="text-sm text-gray-600">Por favor, contacta a la escuela para registrar a tus hijos.</p>
                 </div>
             @endif
+        </div>
+    </div>
+
+    <!-- Modal para Ver Detalles de Comprobante -->
+    <div id="receiptModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
+        <div class="w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl my-8">
+            <div class="mb-4 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900">📄 Detalles del Comprobante</h3>
+                <button onclick="closeReceiptModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-6">
+                <!-- Imagen del Comprobante -->
+                <div class="rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                    <img id="modal_receipt_image" src="" alt="Comprobante" class="w-full h-auto max-h-96 object-contain">
+                </div>
+
+                <!-- Información del Comprobante -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Estudiante</p>
+                        <p id="modal_receipt_student" class="mt-1 text-sm font-semibold text-gray-900">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Período</p>
+                        <p id="modal_receipt_period" class="mt-1 text-sm font-semibold text-gray-900">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Monto Pagado</p>
+                        <p id="modal_receipt_amount" class="mt-1 text-sm font-semibold text-green-600">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Fecha de Pago</p>
+                        <p id="modal_receipt_date" class="mt-1 text-sm font-semibold text-gray-900">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Referencia</p>
+                        <p id="modal_receipt_reference" class="mt-1 text-sm font-semibold text-gray-900">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Titular de Cuenta</p>
+                        <p id="modal_receipt_account_holder" class="mt-1 text-sm font-semibold text-gray-900">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Banco Emisor</p>
+                        <p id="modal_receipt_bank" class="mt-1 text-sm font-semibold text-gray-900">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Método de Pago</p>
+                        <p id="modal_receipt_method" class="mt-1 text-sm font-semibold text-gray-900">-</p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="text-sm font-medium text-gray-500">Estado</p>
+                        <div id="modal_receipt_status" class="mt-1"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex gap-3 justify-end">
+                <button type="button" onclick="closeReceiptModal()" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
+                    Cerrar
+                </button>
+            </div>
         </div>
     </div>
 
@@ -530,6 +606,7 @@
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 closePaymentModal();
+                closeReceiptModal();
             }
         });
 
@@ -537,6 +614,59 @@
         document.getElementById('paymentModal')?.addEventListener('click', function(event) {
             if (event.target === this) {
                 closePaymentModal();
+            }
+        });
+
+        // Receipt Modal Functions
+        function openReceiptModal(receiptId, studentName, period, amount, paymentDate, reference, accountHolder, bank, imagePath, status) {
+            // Set image path - construct full URL for storage
+            const imageUrl = '/storage/' + imagePath;
+            document.getElementById('modal_receipt_image').src = imageUrl;
+
+            // Set text content
+            document.getElementById('modal_receipt_student').textContent = studentName;
+            document.getElementById('modal_receipt_period').textContent = period;
+            document.getElementById('modal_receipt_amount').textContent = '$' + parseFloat(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            document.getElementById('modal_receipt_date').textContent = paymentDate;
+            document.getElementById('modal_receipt_reference').textContent = reference || 'N/A';
+            document.getElementById('modal_receipt_account_holder').textContent = accountHolder || 'No especificado';
+            document.getElementById('modal_receipt_bank').textContent = bank || 'No especificado';
+
+            // Set payment method with icon
+            let methodIcon = '💳';
+            let methodText = 'Transferencia';
+            if (imagePath.includes('transfer')) methodIcon = '💳', methodText = 'Transferencia';
+            else if (imagePath.includes('cash')) methodIcon = '💵', methodText = 'Efectivo';
+            else if (imagePath.includes('check')) methodIcon = '📄', methodText = 'Cheque';
+            document.getElementById('modal_receipt_method').textContent = methodIcon + ' ' + methodText;
+
+            // Set status badge
+            const statusDiv = document.getElementById('modal_receipt_status');
+            let statusBadge = '';
+            if (status === 'pending') {
+                statusBadge = '<span class="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800">⏳ Pendiente de revisión</span>';
+            } else if (status === 'approved') {
+                statusBadge = '<span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">✅ Aprobado</span>';
+            } else if (status === 'rejected') {
+                statusBadge = '<span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800">❌ Rechazado</span>';
+            }
+            statusDiv.innerHTML = statusBadge;
+
+            const modal = document.getElementById('receiptModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeReceiptModal() {
+            const modal = document.getElementById('receiptModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Close receipt modal on background click
+        document.getElementById('receiptModal')?.addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeReceiptModal();
             }
         });
     </script>
