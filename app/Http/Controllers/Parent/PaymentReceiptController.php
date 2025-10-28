@@ -80,6 +80,7 @@ class PaymentReceiptController extends Controller
 
         // Get pending tuitions for each student
         $pendingTuitionsByStudent = [];
+        $allPendingTuitions = collect();
 
         foreach ($students as $student) {
             // Get all tuitions due up to current month
@@ -113,13 +114,17 @@ class PaymentReceiptController extends Controller
                     $remainingAmount -= $amountDue;
                 } else {
                     $pendingTuitions->push($tuition);
+                    $allPendingTuitions->push($tuition);
                 }
             }
 
             $pendingTuitionsByStudent[$student->id] = $pendingTuitions;
         }
 
-        return view('parent.payment-receipts.create', compact('students', 'pendingTuitionsByStudent'));
+        // Sort all pending tuitions by year and month (oldest first)
+        $allPendingTuitions = $allPendingTuitions->sortBy(['year', 'month']);
+
+        return view('parent.payment-receipts.create', compact('students', 'pendingTuitionsByStudent', 'allPendingTuitions'));
     }
 
     public function store(Request $request)

@@ -6,8 +6,113 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="mx-auto max-w-3xl sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-6xl sm:px-6 lg:px-8 space-y-6">
+            <!-- Tabla de Adeudos -->
+            @if($allPendingTuitions->count() > 0)
+                <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                    <div class="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4">
+                        <h3 class="text-lg font-bold text-gray-900">📋 Adeudos Pendientes</h3>
+                        <p class="mt-1 text-sm text-gray-600">Ordenados del más antiguo al más nuevo</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Estudiante</th>
+                                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Período</th>
+                                        <th class="px-6 py-3 text-right text-sm font-semibold text-gray-900">Colegiatura</th>
+                                        <th class="px-6 py-3 text-right text-sm font-semibold text-gray-900">Recargo por Mora</th>
+                                        <th class="px-6 py-3 text-right text-sm font-semibold text-gray-900">Total</th>
+                                        <th class="px-6 py-3 text-center text-sm font-semibold text-gray-900">Días Atraso</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    @php
+                                        $totalAmount = 0;
+                                        $totalLateFees = 0;
+                                        $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                                    @endphp
+                                    @foreach($allPendingTuitions as $tuition)
+                                        @php
+                                            $totalAmount += $tuition->final_amount;
+                                            $totalLateFees += $tuition->calculated_late_fee_amount;
+                                            $rowClass = $tuition->days_late > 0 ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50';
+                                        @endphp
+                                        <tr class="{{ $rowClass }}">
+                                            <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                                                {{ $tuition->student->user->full_name }}
+                                            </td>
+                                            <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
+                                                {{ $monthNames[$tuition->month] }} {{ $tuition->year }}
+                                            </td>
+                                            <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-700">
+                                                ${{ number_format($tuition->final_amount, 2) }}
+                                            </td>
+                                            <td class="whitespace-nowrap px-6 py-4 text-right text-sm">
+                                                @if($tuition->calculated_late_fee_amount > 0)
+                                                    <span class="inline-flex rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
+                                                        ${{ number_format($tuition->calculated_late_fee_amount, 2) }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-gray-500">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-bold text-gray-900">
+                                                ${{ number_format($tuition->calculated_total_amount, 2) }}
+                                            </td>
+                                            <td class="whitespace-nowrap px-6 py-4 text-center text-sm">
+                                                @if($tuition->days_late > 0)
+                                                    <span class="inline-flex rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
+                                                        {{ $tuition->days_late }} días
+                                                    </span>
+                                                @else
+                                                    <span class="text-gray-500">0 días</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-semibold">
+                                    <tr>
+                                        <td colspan="2" class="px-6 py-4 text-sm text-gray-900">
+                                            TOTAL A PAGAR
+                                        </td>
+                                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-900">
+                                            ${{ number_format($totalAmount, 2) }}
+                                        </td>
+                                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-red-800">
+                                            ${{ number_format($totalLateFees, 2) }}
+                                        </td>
+                                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-lg text-gray-900">
+                                            ${{ number_format($totalAmount + $totalLateFees, 2) }}
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            @else
+                <div class="rounded-lg bg-green-50 border border-green-200 p-6">
+                    <div class="flex items-center">
+                        <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-bold text-green-900">¡Al Corriente!</h3>
+                            <p class="text-sm text-green-700">No tienes adeudos pendientes en este momento.</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Formulario de Carga de Comprobante -->
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                <div class="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4">
+                    <h3 class="text-lg font-bold text-gray-900">📤 Subir Comprobante de Pago</h3>
+                </div>
                 <div class="p-6">
                     <p class="mb-6 text-sm text-gray-600">
                         Por favor complete el formulario con los datos de su transferencia. El comprobante será revisado por el área de finanzas.
@@ -182,7 +287,7 @@
                 option.value = tuition.id;
                 option.dataset.year = tuition.year;
                 option.dataset.month = tuition.month;
-                option.dataset.amount = tuition.total_amount;
+                option.dataset.amount = tuition.calculated_total_amount;
 
                 const monthName = monthNames[tuition.month];
                 let label = `${monthName} ${tuition.year}`;
@@ -193,10 +298,10 @@
                 }
 
                 // Show amount including late fee
-                label += ` - $${parseFloat(tuition.total_amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+                label += ` - $${parseFloat(tuition.calculated_total_amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
 
-                if (tuition.late_fee > 0) {
-                    label += ` (Inc. recargo: $${parseFloat(tuition.late_fee).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')})`;
+                if (tuition.calculated_late_fee_amount > 0) {
+                    label += ` (Inc. recargo: $${parseFloat(tuition.calculated_late_fee_amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')})`;
                 }
 
                 option.text = label;
