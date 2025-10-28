@@ -62,7 +62,7 @@
                         </a>
 
                         <!-- Pendientes -->
-                        <a href="{{ route('parent.payment-receipts.index') }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md cursor-pointer">
+                        <a href="{{ route('parent.payment-receipts.create') }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md cursor-pointer">
                             <div class="p-6">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0">
