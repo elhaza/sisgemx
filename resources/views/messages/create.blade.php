@@ -888,7 +888,7 @@
         let allTeachers = [];
 
         // Load all teachers for this parent
-        window.addAllParentTeachers = async function() {
+        async function addAllParentTeachers() {
             try {
                 const response = await fetch('{{ route("api.messages.parent-teachers") }}');
                 const teachers = await response.json();
@@ -905,17 +905,17 @@
                 console.error('Error loading teachers:', error);
                 alert('Error al cargar los maestros');
             }
-        };
+        }
 
-        window.addAdmin = function() {
+        function addParentAdmin() {
             selectedParentRecipients.set('admin', 'Administrador');
             renderParentSelectedRecipients();
-        };
+        }
 
-        window.addFinance = function() {
+        function addParentFinance() {
             selectedParentRecipients.set('finance_admin', 'Usuario de Finanzas');
             renderParentSelectedRecipients();
-        };
+        }
 
         function renderParentSelectedRecipients() {
             parentSelectedRecipientsContainer.innerHTML = Array.from(selectedParentRecipients.entries()).map(([id, name]) => {
@@ -940,10 +940,20 @@
             }).join(',');
         }
 
-        window.removeParentRecipient = function(id) {
+        function removeParentRecipient(id) {
             selectedParentRecipients.delete(id);
             renderParentSelectedRecipients();
-        };
+        }
+
+        function addParentTeacher(id, name, subjects) {
+            const displayName = `${name} - ${subjects}`;
+            if (!selectedParentRecipients.has(id)) {
+                selectedParentRecipients.set(id, displayName);
+                renderParentSelectedRecipients();
+                parentTeacherSearch.value = '';
+                parentTeacherSuggestions.classList.add('hidden');
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             parentTeacherSearch = document.getElementById('parentTeacherSearch');
@@ -957,11 +967,27 @@
             const allTeachersParentBtn = document.getElementById('allTeachersParentBtn');
             const clearAllParentBtn = document.getElementById('clearAllParentBtn');
 
-            if (adminBtn) adminBtn.addEventListener('click', addAdmin);
-            if (financeBtn) financeBtn.addEventListener('click', addFinance);
-            if (allTeachersParentBtn) allTeachersParentBtn.addEventListener('click', addAllParentTeachers);
+            if (adminBtn) {
+                adminBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    addParentAdmin();
+                });
+            }
+            if (financeBtn) {
+                financeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    addParentFinance();
+                });
+            }
+            if (allTeachersParentBtn) {
+                allTeachersParentBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    addAllParentTeachers();
+                });
+            }
             if (clearAllParentBtn) {
-                clearAllParentBtn.addEventListener('click', function() {
+                clearAllParentBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
                     selectedParentRecipients.clear();
                     renderParentSelectedRecipients();
                 });
@@ -997,7 +1023,7 @@
                     parentTeacherSuggestions.innerHTML = filtered.map(teacher => {
                         const subjectsStr = teacher.subjects.map(s => `${s.subject_name} (${s.group})`).join(', ');
                         return `
-                            <div class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition" onclick="addParentTeacher(${teacher.id}, '${teacher.name}', '${subjectsStr}')">
+                            <div class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition" onclick="addParentTeacher(${teacher.id}, '${teacher.name}', '${subjectsStr.replace(/'/g, "\\'")}')">
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-900">${teacher.name}</p>
                                     <p class="text-xs text-gray-500">${subjectsStr}</p>
@@ -1019,16 +1045,6 @@
                 }
             });
         });
-
-        window.addParentTeacher = function(id, name, subjects) {
-            const displayName = `${name} - ${subjects}`;
-            if (!selectedParentRecipients.has(id)) {
-                selectedParentRecipients.set(id, displayName);
-                renderParentSelectedRecipients();
-                parentTeacherSearch.value = '';
-                parentTeacherSuggestions.classList.add('hidden');
-            }
-        };
         @endif
     </script>
     @endpush
