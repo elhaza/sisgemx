@@ -309,13 +309,18 @@ class PaymentReceiptController extends Controller
 
         // Sort by date descending
         $allValidatedReceipts = $allValidatedReceipts->sortByDesc(function ($receipt) {
-            $date = $receipt['payment_date'] ?? $receipt->payment_date ?? $receipt['created_at'] ?? $receipt->created_at ?? now();
+            // Handle both array and object access
+            if (is_array($receipt)) {
+                $date = $receipt['payment_date'] ?? $receipt['created_at'] ?? now();
+            } else {
+                $date = $receipt->payment_date ?? $receipt->created_at ?? now();
+            }
 
             if (is_string($date)) {
                 $date = \Carbon\Carbon::parse($date);
             }
 
-            return $date->getTimestamp();
+            return $date instanceof \Carbon\Carbon ? $date->getTimestamp() : now()->getTimestamp();
         })->values();
 
         return view('finance.payment-receipts.index', compact(
