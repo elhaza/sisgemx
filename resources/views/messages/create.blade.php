@@ -441,130 +441,62 @@
                                     <div id="studentSelectedRecipients" class="mt-4 flex flex-wrap gap-2"></div>
                                 </div>
                             @elseif(auth()->user()->isParent())
-                                <!-- Parents can send to admin, finance admin, or teachers -->
+                                <!-- Parents - Select from recipients -->
                                 <div class="space-y-6">
-                                    <!-- Step 1: Select Role/Type -->
-                                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-5">
-                                        <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                                            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">1</span>
-                                            Selecciona a quién enviar
-                                        </h4>
+                                    <div class="mb-6">
+                                        <label for="parentRecipients" class="block text-sm font-medium text-gray-700">
+                                            Destinatarios *
+                                        </label>
+                                        <p class="mt-1 text-xs text-gray-500">
+                                            Selecciona maestros, administrador o usuario de finanzas
+                                        </p>
 
-                                        <div class="mt-4">
-                                            <label for="parentRecipientRole" class="block text-sm font-medium text-gray-700">
-                                                Tipo de destinatario *
-                                            </label>
-                                            <select
-                                                id="parentRecipientRole"
-                                                class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                                <option value="">-- Selecciona una opción --</option>
-                                                <option value="admin">Administrador</option>
-                                                <option value="finance_admin">Usuario de Finanzas</option>
-                                                <option value="teacher">Maestros</option>
-                                            </select>
+                                        <!-- Buttons for quick selection -->
+                                        <div class="mt-3 flex flex-wrap gap-2 mb-4">
+                                            <button
+                                                type="button"
+                                                id="parentAdminBtn"
+                                                class="inline-flex items-center rounded-md bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200">
+                                                Administrador
+                                            </button>
+                                            <button
+                                                type="button"
+                                                id="parentFinanceBtn"
+                                                class="inline-flex items-center rounded-md bg-green-100 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-200">
+                                                Finanzas
+                                            </button>
+                                            <button
+                                                type="button"
+                                                id="parentSelectAllTeachersBtn"
+                                                class="inline-flex items-center rounded-md bg-purple-100 px-3 py-1.5 text-sm font-medium text-purple-700 hover:bg-purple-200">
+                                                Todos los Maestros
+                                            </button>
+                                            <button
+                                                type="button"
+                                                id="parentClearAllBtn"
+                                                class="inline-flex items-center rounded-md bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-200">
+                                                Limpiar
+                                            </button>
+                                        </div>
+
+                                        <!-- Maestros Dropdown -->
+                                        <div id="parentTeachersContainer" style="max-height: 300px; overflow-y-auto;" class="rounded-lg border border-gray-200 bg-white">
+                                            <div id="parentTeachersList" class="divide-y divide-gray-200"></div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <!-- Step 2: Filter for Teachers -->
-                                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-5" id="parentTeacherFilterContainer" style="display: none;">
-                                        <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                                            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">2</span>
-                                            Refina tu selección
-                                        </h4>
-
-                                        <div class="mt-4">
-                                            <label for="parentTeacherFilterType" class="block text-sm font-medium text-gray-700">
-                                                Filtrar por *
-                                            </label>
-                                            <select
-                                                id="parentTeacherFilterType"
-                                                class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                                <option value="">-- Selecciona una opción --</option>
-                                                <option value="all">Todos los maestros</option>
-                                                <option value="by_group">Por grupo</option>
-                                                <option value="by_subject">Por materia</option>
-                                                <option value="individual">Maestro individual</option>
-                                            </select>
-                                        </div>
+                                <!-- Selected Recipients Display -->
+                                <div class="mb-6" id="parentSelectedRecipientsDisplay" style="display: none;">
+                                    <div class="flex items-center gap-2 rounded-md bg-blue-50 p-3">
+                                        <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span class="text-sm font-medium text-blue-900">
+                                            <span id="parentSelectedCount">0</span> destinatario(s) seleccionado(s)
+                                        </span>
                                     </div>
-
-                                    <!-- Step 3: Secondary Filter -->
-                                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-5" id="parentSecondaryFilterContainer" style="display: none;">
-                                        <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                                            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">3</span>
-                                            Especifica más
-                                        </h4>
-
-                                        <div class="mt-4">
-                                            <label for="parentSecondaryFilter" class="block text-sm font-medium text-gray-700">
-                                                <span id="parentSecondaryFilterLabel">Selecciona una opción</span>
-                                            </label>
-                                            <select
-                                                id="parentSecondaryFilter"
-                                                class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                                <option value="">-- Selecciona una opción --</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <!-- Step 4: Individual Search -->
-                                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-5" id="parentIndividualSearchContainer" style="display: none;">
-                                        <h4 class="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                                            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">4</span>
-                                            Busca maestros individuales
-                                        </h4>
-
-                                        <div class="mt-4">
-                                            <label for="parentIndividualSearch" class="block text-sm font-medium text-gray-700">
-                                                Buscar maestro
-                                            </label>
-                                            <div class="relative mt-2">
-                                                <input
-                                                    type="text"
-                                                    id="parentIndividualSearch"
-                                                    placeholder="Busca por nombre, materia o grupo..."
-                                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                    autocomplete="off"
-                                                >
-                                                <div id="parentIndividualSearchResults" class="hidden absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-96 overflow-y-auto"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Load All and Clear All Buttons -->
-                                    <div class="mt-4 flex gap-3" id="parentLoadClearContainer" style="display: none;">
-                                        <button
-                                            type="button"
-                                            id="parentLoadAllBtn"
-                                            class="inline-flex items-center rounded-md bg-blue-100 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                                            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                            </svg>
-                                            Agregar todos
-                                        </button>
-                                        <button
-                                            type="button"
-                                            id="parentClearAllBtn"
-                                            class="inline-flex items-center rounded-md bg-red-100 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
-                                            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                            Limpiar todos
-                                        </button>
-                                    </div>
-
-                                    <!-- Selected Recipients Display for Parent -->
-                                    <div class="mb-6" id="parentSelectedRecipientsDisplay" style="display: none;">
-                                        <div class="flex items-center gap-2 rounded-md bg-blue-50 p-3">
-                                            <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span class="text-sm font-medium text-blue-900">
-                                                <span id="parentSelectedCount">0</span> destinatario(s) seleccionado(s)
-                                            </span>
-                                        </div>
-                                        <div id="parentSelectedRecipientsList" class="mt-3 flex flex-wrap gap-2"></div>
-                                    </div>
+                                    <div id="parentSelectedRecipientsList" class="mt-3 flex flex-wrap gap-2"></div>
                                 </div>
                             @else
                                 <!-- Other users use the original search -->
@@ -933,227 +865,64 @@
         });
         @endif
 
-        // For parents, handle selection with admin flow
+        // For parents, simple list selection
         @if(auth()->user()->isParent())
         let parentSelectedRecipients = new Map();
         let allParentTeachers = [];
-        let recipientIds = null;
 
-        document.addEventListener('DOMContentLoaded', function() {
-            recipientIds = document.getElementById('recipientIds');
-            const roleSelect = document.getElementById('parentRecipientRole');
-            const filterTypeSelect = document.getElementById('parentTeacherFilterType');
-            const secondaryFilterSelect = document.getElementById('parentSecondaryFilter');
-            const secondaryFilterLabel = document.getElementById('parentSecondaryFilterLabel');
-            const secondaryFilterContainer = document.getElementById('parentSecondaryFilterContainer');
-            const teacherFilterContainer = document.getElementById('parentTeacherFilterContainer');
-            const individualSearchContainer = document.getElementById('parentIndividualSearchContainer');
-            const individualSearch = document.getElementById('parentIndividualSearch');
-            const individualSearchResults = document.getElementById('parentIndividualSearchResults');
-            const loadAllBtn = document.getElementById('parentLoadAllBtn');
-            const clearAllBtn = document.getElementById('parentClearAllBtn');
-            const loadClearContainer = document.getElementById('parentLoadClearContainer');
+        async function loadParentTeachers() {
+            try {
+                const response = await fetch('{{ route("api.messages.parent-teachers") }}');
+                allParentTeachers = await response.json();
+                renderTeachersList();
+            } catch (error) {
+                console.error('Error loading teachers:', error);
+            }
+        }
 
-            // Handle role selection
-            roleSelect.addEventListener('change', function() {
-                const selectedRole = this.value;
+        function renderTeachersList() {
+            const teachersList = document.getElementById('parentTeachersList');
 
-                // Reset containers
-                teacherFilterContainer.style.display = 'none';
-                individualSearchContainer.style.display = 'none';
-                secondaryFilterContainer.style.display = 'none';
-                loadClearContainer.style.display = 'none';
+            if (allParentTeachers.length === 0) {
+                teachersList.innerHTML = '<div class="p-4 text-center text-gray-500">No hay maestros disponibles</div>';
+                return;
+            }
 
-                if (selectedRole === 'teacher') {
-                    teacherFilterContainer.style.display = 'block';
-                } else if (selectedRole === 'admin') {
-                    parentSelectedRecipients.set('admin', 'Administrador');
-                    updateRecipientInput();
-                } else if (selectedRole === 'finance_admin') {
-                    parentSelectedRecipients.set('finance_admin', 'Usuario de Finanzas');
-                    updateRecipientInput();
-                }
+            teachersList.innerHTML = allParentTeachers.map(teacher => {
+                const subjectsStr = teacher.subjects.map(s => `${s.subject_name} (${s.group})`).join(', ');
+                const isSelected = parentSelectedRecipients.has(teacher.id);
 
-                filterTypeSelect.value = '';
-            });
-
-            // Handle teacher filter type selection
-            filterTypeSelect.addEventListener('change', async function() {
-                const filterType = this.value;
-
-                secondaryFilterContainer.style.display = 'none';
-                individualSearchContainer.style.display = 'none';
-                loadClearContainer.style.display = 'none';
-
-                if (!filterType) return;
-
-                // Load teachers if not already loaded
-                if (allParentTeachers.length === 0) {
-                    try {
-                        const response = await fetch('{{ route("api.messages.parent-teachers") }}');
-                        allParentTeachers = await response.json();
-                    } catch (error) {
-                        console.error('Error loading teachers:', error);
-                        return;
-                    }
-                }
-
-                if (filterType === 'all') {
-                    // Show load all button
-                    loadClearContainer.style.display = 'flex';
-                } else if (filterType === 'by_group') {
-                    // Populate groups dropdown
-                    secondaryFilterLabel.textContent = 'Grupo';
-                    const groups = new Set();
-                    allParentTeachers.forEach(teacher => {
-                        teacher.subjects.forEach(subject => {
-                            groups.add(subject.group);
-                        });
-                    });
-
-                    secondaryFilterSelect.innerHTML = '<option value="">-- Selecciona una opción --</option>' +
-                        Array.from(groups).sort().map(group =>
-                            `<option value="${group}">${group}</option>`
-                        ).join('');
-                    secondaryFilterContainer.style.display = 'block';
-                } else if (filterType === 'by_subject') {
-                    // Populate subjects dropdown
-                    secondaryFilterLabel.textContent = 'Materia';
-                    const subjects = new Set();
-                    allParentTeachers.forEach(teacher => {
-                        teacher.subjects.forEach(subject => {
-                            subjects.add(subject.subject_name);
-                        });
-                    });
-
-                    secondaryFilterSelect.innerHTML = '<option value="">-- Selecciona una opción --</option>' +
-                        Array.from(subjects).sort().map(subject =>
-                            `<option value="${subject}">${subject}</option>`
-                        ).join('');
-                    secondaryFilterContainer.style.display = 'block';
-                } else if (filterType === 'individual') {
-                    individualSearchContainer.style.display = 'block';
-                }
-
-                secondaryFilterSelect.value = '';
-            });
-
-            // Handle secondary filter selection
-            secondaryFilterSelect.addEventListener('change', function() {
-                const filterType = filterTypeSelect.value;
-                const filterValue = this.value;
-
-                if (!filterValue) {
-                    loadClearContainer.style.display = 'none';
-                    return;
-                }
-
-                // Filter teachers by selected filter
-                const filtered = allParentTeachers.filter(teacher => {
-                    return teacher.subjects.some(subject => {
-                        if (filterType === 'by_group') {
-                            return subject.group === filterValue;
-                        } else if (filterType === 'by_subject') {
-                            return subject.subject_name === filterValue;
-                        }
-                        return true;
-                    });
-                });
-
-                loadClearContainer.style.display = 'flex';
-            });
-
-            // Handle individual search
-            individualSearch.addEventListener('input', function() {
-                const query = this.value.trim().toLowerCase();
-
-                if (query.length < 1) {
-                    individualSearchResults.classList.add('hidden');
-                    return;
-                }
-
-                // Filter teachers by search query
-                const filtered = allParentTeachers.filter(teacher =>
-                    teacher.name.toLowerCase().includes(query) ||
-                    teacher.subjects.some(s =>
-                        s.subject_name.toLowerCase().includes(query) ||
-                        s.group.toLowerCase().includes(query)
-                    )
-                );
-
-                if (filtered.length === 0) {
-                    individualSearchResults.classList.add('hidden');
-                    return;
-                }
-
-                individualSearchResults.innerHTML = filtered.map(teacher => {
-                    const subjectsStr = teacher.subjects.map(s => `${s.subject_name} (${s.group})`).join(', ');
-                    return `
-                        <div class="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition" onclick="addParentTeacherSelection(${teacher.id}, '${teacher.name.replace(/'/g, "\\'")}', '${subjectsStr.replace(/'/g, "\\'")}')">
+                return `
+                    <div class="p-3 hover:bg-gray-50 cursor-pointer transition" onclick="toggleParentTeacher(${teacher.id}, '${teacher.name.replace(/'/g, "\\'")}', '${subjectsStr.replace(/'/g, "\\'")}')">
+                        <div class="flex items-start gap-3">
+                            <input
+                                type="checkbox"
+                                ${isSelected ? 'checked' : ''}
+                                class="mt-1 rounded border-gray-300"
+                                onclick="event.stopPropagation()"
+                            >
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium text-gray-900">${teacher.name}</p>
                                 <p class="text-xs text-gray-500">${subjectsStr}</p>
                             </div>
                         </div>
-                    `;
-                }).join('');
-
-                individualSearchResults.classList.remove('hidden');
-            });
-
-            // Handle load all button
-            loadAllBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const filterType = filterTypeSelect.value;
-                const filterValue = secondaryFilterSelect.value;
-
-                let filtered = allParentTeachers;
-
-                if (filterType === 'by_group' && filterValue) {
-                    filtered = allParentTeachers.filter(teacher =>
-                        teacher.subjects.some(s => s.group === filterValue)
-                    );
-                } else if (filterType === 'by_subject' && filterValue) {
-                    filtered = allParentTeachers.filter(teacher =>
-                        teacher.subjects.some(s => s.subject_name === filterValue)
-                    );
-                }
-
-                filtered.forEach(teacher => {
-                    const subjectsStr = teacher.subjects.map(s => `${s.subject_name} (${s.group})`).join(', ');
-                    const displayName = `${teacher.name} - ${subjectsStr}`;
-                    parentSelectedRecipients.set(teacher.id, displayName);
-                });
-
-                updateRecipientInput();
-            });
-
-            // Handle clear all button
-            clearAllBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                parentSelectedRecipients.clear();
-                updateRecipientInput();
-            });
-
-            // Close search results on outside click
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('#parentIndividualSearch') && !e.target.closest('#parentIndividualSearchResults')) {
-                    individualSearchResults.classList.add('hidden');
-                }
-            });
-        });
-
-        function addParentTeacherSelection(id, name, subjects) {
-            const displayName = `${name} - ${subjects}`;
-            if (!parentSelectedRecipients.has(id)) {
-                parentSelectedRecipients.set(id, displayName);
-                updateRecipientInput();
-                document.getElementById('parentIndividualSearch').value = '';
-                document.getElementById('parentIndividualSearchResults').classList.add('hidden');
-            }
+                    </div>
+                `;
+            }).join('');
         }
 
-        function updateRecipientInput() {
+        function toggleParentTeacher(id, name, subjects) {
+            if (parentSelectedRecipients.has(id)) {
+                parentSelectedRecipients.delete(id);
+            } else {
+                const displayName = `${name} - ${subjects}`;
+                parentSelectedRecipients.set(id, displayName);
+            }
+            updateParentRecipientInput();
+            renderTeachersList();
+        }
+
+        function updateParentRecipientInput() {
             const recipientIds = document.getElementById('recipientIds');
             const selectedDisplay = document.getElementById('parentSelectedRecipientsDisplay');
             const selectedCount = document.getElementById('parentSelectedCount');
@@ -1189,8 +958,69 @@
 
         function removeParentSelectedRecipient(id) {
             parentSelectedRecipients.delete(id);
-            updateRecipientInput();
+            updateParentRecipientInput();
+            renderTeachersList();
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const adminBtn = document.getElementById('parentAdminBtn');
+            const financeBtn = document.getElementById('parentFinanceBtn');
+            const selectAllTeachersBtn = document.getElementById('parentSelectAllTeachersBtn');
+            const clearAllBtn = document.getElementById('parentClearAllBtn');
+
+            // Load teachers on page load
+            loadParentTeachers();
+
+            // Admin button
+            if (adminBtn) {
+                adminBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (parentSelectedRecipients.has('admin')) {
+                        parentSelectedRecipients.delete('admin');
+                    } else {
+                        parentSelectedRecipients.set('admin', 'Administrador');
+                    }
+                    updateParentRecipientInput();
+                });
+            }
+
+            // Finance button
+            if (financeBtn) {
+                financeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (parentSelectedRecipients.has('finance_admin')) {
+                        parentSelectedRecipients.delete('finance_admin');
+                    } else {
+                        parentSelectedRecipients.set('finance_admin', 'Usuario de Finanzas');
+                    }
+                    updateParentRecipientInput();
+                });
+            }
+
+            // Select all teachers button
+            if (selectAllTeachersBtn) {
+                selectAllTeachersBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    allParentTeachers.forEach(teacher => {
+                        const subjectsStr = teacher.subjects.map(s => `${s.subject_name} (${s.group})`).join(', ');
+                        const displayName = `${teacher.name} - ${subjectsStr}`;
+                        parentSelectedRecipients.set(teacher.id, displayName);
+                    });
+                    updateParentRecipientInput();
+                    renderTeachersList();
+                });
+            }
+
+            // Clear all button
+            if (clearAllBtn) {
+                clearAllBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    parentSelectedRecipients.clear();
+                    updateParentRecipientInput();
+                    renderTeachersList();
+                });
+            }
+        });
         @endif
     </script>
     @endpush
