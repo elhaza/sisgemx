@@ -21,7 +21,7 @@
             @if($students->count() > 0)
                 <div class="mb-8">
                     <div class="grid gap-4 md:grid-cols-4">
-                        <!-- Estudiantes -->
+                        <!-- Estudiantes (Sin enlace - solo información) -->
                         <div class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
                             <div class="p-6">
                                 <div class="flex items-center">
@@ -42,7 +42,7 @@
                         </div>
 
                         <!-- Pagos Realizados -->
-                        <div class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+                        <a href="{{ route('parent.payment-receipts.index', ['status' => 'approved']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md cursor-pointer">
                             <div class="p-6">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0">
@@ -59,10 +59,10 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </a>
 
                         <!-- Pendientes -->
-                        <div class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+                        <a href="{{ route('parent.payment-receipts.index') }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md cursor-pointer">
                             <div class="p-6">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0">
@@ -79,10 +79,10 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </a>
 
                         <!-- Comprobantes -->
-                        <div class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+                        <a href="{{ route('parent.payment-receipts.index') }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md cursor-pointer">
                             <div class="p-6">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0">
@@ -99,7 +99,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                 </div>
             @endif
