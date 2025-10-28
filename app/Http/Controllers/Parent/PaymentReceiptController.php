@@ -85,6 +85,7 @@ class PaymentReceiptController extends Controller
         foreach ($students as $student) {
             // Get all tuitions due up to current month
             $dueTuitions = StudentTuition::where('student_id', $student->id)
+                ->with('student.user')
                 ->where(function ($query) use ($currentYear, $currentMonth) {
                     $query->where('year', '<', $currentYear)
                         ->orWhere(function ($q) use ($currentYear, $currentMonth) {
@@ -118,7 +119,19 @@ class PaymentReceiptController extends Controller
                 }
             }
 
-            $pendingTuitionsByStudent[$student->id] = $pendingTuitions;
+            // Transform to array with calculated values for JSON serialization
+            $pendingTuitionsByStudent[$student->id] = $pendingTuitions->map(function ($tuition) {
+                return [
+                    'id' => $tuition->id,
+                    'student_id' => $tuition->student_id,
+                    'year' => $tuition->year,
+                    'month' => $tuition->month,
+                    'final_amount' => (float) $tuition->final_amount,
+                    'calculated_late_fee_amount' => (float) $tuition->calculated_late_fee_amount,
+                    'calculated_total_amount' => (float) $tuition->calculated_total_amount,
+                    'days_late' => $tuition->days_late,
+                ];
+            })->values()->toArray();
         }
 
         // Sort all pending tuitions by year and month (oldest first)
