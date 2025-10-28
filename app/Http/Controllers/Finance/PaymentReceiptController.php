@@ -302,18 +302,18 @@ class PaymentReceiptController extends Controller
             $receipt->type = 'validated_receipt';
 
             return $receipt;
-        })->toArray();
+        });
 
         // Add admin payments to the list
-        $allValidatedReceipts = array_merge($validatedReceiptsList, $adminPaymentReceipts->toArray());
+        $allValidatedReceipts = $validatedReceiptsList->merge($adminPaymentReceipts);
 
         // Sort by date descending
-        usort($allValidatedReceipts, function ($a, $b) {
+        $allValidatedReceipts = $allValidatedReceipts->sort(function ($a, $b) {
             $dateA = $a->payment_date ?? $a->created_at ?? now();
             $dateB = $b->payment_date ?? $b->created_at ?? now();
 
-            return $dateB->getTimestamp() - $dateA->getTimestamp();
-        });
+            return $dateB->getTimestamp() <=> $dateA->getTimestamp();
+        })->values();
 
         return view('finance.payment-receipts.index', compact(
             'receipts',
