@@ -99,9 +99,14 @@ class StudentTuition extends Model
             return 0;
         }
 
-        // Check if fully paid (total amount paid >= final_amount)
-        $totalPaid = $this->payments()->where('is_paid', true)->sum('amount');
-        if ($totalPaid >= $this->final_amount) {
+        // Check if fully paid via PaymentReceipts (approved)
+        $approvedReceipts = \App\Models\PaymentReceipt::where('student_id', $this->student_id)
+            ->where('payment_year', $this->year)
+            ->where('payment_month', $this->month)
+            ->where('status', 'approved')
+            ->sum('amount_paid');
+
+        if ($approvedReceipts >= $this->final_amount) {
             return 0;
         }
 
