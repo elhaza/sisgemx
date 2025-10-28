@@ -56,6 +56,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/messages/{message}', [MessageController::class, 'delete'])->name('messages.delete');
     Route::get('/api/messages/search', [MessageController::class, 'search'])->name('api.messages.search');
     Route::get('/api/messages/student-teachers', [MessageController::class, 'getStudentTeachers'])->name('api.messages.student-teachers');
+    Route::get('/api/messages/parent-teachers', [MessageController::class, 'getParentTeachers'])->name('api.messages.parent-teachers');
 
     // Rutas para Padres de Familia
     Route::middleware(['role:parent'])->prefix('parent')->name('parent.')->group(function () {

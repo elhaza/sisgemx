@@ -159,8 +159,22 @@ class MessageController extends Controller
         foreach ($parts as $part) {
             $part = trim($part);
 
-            // Handle group searches (legacy support)
-            if (str_starts_with($part, 'all:')) {
+            // Handle admin role
+            if ($part === 'admin') {
+                $adminIds = User::where('role', 'admin')
+                    ->where('id', '!=', $user->id)
+                    ->pluck('id')
+                    ->toArray();
+                $recipientIds = array_merge($recipientIds, $adminIds);
+            } elseif ($part === 'finance_admin') {
+                // Handle finance admin role
+                $financeIds = User::where('role', 'finance_admin')
+                    ->where('id', '!=', $user->id)
+                    ->pluck('id')
+                    ->toArray();
+                $recipientIds = array_merge($recipientIds, $financeIds);
+            } elseif (str_starts_with($part, 'all:')) {
+                // Handle group searches (legacy support)
                 $roleQuery = str_replace('all:', '', $part);
                 $groupIds = User::where('role', $roleQuery)
                     ->where('id', '!=', $user->id)
@@ -240,6 +254,62 @@ class MessageController extends Controller
         }
 
         return response()->json($user->getStudentTeachers());
+    }
+
+    public function getParentTeachers(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (! $user->isParent()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Get students of this parent
+        $students = Student::where(function ($q) use ($user) {
+            $q->where('tutor_1_id', $user->id)
+                ->orWhere('tutor_2_id', $user->id);
+        })->get();
+
+        if ($students->isEmpty() && $user->student) {
+            $students = collect([$user->student]);
+        }
+
+        // Get teachers for these students
+        $teachers = User::whereHas('subjects', function ($q) use ($students) {
+            $q->whereIn('student_id', $students->pluck('id'));
+        })
+            ->where('role', 'teacher')
+            ->with('subjects')
+            ->get();
+
+        // Transform to include subject and group info
+        $result = [];
+        foreach ($teachers as $teacher) {
+            $subjectsInfo = [];
+            foreach ($teacher->subjects as $subject) {
+                if (in_array($subject->student_id, $students->pluck('id')->toArray())) {
+                    $student = $students->find($subject->student_id);
+                    if ($student) {
+                        $subjectsInfo[] = [
+                            'subject_name' => $subject->subject_name ?? 'Sin materia',
+                            'group' => $student->group ?? 'Sin grupo',
+                        ];
+                    }
+                }
+            }
+
+            if (! empty($subjectsInfo)) {
+                $result[] = [
+                    'id' => $teacher->id,
+                    'name' => $teacher->full_name,
+                    'email' => $teacher->email,
+                    'role' => $teacher->role,
+                    'subjects' => $subjectsInfo,
+                ];
+            }
+        }
+
+        return response()->json($result);
     }
 
     public function search(Request $request): JsonResponse
