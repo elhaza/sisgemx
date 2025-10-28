@@ -207,15 +207,15 @@
                                                     <span class="font-semibold text-gray-900">{{ $tuition->student->user->full_name }}</span>
                                                     <span class="ml-2 text-gray-600">{{ \Carbon\Carbon::create($tuition->year, $tuition->month)->locale('es')->isoFormat('MMM YYYY') }}</span>
                                                 </div>
-                                                <span class="ml-2 font-bold text-red-700 text-sm">${{ number_format($tuition->total_amount, 2) }}</span>
+                                                <span class="ml-2 font-bold text-red-700 text-sm">${{ number_format($tuition->calculated_total_amount, 2) }}</span>
                                             </div>
-                                            @if($tuition->late_fee > 0)
+                                            @if($tuition->calculated_late_fee_amount > 0)
                                                 <div class="text-xs text-red-600 mb-2">
-                                                    🔔 <strong>{{ $tuition->days_late }} días</strong> de atraso (Recargo: ${{{ number_format($tuition->late_fee, 2) }}})
+                                                    🔔 <strong>{{ $tuition->days_late }} días</strong> de atraso (Recargo: ${{{ number_format($tuition->calculated_late_fee_amount, 2) }}})
                                                 </div>
                                             @endif
                                             <button
-                                                onclick="openPaymentModal({{ $tuition->id }}, '{{ $tuition->student->user->full_name }}', '{{ \Carbon\Carbon::create($tuition->year, $tuition->month)->locale('es')->isoFormat('MMMM YYYY') }}', {{ $tuition->total_amount }}, {{ $tuition->student_id }}, {{ $tuition->year }}, {{ $tuition->month }})"
+                                                onclick="openPaymentModal({{ $tuition->id }}, '{{ $tuition->student->user->full_name }}', '{{ \Carbon\Carbon::create($tuition->year, $tuition->month)->locale('es')->isoFormat('MMMM YYYY') }}', {{ $tuition->calculated_total_amount }}, {{ $tuition->student_id }}, {{ $tuition->year }}, {{ $tuition->month }})"
                                                 class="inline-flex items-center gap-1 rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 transition">
                                                 📤 Subir Comprobante
                                             </button>

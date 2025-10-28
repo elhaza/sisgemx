@@ -90,11 +90,11 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
 
-        // Calcular monto total pendiente SOLO DE VENCIDOS (con recargos)
-        $totalOverdue = $overdueTuitions->sum('total_amount');
+        // Calcular monto total pendiente SOLO DE VENCIDOS (con recargos calculados dinámicamente)
+        $totalOverdue = $overdueTuitions->sum('calculated_total_amount');
 
-        // Calcular total de recargos en vencidos
-        $totalLateFees = $overdueTuitions->sum('late_fee');
+        // Calcular total de recargos en vencidos (usando valores calculados dinámicamente)
+        $totalLateFees = $overdueTuitions->sum('calculated_late_fee_amount');
 
         // Unir vencidos + mes actual para la lista
         $displayPendingTuitions = $overdueTuitions;
