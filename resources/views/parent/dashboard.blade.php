@@ -22,20 +22,20 @@
                 <div class="overflow-hidden rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg">
                     <div class="px-6 py-8">
                         <div class="grid gap-6 md:grid-cols-4">
-                            <div class="rounded-lg bg-white/10 p-4 backdrop-blur-sm border border-white/20">
-                                <p class="text-sm font-medium text-blue-100">Estudiantes</p>
+                            <div class="rounded-lg bg-white/20 p-4 backdrop-blur-sm border border-white/40">
+                                <p class="text-sm font-semibold text-white">Estudiantes</p>
                                 <p class="mt-2 text-3xl font-bold text-white">{{ $students->count() }}</p>
                             </div>
-                            <div class="rounded-lg bg-white/10 p-4 backdrop-blur-sm border border-white/20">
-                                <p class="text-sm font-medium text-blue-100">Pagos</p>
+                            <div class="rounded-lg bg-white/20 p-4 backdrop-blur-sm border border-white/40">
+                                <p class="text-sm font-semibold text-white">Pagos</p>
                                 <p class="mt-2 text-3xl font-bold text-white">{{ $paidTuitionsCount }}</p>
                             </div>
-                            <div class="rounded-lg bg-white/10 p-4 backdrop-blur-sm border border-white/20">
-                                <p class="text-sm font-medium text-blue-100">Pendientes</p>
+                            <div class="rounded-lg bg-white/20 p-4 backdrop-blur-sm border border-white/40">
+                                <p class="text-sm font-semibold text-white">Pendientes</p>
                                 <p class="mt-2 text-3xl font-bold text-white">{{ $displayPendingTuitions->count() }}</p>
                             </div>
-                            <div class="rounded-lg bg-white/10 p-4 backdrop-blur-sm border border-white/20">
-                                <p class="text-sm font-medium text-blue-100">Comprobantes</p>
+                            <div class="rounded-lg bg-white/20 p-4 backdrop-blur-sm border border-white/40">
+                                <p class="text-sm font-semibold text-white">Comprobantes</p>
                                 <p class="mt-2 text-3xl font-bold text-white">{{ $recentReceipts->count() }}</p>
                             </div>
                         </div>
