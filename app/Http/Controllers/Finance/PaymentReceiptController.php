@@ -302,28 +302,21 @@ class PaymentReceiptController extends Controller
             $receipt->type = 'validated_receipt';
 
             return $receipt;
-        })->toArray();
+        });
 
-        // Convert admin payments to array format
-        $adminPaymentReceiptsArray = $adminPaymentReceipts->toArray();
-
-        // Add admin payments to the list
-        $allValidatedReceipts = array_merge($validatedReceiptsList, $adminPaymentReceiptsArray);
+        // Combine both collections
+        $allValidatedReceipts = $validatedReceiptsList->concat($adminPaymentReceipts);
 
         // Sort by date descending
-        usort($allValidatedReceipts, function ($a, $b) {
-            $dateA = $a['payment_date'] ?? $a['created_at'] ?? now();
-            $dateB = $b['payment_date'] ?? $b['created_at'] ?? now();
+        $allValidatedReceipts = $allValidatedReceipts->sortByDesc(function ($receipt) {
+            $date = $receipt['payment_date'] ?? $receipt->payment_date ?? $receipt['created_at'] ?? $receipt->created_at ?? now();
 
-            if (is_string($dateA)) {
-                $dateA = \Carbon\Carbon::parse($dateA);
-            }
-            if (is_string($dateB)) {
-                $dateB = \Carbon\Carbon::parse($dateB);
+            if (is_string($date)) {
+                $date = \Carbon\Carbon::parse($date);
             }
 
-            return $dateB->getTimestamp() <=> $dateA->getTimestamp();
-        });
+            return $date->getTimestamp();
+        })->values();
 
         return view('finance.payment-receipts.index', compact(
             'receipts',

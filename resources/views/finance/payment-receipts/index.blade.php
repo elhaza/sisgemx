@@ -315,19 +315,27 @@
                     <tbody class="divide-y divide-gray-200">
                         @forelse($allValidatedReceipts as $receipt)
                             @php
-                                $paymentDate = $receipt['payment_date'] ?? null;
+                                // Handle both array and object access
+                                $paymentDate = is_array($receipt) ? ($receipt['payment_date'] ?? null) : ($receipt->payment_date ?? null);
                                 if (is_string($paymentDate)) {
                                     $paymentDate = \Carbon\Carbon::parse($paymentDate);
                                 }
-                                $type = $receipt['type'] ?? 'validated_receipt';
-                                $student = $receipt['student'] ?? null;
-                                $amountPaid = $receipt['amount_paid'] ?? 0;
+
+                                $type = is_array($receipt) ? ($receipt['type'] ?? 'validated_receipt') : ($receipt->type ?? 'validated_receipt');
+                                $student = is_array($receipt) ? ($receipt['student'] ?? null) : ($receipt->student ?? null);
+                                $amountPaid = is_array($receipt) ? ($receipt['amount_paid'] ?? 0) : ($receipt->amount_paid ?? 0);
                             @endphp
                             <tr class="{{ $type === 'admin_payment' ? 'bg-blue-50' : 'hover:bg-gray-50' }}">
                                 <td class="px-4 py-2">{{ $paymentDate?->format('d/m/Y') ?? 'N/A' }}</td>
                                 <td class="px-4 py-2">
-                                    @if($student && isset($student['user']))
-                                        {{ $student['user']['full_name'] ?? $student['user']['name'] ?? 'N/A' }}
+                                    @if($student)
+                                        @if(is_array($student))
+                                            {{ $student['user']['full_name'] ?? $student['user']['name'] ?? 'N/A' }}
+                                        @elseif(is_object($student))
+                                            {{ $student->user?->full_name ?? $student->user?->name ?? 'N/A' }}
+                                        @else
+                                            N/A
+                                        @endif
                                     @else
                                         N/A
                                     @endif
