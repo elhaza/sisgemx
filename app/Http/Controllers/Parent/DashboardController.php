@@ -43,9 +43,9 @@ class DashboardController extends Controller
             ->orderBy('month')
             ->get();
 
-        // Obtener comprobantes aprobados para calcular colegiaturas pagadas
+        // Obtener comprobantes validados para calcular colegiaturas pagadas
         $approvedReceipts = PaymentReceipt::whereIn('student_id', $studentIds)
-            ->where('status', 'approved')
+            ->where('status', 'validated')
             ->orderBy('payment_date')
             ->get();
 

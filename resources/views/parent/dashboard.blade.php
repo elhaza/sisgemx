@@ -42,7 +42,7 @@
                         </div>
 
                         <!-- Pagos Realizados -->
-                        <a href="{{ route('parent.payment-receipts.index', ['status' => 'approved']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md cursor-pointer">
+                        <a href="{{ route('parent.payment-receipts.index', ['status' => 'validated']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md cursor-pointer">
                             <div class="p-6">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0">
@@ -298,8 +298,8 @@
                                         <div class="ml-4">
                                             @if($receipt->status->value === 'pending')
                                                 <span class="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800">⏳ Pendiente</span>
-                                            @elseif($receipt->status->value === 'approved')
-                                                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">✅ Aprobado</span>
+                                            @elseif($receipt->status->value === 'validated')
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">✅ Validado</span>
                                             @elseif($receipt->status->value === 'rejected')
                                                 <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">❌ Rechazado</span>
                                             @endif
@@ -645,8 +645,8 @@
             let statusBadge = '';
             if (status === 'pending') {
                 statusBadge = '<span class="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800">⏳ Pendiente de revisión</span>';
-            } else if (status === 'approved') {
-                statusBadge = '<span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">✅ Aprobado</span>';
+            } else if (status === 'validated') {
+                statusBadge = '<span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">✅ Validado</span>';
             } else if (status === 'rejected') {
                 statusBadge = '<span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800">❌ Rechazado</span>';
             }

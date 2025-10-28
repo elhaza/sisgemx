@@ -95,9 +95,9 @@ class PaymentReceiptController extends Controller
                 ->orderBy('month')
                 ->get();
 
-            // Get approved receipts for this student
+            // Get validated receipts for this student
             $approvedReceipts = PaymentReceipt::where('student_id', $student->id)
-                ->where('status', 'approved')
+                ->where('status', 'validated')
                 ->orderBy('payment_date')
                 ->get();
 
