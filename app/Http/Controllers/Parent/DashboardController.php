@@ -59,8 +59,8 @@ class DashboardController extends Controller
         $paidTuitions = collect();
 
         foreach ($dueTuitions as $tuition) {
-            // Use total_amount which includes late fees
-            $amountDue = $tuition->total_amount;
+            // Use calculated_total_amount which includes dynamically calculated late fees
+            $amountDue = $tuition->calculated_total_amount;
             if ($remainingAmount >= $amountDue) {
                 $remainingAmount -= $amountDue;
                 $paidTuitionsCount++;

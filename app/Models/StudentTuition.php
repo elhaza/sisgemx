@@ -95,7 +95,13 @@ class StudentTuition extends Model
      */
     public function getCalculatedLateFeeAmountAttribute(): float
     {
-        if ($this->isPaid() || ! $this->due_date || $this->days_late <= 0) {
+        if (! $this->due_date || $this->days_late <= 0) {
+            return 0;
+        }
+
+        // Check if fully paid (total amount paid >= final_amount)
+        $totalPaid = $this->payments()->where('is_paid', true)->sum('amount');
+        if ($totalPaid >= $this->final_amount) {
             return 0;
         }
 
