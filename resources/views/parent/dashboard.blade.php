@@ -282,7 +282,7 @@
                         <div class="space-y-3">
                             @foreach($recentReceipts as $receipt)
                                 <div class="rounded-lg border border-gray-200 hover:border-blue-400 hover:shadow-md transition overflow-hidden">
-                                    <div class="flex items-start justify-between p-4 cursor-pointer hover:bg-gray-50" onclick="openReceiptModal({{ $receipt->id }}, '{{ $receipt->student->user->full_name }}', '{{ \Carbon\Carbon::create($receipt->payment_year, $receipt->payment_month)->locale('es')->isoFormat('MMMM YYYY') }}', {{ $receipt->amount_paid }}, '{{ $receipt->payment_date->format('d/m/Y') }}', '{{ $receipt->reference }}', '{{ $receipt->account_holder_name }}', '{{ $receipt->issuing_bank }}', '{{ $receipt->payment_method }}', '{{ $receipt->receipt_image }}', '{{ $receipt->status->value }}')">
+                                    <div class="flex items-start justify-between p-4 cursor-pointer hover:bg-gray-50" onclick="openReceiptModal({{ $receipt->id }}, '{{ $receipt->student->user->full_name }}', '{{ \Carbon\Carbon::create($receipt->payment_year, $receipt->payment_month)->locale('es')->isoFormat('MMMM YYYY') }}', {{ $receipt->amount_paid }}, '{{ $receipt->payment_date->format('d/m/Y') }}', '{{ $receipt->reference }}', '{{ $receipt->account_holder_name }}', '{{ $receipt->issuing_bank }}', '{{ $receipt->receipt_image }}', '{{ $receipt->status->value }}')">
                                         <div class="flex-1">
                                             <div class="flex items-center gap-3">
                                                 <div>
