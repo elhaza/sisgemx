@@ -314,17 +314,26 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         @forelse($allValidatedReceipts as $receipt)
-                            <tr class="{{ isset($receipt->type) && $receipt->type === 'admin_payment' ? 'bg-blue-50' : 'hover:bg-gray-50' }}">
-                                <td class="px-4 py-2">{{ $receipt->payment_date?->format('d/m/Y') ?? 'N/A' }}</td>
+                            @php
+                                $paymentDate = $receipt['payment_date'] ?? null;
+                                if (is_string($paymentDate)) {
+                                    $paymentDate = \Carbon\Carbon::parse($paymentDate);
+                                }
+                                $type = $receipt['type'] ?? 'validated_receipt';
+                                $student = $receipt['student'] ?? null;
+                                $amountPaid = $receipt['amount_paid'] ?? 0;
+                            @endphp
+                            <tr class="{{ $type === 'admin_payment' ? 'bg-blue-50' : 'hover:bg-gray-50' }}">
+                                <td class="px-4 py-2">{{ $paymentDate?->format('d/m/Y') ?? 'N/A' }}</td>
                                 <td class="px-4 py-2">
-                                    @if(isset($receipt->student) && $receipt->student)
-                                        {{ $receipt->student->user->full_name }}
+                                    @if($student && isset($student['user']))
+                                        {{ $student['user']['full_name'] ?? $student['user']['name'] ?? 'N/A' }}
                                     @else
                                         N/A
                                     @endif
                                 </td>
                                 <td class="px-4 py-2">
-                                    @if(isset($receipt->type) && $receipt->type === 'admin_payment')
+                                    @if($type === 'admin_payment')
                                         <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
                                             Aplicado por Admin
                                         </span>
@@ -334,7 +343,7 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-2 text-right font-semibold">${{ number_format($receipt->amount_paid, 2) }}</td>
+                                <td class="px-4 py-2 text-right font-semibold">${{ number_format($amountPaid, 2) }}</td>
                             </tr>
                         @empty
                             <tr>
