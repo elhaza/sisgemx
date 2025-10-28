@@ -871,23 +871,6 @@
             let parentSelectedRecipients = new Map();
             let allParentTeachers = [];
 
-            window.toggleParentTeacher = function(id, name, subjects) {
-                if (parentSelectedRecipients.has(id)) {
-                    parentSelectedRecipients.delete(id);
-                } else {
-                    const displayName = name + ' - ' + subjects;
-                    parentSelectedRecipients.set(id, displayName);
-                }
-                updateParentRecipientInput();
-                renderTeachersList();
-            };
-
-            window.removeParentSelectedRecipient = function(id) {
-                parentSelectedRecipients.delete(id);
-                updateParentRecipientInput();
-                renderTeachersList();
-            };
-
             function renderTeachersList() {
                 const teachersList = document.getElementById('parentTeachersList');
 
@@ -969,6 +952,27 @@
                     console.error('Error loading teachers:', error);
                 }
             }
+
+            // Expose functions to window
+            window.toggleParentTeacher = function(id, name, subjects) {
+                if (parentSelectedRecipients.has(id)) {
+                    parentSelectedRecipients.delete(id);
+                } else {
+                    const displayName = name + ' - ' + subjects;
+                    parentSelectedRecipients.set(id, displayName);
+                }
+                updateParentRecipientInput();
+                renderTeachersList();
+            };
+
+            window.removeParentSelectedRecipient = function(id) {
+                parentSelectedRecipients.delete(id);
+                updateParentRecipientInput();
+                renderTeachersList();
+            };
+
+            window.updateParentRecipientInput = updateParentRecipientInput;
+            window.renderTeachersList = renderTeachersList;
 
             document.addEventListener('DOMContentLoaded', function() {
                 const adminBtn = document.getElementById('parentAdminBtn');
