@@ -33,13 +33,13 @@ class StudentController extends Controller
 
         // Filter by enrollment number
         if ($request->filled('enrollment_number')) {
-            $query->where('enrollment_number', 'like', '%'.$request->enrollment_number.'%');
+            $query->where('enrollment_number', 'like', '%'.addcslashes($request->enrollment_number, '%_').'%');
         }
 
         // Filter by name
         if ($request->filled('name')) {
             $query->whereHas('user', function ($q) use ($request) {
-                $q->where('name', 'like', '%'.$request->name.'%');
+                $q->where('name', 'like', '%'.addcslashes($request->name, '%_').'%');
             });
         }
 
@@ -215,9 +215,9 @@ class StudentController extends Controller
 
         // Auto-generate enrollment number if not provided
         if (empty($validated['enrollment_number'])) {
-            $prefix = env('PREFIX_TUITION', 'PRI');
-            $schoolCode = env('SCHOOL_CODE', 'ESC001');
-            $year = date('Y');
+            $prefix = config('school.prefix_tuition');
+            $schoolCode = config('school.school_code');
+            $year = now()->year;
 
             // Get the next consecutive number
             $lastStudent = Student::orderBy('id', 'desc')->first();

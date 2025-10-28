@@ -85,6 +85,11 @@ class DashboardController extends Controller
      */
     public function overdueParentsReport()
     {
+        // Verify authorization
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'No tienes permiso para acceder a este reporte.');
+        }
+
         $now = now();
 
         // Get all overdue student tuitions with active students

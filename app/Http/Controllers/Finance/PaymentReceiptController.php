@@ -51,7 +51,8 @@ class PaymentReceiptController extends Controller
 
         // Get PaymentReceipts
         $query = PaymentReceipt::query()
-            ->with(['student.user', 'parent', 'registeredBy']);
+            ->with(['student.user', 'parent', 'registeredBy', 'validatedBy', 'statusLogs.changedBy'])
+            ->whereNotNull('student_id');
 
         if ($status) {
             $query->where('status', $status);
@@ -332,7 +333,10 @@ class PaymentReceiptController extends Controller
 
     public function create()
     {
-        $students = Student::with('user')->get();
+        $students = Student::with('user')
+            ->where('status', 'active')
+            ->orderBy('user_id')
+            ->get();
 
         return view('finance.payment-receipts.create', compact('students'));
     }

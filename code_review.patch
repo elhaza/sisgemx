@@ -1,0 +1,152 @@
+diff --git a/app/Http/Controllers/Admin/SchoolYearController.php b/app/Http/Controllers/Admin/SchoolYearController.php
+index e2f8b96..1c7804e 100644
+--- a/app/Http/Controllers/Admin/SchoolYearController.php
++++ b/app/Http/Controllers/Admin/SchoolYearController.php
+@@ -463,7 +463,7 @@ public function destroy(Request $request, SchoolYear $schoolYear)
+             'confirmation_token' => 'required|string',
+         ]);
+ 
+-        $expectedToken = env('TOKEN_SPECIAL_COMMANDS', 'DELETE2025');
++        $expectedToken = config('school.token_special_commands');
+ 
+         if ($request->confirmation_token !== $expectedToken) {
+             return redirect()->route('admin.school-years.index')->with('error', 'Token de confirmación incorrecto. No se puede eliminar el ciclo escolar.');
+diff --git a/app/Http/Controllers/Admin/StudentController.php b/app/Http/Controllers/Admin/StudentController.php
+index a0df96e..a7673a6 100644
+--- a/app/Http/Controllers/Admin/StudentController.php
++++ b/app/Http/Controllers/Admin/StudentController.php
+@@ -33,13 +33,13 @@ public function index(Request $request)
+ 
+         // Filter by enrollment number
+         if ($request->filled('enrollment_number')) {
+-            $query->where('enrollment_number', 'like', '%'.$request->enrollment_number.'%');
++            $query->where('enrollment_number', 'like', '%'.addcslashes($request->enrollment_number, '%_').'%');
+         }
+ 
+         // Filter by name
+         if ($request->filled('name')) {
+             $query->whereHas('user', function ($q) use ($request) {
+-                $q->where('name', 'like', '%'.$request->name.'%');
++                $q->where('name', 'like', '%'.addcslashes($request->name, '%_').'%');
+             });
+         }
+ 
+@@ -215,9 +215,9 @@ public function store(Request $request)
+ 
+         // Auto-generate enrollment number if not provided
+         if (empty($validated['enrollment_number'])) {
+-            $prefix = env('PREFIX_TUITION', 'PRI');
+-            $schoolCode = env('SCHOOL_CODE', 'ESC001');
+-            $year = date('Y');
++            $prefix = config('school.prefix_tuition');
++            $schoolCode = config('school.school_code');
++            $year = now()->year;
+ 
+             // Get the next consecutive number
+             $lastStudent = Student::orderBy('id', 'desc')->first();
+diff --git a/app/Http/Controllers/DashboardController.php b/app/Http/Controllers/DashboardController.php
+index ee566de..ca684a5 100644
+--- a/app/Http/Controllers/DashboardController.php
++++ b/app/Http/Controllers/DashboardController.php
+@@ -85,6 +85,11 @@ public function index(Request $request)
+      */
+     public function overdueParentsReport()
+     {
++        // Verify authorization
++        if (! auth()->user()->isAdmin()) {
++            abort(403, 'No tienes permiso para acceder a este reporte.');
++        }
++
+         $now = now();
+ 
+         // Get all overdue student tuitions with active students
+diff --git a/app/Http/Controllers/Finance/PaymentReceiptController.php b/app/Http/Controllers/Finance/PaymentReceiptController.php
+index 47640f7..a10e359 100644
+--- a/app/Http/Controllers/Finance/PaymentReceiptController.php
++++ b/app/Http/Controllers/Finance/PaymentReceiptController.php
+@@ -51,7 +51,8 @@ public function index(Request $request)
+ 
+         // Get PaymentReceipts
+         $query = PaymentReceipt::query()
+-            ->with(['student.user', 'parent', 'registeredBy']);
++            ->with(['student.user', 'parent', 'registeredBy', 'validatedBy', 'statusLogs.changedBy'])
++            ->whereNotNull('student_id');
+ 
+         if ($status) {
+             $query->where('status', $status);
+@@ -332,7 +333,10 @@ public function index(Request $request)
+ 
+     public function create()
+     {
+-        $students = Student::with('user')->get();
++        $students = Student::with('user')
++            ->where('status', 'active')
++            ->orderBy('user_id')
++            ->get();
+ 
+         return view('finance.payment-receipts.create', compact('students'));
+     }
+diff --git a/app/Http/Controllers/MessageController.php b/app/Http/Controllers/MessageController.php
+index 8ea12ca..a2ee317 100644
+--- a/app/Http/Controllers/MessageController.php
++++ b/app/Http/Controllers/MessageController.php
+@@ -55,12 +55,13 @@ public function inbox(Request $request): View
+ 
+         // Apply search filter if provided
+         if ($searchQuery) {
+-            $conversations->where(function ($q) use ($searchQuery) {
+-                $q->where('subject', 'like', "%{$searchQuery}%")
+-                    ->orWhere('body', 'like', "%{$searchQuery}%")
+-                    ->orWhereHas('sender', function ($q) use ($searchQuery) {
+-                        $q->where('name', 'like', "%{$searchQuery}%")
+-                            ->orWhere('email', 'like', "%{$searchQuery}%");
++            $escapedQuery = addcslashes($searchQuery, '%_');
++            $conversations->where(function ($q) use ($escapedQuery) {
++                $q->where('subject', 'like', '%'.$escapedQuery.'%')
++                    ->orWhere('body', 'like', '%'.$escapedQuery.'%')
++                    ->orWhereHas('sender', function ($q) use ($escapedQuery) {
++                        $q->where('name', 'like', '%'.$escapedQuery.'%')
++                            ->orWhere('email', 'like', '%'.$escapedQuery.'%');
+                     });
+             });
+         }
+diff --git a/app/Models/GradeSection.php b/app/Models/GradeSection.php
+index 7c31dda..634eb65 100644
+--- a/app/Models/GradeSection.php
++++ b/app/Models/GradeSection.php
+@@ -27,13 +27,13 @@ protected static function boot()
+         parent::boot();
+ 
+         static::creating(function ($model) {
+-            if (!$model->name && $model->grade_level && $model->section) {
++            if (! $model->name && $model->grade_level && $model->section) {
+                 $model->name = $model->grade_level.$model->section;
+             }
+         });
+ 
+         static::updating(function ($model) {
+-            if ($model->isDirty(['grade_level', 'section']) && !$model->isDirty('name')) {
++            if ($model->isDirty(['grade_level', 'section']) && ! $model->isDirty('name')) {
+                 $model->name = $model->grade_level.$model->section;
+             }
+         });
+diff --git a/config/school.php b/config/school.php
+new file mode 100644
+index 0000000..92a5d50
+--- /dev/null
++++ b/config/school.php
+@@ -0,0 +1,13 @@
++<?php
++
++return [
++    /*
++    |--------------------------------------------------------------------------
++    | School Configuration
++    |--------------------------------------------------------------------------
++    */
++
++    'prefix_tuition' => env('PREFIX_TUITION', 'PRI'),
++    'school_code' => env('SCHOOL_CODE', 'ESC001'),
++    'token_special_commands' => env('TOKEN_SPECIAL_COMMANDS', 'DELETE2025'),
++
++];

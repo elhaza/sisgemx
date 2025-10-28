@@ -27,13 +27,13 @@ class GradeSection extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            if (!$model->name && $model->grade_level && $model->section) {
+            if (! $model->name && $model->grade_level && $model->section) {
                 $model->name = $model->grade_level.$model->section;
             }
         });
 
         static::updating(function ($model) {
-            if ($model->isDirty(['grade_level', 'section']) && !$model->isDirty('name')) {
+            if ($model->isDirty(['grade_level', 'section']) && ! $model->isDirty('name')) {
                 $model->name = $model->grade_level.$model->section;
             }
         });

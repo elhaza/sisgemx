@@ -55,12 +55,13 @@ class MessageController extends Controller
 
         // Apply search filter if provided
         if ($searchQuery) {
-            $conversations->where(function ($q) use ($searchQuery) {
-                $q->where('subject', 'like', "%{$searchQuery}%")
-                    ->orWhere('body', 'like', "%{$searchQuery}%")
-                    ->orWhereHas('sender', function ($q) use ($searchQuery) {
-                        $q->where('name', 'like', "%{$searchQuery}%")
-                            ->orWhere('email', 'like', "%{$searchQuery}%");
+            $escapedQuery = addcslashes($searchQuery, '%_');
+            $conversations->where(function ($q) use ($escapedQuery) {
+                $q->where('subject', 'like', '%'.$escapedQuery.'%')
+                    ->orWhere('body', 'like', '%'.$escapedQuery.'%')
+                    ->orWhereHas('sender', function ($q) use ($escapedQuery) {
+                        $q->where('name', 'like', '%'.$escapedQuery.'%')
+                            ->orWhere('email', 'like', '%'.$escapedQuery.'%');
                     });
             });
         }

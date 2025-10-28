@@ -463,7 +463,7 @@ class SchoolYearController extends Controller
             'confirmation_token' => 'required|string',
         ]);
 
-        $expectedToken = env('TOKEN_SPECIAL_COMMANDS', 'DELETE2025');
+        $expectedToken = config('school.token_special_commands');
 
         if ($request->confirmation_token !== $expectedToken) {
             return redirect()->route('admin.school-years.index')->with('error', 'Token de confirmación incorrecto. No se puede eliminar el ciclo escolar.');
