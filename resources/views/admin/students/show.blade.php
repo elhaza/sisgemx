@@ -168,13 +168,13 @@
                                                 @endif
                                             </td>
                                             <td class="px-4 py-3 text-center">
-                                                <button type="button" onclick="openEditLateFeeModal({{ $tuition->id }}, {{ $tuition->late_fee_amount }}, {{ $tuition->final_amount }})" class="inline-block rounded-full {{ $tuition->late_fee_amount > 0 ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }} px-3 py-1 font-semibold cursor-pointer transition">
-                                                    ${{ number_format($tuition->late_fee_amount, 2) }}
+                                                <button type="button" onclick="openEditLateFeeModal({{ $tuition->id }}, {{ $tuition->calculated_late_fee_amount }}, {{ $tuition->final_amount }})" class="inline-block rounded-full {{ $tuition->calculated_late_fee_amount > 0 ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }} px-3 py-1 font-semibold cursor-pointer transition">
+                                                    ${{ number_format($tuition->calculated_late_fee_amount, 2) }}
                                                 </button>
                                             </td>
                                             <td class="px-4 py-3 text-center font-bold">
                                                 <span id="total-{{ $tuition->id }}">
-                                                    ${{ number_format($tuition->final_amount + $tuition->late_fee_amount, 2) }}
+                                                    ${{ number_format($tuition->calculated_total_amount, 2) }}
                                                 </span>
                                             </td>
                                             <td class="px-4 py-3 text-center">
@@ -186,9 +186,9 @@
                                                         Pagada
                                                     </span>
                                                 @elseif($tuition->due_date && $tuition->due_date->isPast())
-                                                    <span class="inline-block rounded-full bg-red-100 px-3 py-1 text-red-700 font-semibold">
+                                                    <button type="button" onclick="openPaymentDetailsModal({{ $student->id }}, {{ $tuition->id }})" class="inline-block rounded-full bg-red-100 px-3 py-1 text-red-700 font-semibold hover:bg-red-200 cursor-pointer transition">
                                                         Vencida ({{ $tuition->days_late }} días)
-                                                    </span>
+                                                    </button>
                                                 @else
                                                     <span class="inline-block rounded-full bg-green-100 px-3 py-1 text-green-700 font-semibold">
                                                         Pendiente
@@ -222,7 +222,7 @@
                                                                     Liquidar
                                                                 </button>
                                                             @else
-                                                                <button type="submit" class="rounded-md bg-green-600 px-3 py-1 text-sm font-medium text-white hover:bg-green-700 transition" onclick="return confirm('¿Liquidar mensualidad de ${{ number_format($tuition->final_amount + $tuition->late_fee_amount, 2) }}?')">
+                                                                <button type="submit" class="rounded-md bg-green-600 px-3 py-1 text-sm font-medium text-white hover:bg-green-700 transition" onclick="return confirm('¿Liquidar mensualidad de ${{ number_format($tuition->calculated_total_amount, 2) }}?')">
                                                                     Liquidar
                                                                 </button>
                                                             @endif
@@ -277,6 +277,23 @@
         </div>
     </div>
 
+    <!-- Modal para detalles de adeudo y recargos -->
+    <div id="paymentDetailsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-96 overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-gray-900">Detalles de Adeudo</h3>
+                <button type="button" onclick="closePaymentDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="paymentDetailsContent">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentTuitionId = null;
         let currentFinalAmount = 0;
@@ -311,6 +328,151 @@
         document.getElementById('editLateFeeModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeEditLateFeeModal();
+            }
+        });
+
+        // Payment Details Modal Functions
+        function openPaymentDetailsModal(studentId, tuitionId) {
+            const modal = document.getElementById('paymentDetailsModal');
+            const content = document.getElementById('paymentDetailsContent');
+
+            // Show loading state
+            content.innerHTML = '<div class="text-center py-8"><div class="inline-block"><svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div></div>';
+            modal.classList.remove('hidden');
+
+            // Fetch payment details
+            fetch(`/admin/students/${studentId}/tuitions/${tuitionId}/details`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Error al obtener detalles');
+                    return response.json();
+                })
+                .then(data => {
+                    renderPaymentDetails(data.data);
+                })
+                .catch(error => {
+                    content.innerHTML = `<div class="text-center py-8 text-red-600"><p>${error.message}</p></div>`;
+                });
+        }
+
+        function closePaymentDetailsModal() {
+            document.getElementById('paymentDetailsModal').classList.add('hidden');
+        }
+
+        function renderPaymentDetails(data) {
+            const content = document.getElementById('paymentDetailsContent');
+            const debtDetails = data.debt_details;
+            const lateFeeDetails = data.late_fee_details;
+            const paymentSummary = data.payment_summary;
+            const explanation = lateFeeDetails.explanation;
+
+            let html = `
+                <div class="space-y-6">
+                    <!-- Header -->
+                    <div class="border-b pb-4">
+                        <h3 class="text-xl font-bold text-gray-900">${data.period}</h3>
+                        <p class="text-sm text-gray-600">Estudiante: ${data.student_name}</p>
+                        <p class="text-sm text-gray-600">Vencimiento: ${data.due_date}</p>
+                    </div>
+
+                    <!-- Detalles de Adeudo -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-900 mb-3">Detalles de Adeudo</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Monto Base:</span>
+                                <span class="font-semibold">$${parseFloat(debtDetails.base_amount).toFixed(2)}</span>
+                            </div>
+                            ${debtDetails.discount_percentage > 0 ? `
+                                <div class="flex justify-between text-green-700">
+                                    <span class="text-gray-600">Descuento (${parseFloat(debtDetails.discount_percentage).toFixed(2)}%):</span>
+                                    <span class="font-semibold">-$${parseFloat(debtDetails.discount_amount).toFixed(2)}</span>
+                                </div>
+                                ${debtDetails.discount_reason ? `
+                                    <div class="text-xs text-gray-500 italic">
+                                        Razón: ${debtDetails.discount_reason}
+                                    </div>
+                                ` : ''}
+                            ` : ''}
+                            <div class="border-t pt-2 flex justify-between font-bold text-gray-900">
+                                <span>Monto a Liquidar:</span>
+                                <span>$${parseFloat(debtDetails.final_amount).toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detalles de Recargos por Mora -->
+                    ${explanation && Object.keys(explanation).length > 0 ? `
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-red-900 mb-3">Detalle de Recargos por Mora</h4>
+                            <div class="space-y-3 text-sm">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <span class="text-gray-600">Días Vencido:</span>
+                                    <span class="font-semibold text-red-700">${explanation.days_late} días</span>
+
+                                    ${explanation.grace_period_days ? `
+                                        <span class="text-gray-600">Período de Gracia:</span>
+                                        <span class="font-semibold">${explanation.grace_period_days} días</span>
+                                    ` : ''}
+
+                                    <span class="text-gray-600">Días Facturables:</span>
+                                    <span class="font-semibold text-red-700">${explanation.billable_days} días</span>
+                                </div>
+
+                                <div class="border-t border-red-200 pt-3">
+                                    <p class="text-gray-700 font-medium mb-2">Cálculo del Recargo:</p>
+                                    <p class="text-gray-600 bg-white p-2 rounded">${explanation.description}</p>
+                                </div>
+
+                                ${explanation.fee_type === 'DAILY' && explanation.calculated_from === 'amount_per_day' ? `
+                                    <div class="bg-white p-2 rounded text-xs">
+                                        <p><span class="font-semibold">Recargo diario:</span> $${parseFloat(explanation.daily_fee).toFixed(2)}</p>
+                                        <p><span class="font-semibold">Cálculo:</span> ${explanation.billable_days} días × $${parseFloat(explanation.daily_fee).toFixed(2)} = $${parseFloat(explanation.billable_days * explanation.daily_fee).toFixed(2)}</p>
+                                    </div>
+                                ` : ''}
+
+                                ${explanation.fee_type === 'MONTHLY' && explanation.calculated_from === 'amount_per_month' ? `
+                                    <div class="bg-white p-2 rounded text-xs">
+                                        <p><span class="font-semibold">Recargo mensual:</span> $${parseFloat(explanation.monthly_fee).toFixed(2)}</p>
+                                        <p><span class="font-semibold">Meses vencidos:</span> ${Math.ceil(explanation.billable_days / 30)}</p>
+                                    </div>
+                                ` : ''}
+
+                                <div class="border-t border-red-200 pt-3 flex justify-between font-bold text-red-700">
+                                    <span>Total Recargos:</span>
+                                    <span>$${parseFloat(lateFeeDetails.amount).toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- Resumen de Pago -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-blue-900 mb-3">Resumen de Pago</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Colegiatura:</span>
+                                <span class="font-semibold">$${parseFloat(paymentSummary.base_tuition).toFixed(2)}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Recargos por Mora:</span>
+                                <span class="font-semibold text-red-700">$${parseFloat(paymentSummary.late_fees).toFixed(2)}</span>
+                            </div>
+                            <div class="border-t border-blue-200 pt-2 flex justify-between font-bold text-lg text-blue-900">
+                                <span>Total a Pagar:</span>
+                                <span>$${parseFloat(paymentSummary.total_due).toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            content.innerHTML = html;
+        }
+
+        // Close payment details modal when clicking outside
+        document.getElementById('paymentDetailsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePaymentDetailsModal();
             }
         });
     </script>

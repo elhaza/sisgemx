@@ -16,7 +16,7 @@
                 <p class="font-semibold">Total de padres/tutores con mora: {{ $totalParents }}</p>
             </div>
 
-            @if($parentReport->isEmpty())
+            @if(empty($parentReport))
                 <div class="rounded-lg bg-green-100 p-4 text-green-700">
                     <p>¡Excelente! No hay padres/tutores con pagos en mora.</p>
                 </div>

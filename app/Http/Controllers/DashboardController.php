@@ -107,8 +107,8 @@ class DashboardController extends Controller
             ->with(['user', 'tutor1', 'tutor2'])
             ->get();
 
-        // Build report grouped by tutor
-        $parentReport = collect();
+        // Build report grouped by tutor pair (tutor1 + tutor2)
+        $parentReport = [];
 
         foreach ($students as $student) {
             $allStudentOverdueTuitions = StudentTuition::where('student_id', $student->id)
@@ -128,7 +128,7 @@ class DashboardController extends Controller
             // Calculate tuition amount and late fees
             $tuitionAmount = $overdueTuitions->sum('final_amount');
             $lateFeeAmount = $overdueTuitions->sum(function ($tuition) {
-                return $tuition->late_fee;
+                return $tuition->calculated_late_fee_amount;
             });
             $totalAmount = $tuitionAmount + $lateFeeAmount;
 
@@ -142,100 +142,54 @@ class DashboardController extends Controller
                 $phoneNumber = $cleanPhone;
             }
 
-            // Add to tutor 1
+            $studentData = [
+                'id' => $student->id,
+                'name' => $student->user->full_name,
+                'phone_number' => $phoneNumber,
+                'overdue_count' => $overdueCount,
+                'max_days_late' => $maxDaysLate,
+                'tuition_amount' => $tuitionAmount,
+                'late_fee_amount' => $lateFeeAmount,
+                'total_amount' => $totalAmount,
+            ];
+
+            // Create a unique key based on both tutors (sorted to ensure consistency)
+            $tutorIds = [];
             if ($student->tutor1) {
-                $key = $student->tutor1->id;
-                if ($parentReport->has($key)) {
-                    $existing = $parentReport->get($key);
-                    $existing['students']->push([
-                        'id' => $student->id,
-                        'name' => $student->user->full_name,
-                        'phone_number' => $phoneNumber,
-                        'overdue_count' => $overdueCount,
-                        'max_days_late' => $maxDaysLate,
-                        'tuition_amount' => $tuitionAmount,
-                        'late_fee_amount' => $lateFeeAmount,
-                        'total_amount' => $totalAmount,
-                    ]);
-                    $existing['total_overdue_tuitions'] += $overdueCount;
-                    $existing['max_days_late'] = max($existing['max_days_late'], $maxDaysLate);
-                    $existing['total_tuition_amount'] += $tuitionAmount;
-                    $existing['total_late_fee_amount'] += $lateFeeAmount;
-                } else {
-                    $parentReport->put($key, [
-                        'tutor_1_name' => $student->tutor1->full_name,
-                        'tutor_1_email' => $student->tutor1->email,
-                        'tutor_2_name' => $student->tutor2?->full_name,
-                        'tutor_2_email' => $student->tutor2?->email,
-                        'students' => collect([
-                            [
-                                'id' => $student->id,
-                                'name' => $student->user->full_name,
-                                'phone_number' => $phoneNumber,
-                                'overdue_count' => $overdueCount,
-                                'max_days_late' => $maxDaysLate,
-                                'tuition_amount' => $tuitionAmount,
-                                'late_fee_amount' => $lateFeeAmount,
-                                'total_amount' => $totalAmount,
-                            ],
-                        ]),
-                        'total_overdue_tuitions' => $overdueCount,
-                        'max_days_late' => $maxDaysLate,
-                        'total_tuition_amount' => $tuitionAmount,
-                        'total_late_fee_amount' => $lateFeeAmount,
-                    ]);
-                }
+                $tutorIds[] = $student->tutor1->id;
+            }
+            if ($student->tutor2 && $student->tutor2->id !== $student->tutor1?->id) {
+                $tutorIds[] = $student->tutor2->id;
+            }
+            sort($tutorIds);
+            $key = implode('-', $tutorIds);
+
+            // Initialize the group if it doesn't exist
+            if (! isset($parentReport[$key])) {
+                $parentReport[$key] = [
+                    'tutor_1_name' => $student->tutor1?->full_name,
+                    'tutor_1_email' => $student->tutor1?->email,
+                    'tutor_2_name' => $student->tutor2?->full_name,
+                    'tutor_2_email' => $student->tutor2?->email,
+                    'students' => [],
+                    'total_overdue_tuitions' => 0,
+                    'max_days_late' => 0,
+                    'total_tuition_amount' => 0,
+                    'total_late_fee_amount' => 0,
+                ];
             }
 
-            // Add to tutor 2 if different from tutor 1
-            if ($student->tutor2 && (! $student->tutor1 || $student->tutor2->id !== $student->tutor1->id)) {
-                $key = $student->tutor2->id;
-                if ($parentReport->has($key)) {
-                    $existing = $parentReport->get($key);
-                    $existing['students']->push([
-                        'id' => $student->id,
-                        'name' => $student->user->full_name,
-                        'phone_number' => $phoneNumber,
-                        'overdue_count' => $overdueCount,
-                        'max_days_late' => $maxDaysLate,
-                        'tuition_amount' => $tuitionAmount,
-                        'late_fee_amount' => $lateFeeAmount,
-                        'total_amount' => $totalAmount,
-                    ]);
-                    $existing['total_overdue_tuitions'] += $overdueCount;
-                    $existing['max_days_late'] = max($existing['max_days_late'], $maxDaysLate);
-                    $existing['total_tuition_amount'] += $tuitionAmount;
-                    $existing['total_late_fee_amount'] += $lateFeeAmount;
-                } else {
-                    $parentReport->put($key, [
-                        'tutor_1_name' => $student->tutor2->full_name,
-                        'tutor_1_email' => $student->tutor2->email,
-                        'tutor_2_name' => null,
-                        'tutor_2_email' => null,
-                        'students' => collect([
-                            [
-                                'id' => $student->id,
-                                'name' => $student->user->full_name,
-                                'phone_number' => $phoneNumber,
-                                'overdue_count' => $overdueCount,
-                                'max_days_late' => $maxDaysLate,
-                                'tuition_amount' => $tuitionAmount,
-                                'late_fee_amount' => $lateFeeAmount,
-                                'total_amount' => $totalAmount,
-                            ],
-                        ]),
-                        'total_overdue_tuitions' => $overdueCount,
-                        'max_days_late' => $maxDaysLate,
-                        'total_tuition_amount' => $tuitionAmount,
-                        'total_late_fee_amount' => $lateFeeAmount,
-                    ]);
-                }
-            }
+            // Add student to the group
+            $parentReport[$key]['students'][] = $studentData;
+            $parentReport[$key]['total_overdue_tuitions'] += $overdueCount;
+            $parentReport[$key]['max_days_late'] = max($parentReport[$key]['max_days_late'], $maxDaysLate);
+            $parentReport[$key]['total_tuition_amount'] += $tuitionAmount;
+            $parentReport[$key]['total_late_fee_amount'] += $lateFeeAmount;
         }
 
         return view('admin.overdue-parents-report', [
-            'parentReport' => $parentReport->values(),
-            'totalParents' => $parentReport->count(),
+            'parentReport' => array_values($parentReport),
+            'totalParents' => count($parentReport),
         ]);
     }
 
@@ -298,7 +252,7 @@ class DashboardController extends Controller
             })
             ->sum('final_amount');
 
-        // Calcular total de recargos por mora (refresh after updates)
+        // Calcular total de recargos por mora (using calculated fees)
         $overdueTuitionsRefreshed = StudentTuition::where('due_date', '<', $now->toDateString())
             ->whereHas('student', function ($query) {
                 $query->where('status', 'active');
@@ -308,7 +262,9 @@ class DashboardController extends Controller
                 return ! $tuition->isPaid();
             });
 
-        $lateFees = $overdueTuitionsRefreshed->sum('late_fee_amount');
+        $lateFees = $overdueTuitionsRefreshed->sum(function ($tuition) {
+            return $tuition->calculated_late_fee_amount;
+        });
 
         return [
             'monthly_payments' => $monthlyPayments,

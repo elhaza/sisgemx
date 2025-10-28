@@ -542,4 +542,101 @@ class StudentController extends Controller
             return null;
         }
     }
+
+    public function getTuitionDetails(Student $student, StudentTuition $studentTuition): \Illuminate\Http\JsonResponse
+    {
+        // Verify the tuition belongs to the student
+        if ($studentTuition->student_id !== $student->id) {
+            abort(404);
+        }
+
+        $daysLate = PaymentHelper::calculateDaysLate($studentTuition->due_date->format('Y-m-d'));
+        $gracePeriodDays = config('payment.grace_period_days', 0);
+
+        // Calculate the late fee based on current configuration
+        $calculatedLateFee = PaymentHelper::calculateLateFee((float) $studentTuition->final_amount, $daysLate);
+
+        // Prepare late fee explanation
+        $lateFeeExplanation = [];
+        if ($daysLate > 0) {
+            $lateFeeExplanation['days_late'] = $daysLate;
+            // Only include grace period if it's greater than 0
+            if ($gracePeriodDays > 0) {
+                $lateFeeExplanation['grace_period_days'] = $gracePeriodDays;
+            }
+            $lateFeeExplanation['billable_days'] = max(0, $daysLate - $gracePeriodDays);
+
+            $feeType = config('payment.late_fee_type', 'MONTHLY');
+            $lateFeeExplanation['fee_type'] = $feeType;
+
+            if ($feeType === 'ONCE') {
+                $lateFeeExplanation['description'] = 'Se aplica una única vez como recargo fijo';
+                $lateFeeExplanation['fee_amount'] = config('payment.late_fee_monthly_amount', 0);
+            } elseif ($feeType === 'DAILY') {
+                $dailyAmount = config('payment.late_fee_daily_amount', 0);
+                $dailyRate = config('payment.late_fee_rate', 0);
+
+                if ($dailyAmount > 0) {
+                    $lateFeeExplanation['description'] = 'Recargo de $'.number_format($dailyAmount, 2).' por día';
+                    $lateFeeExplanation['daily_fee'] = $dailyAmount;
+                    $lateFeeExplanation['calculated_from'] = 'amount_per_day';
+                } else {
+                    $lateFeeExplanation['description'] = "Recargo de {$dailyRate}% de la mensualidad por día";
+                    $lateFeeExplanation['daily_rate'] = $dailyRate;
+                    $lateFeeExplanation['calculated_from'] = 'percentage';
+                }
+            } elseif ($feeType === 'MONTHLY') {
+                $monthlyAmount = config('payment.late_fee_monthly_amount', 0);
+                $monthlyRate = config('payment.late_fee_rate', 0);
+
+                if ($monthlyAmount > 0) {
+                    $lateFeeExplanation['description'] = 'Recargo de $'.number_format($monthlyAmount, 2).' por mes vencido';
+                    $lateFeeExplanation['monthly_fee'] = $monthlyAmount;
+                    $lateFeeExplanation['calculated_from'] = 'amount_per_month';
+                } else {
+                    $lateFeeExplanation['description'] = "Recargo de {$monthlyRate}% de la mensualidad por mes vencido";
+                    $lateFeeExplanation['monthly_rate'] = $monthlyRate;
+                    $lateFeeExplanation['calculated_from'] = 'percentage';
+                }
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'tuition_id' => $studentTuition->id,
+                'period' => $studentTuition->month_name.' '.$studentTuition->year,
+                'student_name' => $student->user->name,
+                'due_date' => $studentTuition->due_date->format('d/m/Y'),
+                'days_late' => $daysLate,
+                'is_paid' => $studentTuition->isPaid(),
+
+                // Detalles de adeudo
+                'debt_details' => [
+                    'base_amount' => $studentTuition->monthly_amount,
+                    'discount_percentage' => $studentTuition->discount_percentage,
+                    'discount_amount' => $studentTuition->discount_amount,
+                    'discount_reason' => $studentTuition->discount_reason,
+                    'final_amount' => $studentTuition->final_amount,
+                ],
+
+                // Detalles de recargos
+                'late_fee_details' => [
+                    'amount' => $calculatedLateFee,
+                    'paid_amount' => $studentTuition->late_fee_paid,
+                    'remaining' => max(0, $calculatedLateFee - $studentTuition->late_fee_paid),
+                    'explanation' => $lateFeeExplanation,
+                ],
+
+                // Total a pagar
+                'payment_summary' => [
+                    'base_tuition' => $studentTuition->final_amount,
+                    'late_fees' => $calculatedLateFee,
+                    'total_due' => $studentTuition->final_amount + $calculatedLateFee,
+                    'amount_paid' => $studentTuition->late_fee_paid,
+                    'amount_remaining' => $studentTuition->final_amount + max(0, $calculatedLateFee - $studentTuition->late_fee_paid),
+                ],
+            ],
+        ]);
+    }
 }

@@ -91,11 +91,31 @@ class StudentTuition extends Model
     }
 
     /**
+     * Get the calculated late fee based on current configuration
+     */
+    public function getCalculatedLateFeeAmountAttribute(): float
+    {
+        if ($this->isPaid() || ! $this->due_date || $this->days_late <= 0) {
+            return 0;
+        }
+
+        return PaymentHelper::calculateLateFee((float) $this->final_amount, $this->days_late);
+    }
+
+    /**
      * Get the total amount including late fees
      */
     public function getTotalAmountAttribute(): float
     {
         return $this->final_amount + $this->late_fee_amount;
+    }
+
+    /**
+     * Get the calculated total amount including calculated late fees
+     */
+    public function getCalculatedTotalAmountAttribute(): float
+    {
+        return $this->final_amount + $this->calculated_late_fee_amount;
     }
 
     /**
