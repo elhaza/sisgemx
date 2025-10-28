@@ -17,26 +17,87 @@
 
     <div class="py-12">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
-            <!-- Hero Banner con Métricas Clave -->
+            <!-- Hero Banner con Métricas Clave - Similar al Admin Dashboard -->
             @if($students->count() > 0)
-                <div class="overflow-hidden rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg">
-                    <div class="px-6 py-8">
-                        <div class="grid gap-6 md:grid-cols-4">
-                            <div class="rounded-lg bg-white/20 p-4 backdrop-blur-sm border border-white/40">
-                                <p class="text-sm font-semibold text-white">Estudiantes</p>
-                                <p class="mt-2 text-3xl font-bold text-white">{{ $students->count() }}</p>
+                <div class="mb-8">
+                    <div class="grid gap-4 md:grid-cols-4">
+                        <!-- Estudiantes -->
+                        <div class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+                            <div class="p-6">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt class="truncate text-sm font-medium text-gray-500">Estudiantes</dt>
+                                            <dd class="text-2xl font-semibold text-gray-900">{{ $students->count() }}</dd>
+                                            <p class="text-xs text-gray-500 mt-1">En el sistema</p>
+                                        </dl>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="rounded-lg bg-white/20 p-4 backdrop-blur-sm border border-white/40">
-                                <p class="text-sm font-semibold text-white">Pagos</p>
-                                <p class="mt-2 text-3xl font-bold text-white">{{ $paidTuitionsCount }}</p>
+                        </div>
+
+                        <!-- Pagos Realizados -->
+                        <div class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+                            <div class="p-6">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt class="truncate text-sm font-medium text-gray-500">Pagos Realizados</dt>
+                                            <dd class="text-2xl font-semibold text-gray-900">{{ $paidTuitionsCount }}</dd>
+                                            <p class="text-xs text-gray-500 mt-1">Aprobados</p>
+                                        </dl>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="rounded-lg bg-white/20 p-4 backdrop-blur-sm border border-white/40">
-                                <p class="text-sm font-semibold text-white">Pendientes</p>
-                                <p class="mt-2 text-3xl font-bold text-white">{{ $displayPendingTuitions->count() }}</p>
+                        </div>
+
+                        <!-- Pendientes -->
+                        <div class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+                            <div class="p-6">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-8 w-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt class="truncate text-sm font-medium text-gray-500">Pendientes</dt>
+                                            <dd class="text-2xl font-semibold text-gray-900">{{ $displayPendingTuitions->count() }}</dd>
+                                            <p class="text-xs text-gray-500 mt-1">Por pagar</p>
+                                        </dl>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="rounded-lg bg-white/20 p-4 backdrop-blur-sm border border-white/40">
-                                <p class="text-sm font-semibold text-white">Comprobantes</p>
-                                <p class="mt-2 text-3xl font-bold text-white">{{ $recentReceipts->count() }}</p>
+                        </div>
+
+                        <!-- Comprobantes -->
+                        <div class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+                            <div class="p-6">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-8 w-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt class="truncate text-sm font-medium text-gray-500">Comprobantes</dt>
+                                            <dd class="text-2xl font-semibold text-gray-900">{{ $recentReceipts->count() }}</dd>
+                                            <p class="text-xs text-gray-500 mt-1">Subidos</p>
+                                        </dl>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
