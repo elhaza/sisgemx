@@ -37,7 +37,7 @@
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
                                     <dt class="truncate text-sm font-medium text-gray-500">Comprobantes Validados</dt>
-                                    <dd class="text-3xl font-semibold text-gray-900">{{ $validatedReceiptsCount }}</dd>
+                                    <dd class="text-3xl font-semibold text-gray-900">{{ $validatedReceiptsCount }} de {{ $validatedReceiptsCount + $pendingReceiptsCount }}</dd>
                                 </dl>
                             </div>
                         </div>
