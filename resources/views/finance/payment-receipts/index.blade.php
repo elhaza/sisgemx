@@ -199,16 +199,12 @@
                                     <td class="whitespace-nowrap px-6 py-4">
                                         @if(isset($receipt->type) && $receipt->type === 'admin_payment')
                                             <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Validado</span>
-                                        @elseif(isset($receipt->status) && is_object($receipt->status) && method_exists($receipt->status, 'value'))
-                                            @if($receipt->status->value === 'pending')
-                                                <span class="rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">Pendiente</span>
-                                            @elseif($receipt->status->value === 'validated')
-                                                <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Validado</span>
-                                            @else
-                                                <span class="rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">Rechazado</span>
-                                            @endif
+                                        @elseif($receipt->status->value === 'pending')
+                                            <span class="rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">Pendiente</span>
+                                        @elseif($receipt->status->value === 'approved')
+                                            <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Aprobado</span>
                                         @else
-                                            <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Validado</span>
+                                            <span class="rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">Rechazado</span>
                                         @endif
                                     </td>
                                     <td class="whitespace-nowrap px-6 py-4">
