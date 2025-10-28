@@ -867,160 +867,169 @@
 
         // For parents, simple list selection
         @if(auth()->user()->isParent())
-        let parentSelectedRecipients = new Map();
-        let allParentTeachers = [];
+        (function() {
+            let parentSelectedRecipients = new Map();
+            let allParentTeachers = [];
 
-        async function loadParentTeachers() {
-            try {
-                const response = await fetch('{{ route("api.messages.parent-teachers") }}');
-                allParentTeachers = await response.json();
+            window.toggleParentTeacher = function(id, name, subjects) {
+                if (parentSelectedRecipients.has(id)) {
+                    parentSelectedRecipients.delete(id);
+                } else {
+                    const displayName = name + ' - ' + subjects;
+                    parentSelectedRecipients.set(id, displayName);
+                }
+                updateParentRecipientInput();
                 renderTeachersList();
-            } catch (error) {
-                console.error('Error loading teachers:', error);
-            }
-        }
+            };
 
-        function renderTeachersList() {
-            const teachersList = document.getElementById('parentTeachersList');
+            window.removeParentSelectedRecipient = function(id) {
+                parentSelectedRecipients.delete(id);
+                updateParentRecipientInput();
+                renderTeachersList();
+            };
 
-            if (allParentTeachers.length === 0) {
-                teachersList.innerHTML = '<div class="p-4 text-center text-gray-500">No hay maestros disponibles</div>';
-                return;
-            }
+            function renderTeachersList() {
+                const teachersList = document.getElementById('parentTeachersList');
 
-            teachersList.innerHTML = allParentTeachers.map(teacher => {
-                const subjectsStr = teacher.subjects.map(s => `${s.subject_name} (${s.group})`).join(', ');
-                const isSelected = parentSelectedRecipients.has(teacher.id);
+                if (!teachersList) return;
 
-                return `
-                    <div class="p-3 hover:bg-gray-50 cursor-pointer transition" onclick="toggleParentTeacher(${teacher.id}, '${teacher.name.replace(/'/g, "\\'")}', '${subjectsStr.replace(/'/g, "\\'")}')">
-                        <div class="flex items-start gap-3">
-                            <input
-                                type="checkbox"
-                                ${isSelected ? 'checked' : ''}
-                                class="mt-1 rounded border-gray-300"
-                                onclick="event.stopPropagation()"
-                            >
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-gray-900">${teacher.name}</p>
-                                <p class="text-xs text-gray-500">${subjectsStr}</p>
+                if (allParentTeachers.length === 0) {
+                    teachersList.innerHTML = '<div class="p-4 text-center text-gray-500">No hay maestros disponibles</div>';
+                    return;
+                }
+
+                teachersList.innerHTML = allParentTeachers.map(teacher => {
+                    const subjectsStr = teacher.subjects.map(s => s.subject_name + ' (' + s.group + ')').join(', ');
+                    const isSelected = parentSelectedRecipients.has(teacher.id);
+                    const nameEscaped = teacher.name.replace(/'/g, "\\'");
+                    const subjectsEscaped = subjectsStr.replace(/'/g, "\\'");
+
+                    return `
+                        <div class="p-3 hover:bg-gray-50 cursor-pointer transition" onclick="toggleParentTeacher(${teacher.id}, '${nameEscaped}', '${subjectsEscaped}')">
+                            <div class="flex items-start gap-3">
+                                <input
+                                    type="checkbox"
+                                    ${isSelected ? 'checked' : ''}
+                                    class="mt-1 rounded border-gray-300"
+                                    onclick="event.stopPropagation()"
+                                >
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900">${teacher.name}</p>
+                                    <p class="text-xs text-gray-500">${subjectsStr}</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function toggleParentTeacher(id, name, subjects) {
-            if (parentSelectedRecipients.has(id)) {
-                parentSelectedRecipients.delete(id);
-            } else {
-                const displayName = `${name} - ${subjects}`;
-                parentSelectedRecipients.set(id, displayName);
-            }
-            updateParentRecipientInput();
-            renderTeachersList();
-        }
-
-        function updateParentRecipientInput() {
-            const recipientIds = document.getElementById('recipientIds');
-            const selectedDisplay = document.getElementById('parentSelectedRecipientsDisplay');
-            const selectedCount = document.getElementById('parentSelectedCount');
-            const selectedList = document.getElementById('parentSelectedRecipientsList');
-
-            recipientIds.value = Array.from(parentSelectedRecipients.keys()).map(id => {
-                if (id === 'admin' || id === 'finance_admin') {
-                    return id;
-                }
-                return id.toString();
-            }).join(',');
-
-            // Update display
-            if (parentSelectedRecipients.size > 0) {
-                selectedDisplay.style.display = 'block';
-                selectedCount.textContent = parentSelectedRecipients.size;
-                selectedList.innerHTML = Array.from(parentSelectedRecipients.entries()).map(([id, name]) => {
-                    return `
-                        <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-sm font-medium">
-                            ${name}
-                            <button type="button" onclick="removeParentSelectedRecipient('${id}')" class="text-blue-700 hover:text-blue-900">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </span>
                     `;
                 }).join('');
-            } else {
-                selectedDisplay.style.display = 'none';
             }
-        }
 
-        function removeParentSelectedRecipient(id) {
-            parentSelectedRecipients.delete(id);
-            updateParentRecipientInput();
-            renderTeachersList();
-        }
+            function updateParentRecipientInput() {
+                const recipientIds = document.getElementById('recipientIds');
+                const selectedDisplay = document.getElementById('parentSelectedRecipientsDisplay');
+                const selectedCount = document.getElementById('parentSelectedCount');
+                const selectedList = document.getElementById('parentSelectedRecipientsList');
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const adminBtn = document.getElementById('parentAdminBtn');
-            const financeBtn = document.getElementById('parentFinanceBtn');
-            const selectAllTeachersBtn = document.getElementById('parentSelectAllTeachersBtn');
-            const clearAllBtn = document.getElementById('parentClearAllBtn');
+                if (!recipientIds) return;
 
-            // Load teachers on page load
-            loadParentTeachers();
-
-            // Admin button
-            if (adminBtn) {
-                adminBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (parentSelectedRecipients.has('admin')) {
-                        parentSelectedRecipients.delete('admin');
-                    } else {
-                        parentSelectedRecipients.set('admin', 'Administrador');
+                recipientIds.value = Array.from(parentSelectedRecipients.keys()).map(id => {
+                    if (id === 'admin' || id === 'finance_admin') {
+                        return id;
                     }
-                    updateParentRecipientInput();
-                });
+                    return id.toString();
+                }).join(',');
+
+                // Update display
+                if (parentSelectedRecipients.size > 0) {
+                    selectedDisplay.style.display = 'block';
+                    selectedCount.textContent = parentSelectedRecipients.size;
+                    selectedList.innerHTML = Array.from(parentSelectedRecipients.entries()).map(([id, name]) => {
+                        const nameEscaped = id.toString().replace(/'/g, "\\'");
+                        return `
+                            <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-sm font-medium">
+                                ${name}
+                                <button type="button" onclick="removeParentSelectedRecipient('${nameEscaped}')" class="text-blue-700 hover:text-blue-900">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </span>
+                        `;
+                    }).join('');
+                } else {
+                    selectedDisplay.style.display = 'none';
+                }
             }
 
-            // Finance button
-            if (financeBtn) {
-                financeBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (parentSelectedRecipients.has('finance_admin')) {
-                        parentSelectedRecipients.delete('finance_admin');
-                    } else {
-                        parentSelectedRecipients.set('finance_admin', 'Usuario de Finanzas');
-                    }
-                    updateParentRecipientInput();
-                });
+            async function loadParentTeachers() {
+                try {
+                    const response = await fetch('{{ route("api.messages.parent-teachers") }}');
+                    allParentTeachers = await response.json();
+                    renderTeachersList();
+                } catch (error) {
+                    console.error('Error loading teachers:', error);
+                }
             }
 
-            // Select all teachers button
-            if (selectAllTeachersBtn) {
-                selectAllTeachersBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    allParentTeachers.forEach(teacher => {
-                        const subjectsStr = teacher.subjects.map(s => `${s.subject_name} (${s.group})`).join(', ');
-                        const displayName = `${teacher.name} - ${subjectsStr}`;
-                        parentSelectedRecipients.set(teacher.id, displayName);
+            document.addEventListener('DOMContentLoaded', function() {
+                const adminBtn = document.getElementById('parentAdminBtn');
+                const financeBtn = document.getElementById('parentFinanceBtn');
+                const selectAllTeachersBtn = document.getElementById('parentSelectAllTeachersBtn');
+                const clearAllBtn = document.getElementById('parentClearAllBtn');
+
+                // Load teachers on page load
+                loadParentTeachers();
+
+                // Admin button
+                if (adminBtn) {
+                    adminBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        if (parentSelectedRecipients.has('admin')) {
+                            parentSelectedRecipients.delete('admin');
+                        } else {
+                            parentSelectedRecipients.set('admin', 'Administrador');
+                        }
+                        updateParentRecipientInput();
                     });
-                    updateParentRecipientInput();
-                    renderTeachersList();
-                });
-            }
+                }
 
-            // Clear all button
-            if (clearAllBtn) {
-                clearAllBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    parentSelectedRecipients.clear();
-                    updateParentRecipientInput();
-                    renderTeachersList();
-                });
-            }
-        });
+                // Finance button
+                if (financeBtn) {
+                    financeBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        if (parentSelectedRecipients.has('finance_admin')) {
+                            parentSelectedRecipients.delete('finance_admin');
+                        } else {
+                            parentSelectedRecipients.set('finance_admin', 'Usuario de Finanzas');
+                        }
+                        updateParentRecipientInput();
+                    });
+                }
+
+                // Select all teachers button
+                if (selectAllTeachersBtn) {
+                    selectAllTeachersBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        allParentTeachers.forEach(teacher => {
+                            const subjectsStr = teacher.subjects.map(s => s.subject_name + ' (' + s.group + ')').join(', ');
+                            const displayName = teacher.name + ' - ' + subjectsStr;
+                            parentSelectedRecipients.set(teacher.id, displayName);
+                        });
+                        updateParentRecipientInput();
+                        renderTeachersList();
+                    });
+                }
+
+                // Clear all button
+                if (clearAllBtn) {
+                    clearAllBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        parentSelectedRecipients.clear();
+                        updateParentRecipientInput();
+                        renderTeachersList();
+                    });
+                }
+            });
+        })();
         @endif
     </script>
     @endpush
