@@ -3,12 +3,16 @@
 namespace App\Models;
 
 use App\Helpers\PaymentHelper;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StudentTuition extends Model
 {
+    /** @use HasFactory<\Database\Factories\StudentTuitionFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'student_id',
         'school_year_id',

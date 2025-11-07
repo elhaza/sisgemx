@@ -198,9 +198,15 @@ class ComprehensiveSchoolSeeder extends Seeder
      */
     private function createSchoolYear(): SchoolYear
     {
+        // Desactivar cualquier ciclo anterior
+        SchoolYear::where('is_active', true)->update(['is_active' => false]);
+
         // Verificar si ya existe
         $existing = SchoolYear::where('name', '2025-2026')->first();
         if ($existing) {
+            // Activarlo
+            $existing->update(['is_active' => true]);
+
             return $existing;
         }
 
@@ -208,7 +214,7 @@ class ComprehensiveSchoolSeeder extends Seeder
             'name' => '2025-2026',
             'start_date' => '2025-08-01',
             'end_date' => '2026-07-31',
-            'is_active' => false, // No activar aún, es futuro
+            'is_active' => true, // Activar el ciclo escolar
         ]);
     }
 
@@ -491,7 +497,10 @@ class ComprehensiveSchoolSeeder extends Seeder
         $months = ['Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio'];
 
         // Crear una cuota por mes del ciclo escolar
-        for ($month = 1; $month <= 12; $month++) {
+        // Crear cuotas en orden del año escolar: Agosto-Diciembre (2025), luego Enero-Julio (2026)
+        $monthOrder = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7]; // Orden del año escolar
+
+        foreach ($monthOrder as $month) {
             $existing = MonthlyTuition::where('school_year_id', $schoolYear->id)
                 ->where('month', $month)
                 ->first();
@@ -502,9 +511,14 @@ class ComprehensiveSchoolSeeder extends Seeder
                 continue;
             }
 
+            // Determinar año según el mes
+            // Agosto-Diciembre = 2025 (meses 8-12)
+            // Enero-Julio = 2026 (meses 1-7)
+            $year = ($month >= 8) ? 2025 : 2026;
+
             $tuition = MonthlyTuition::create([
                 'school_year_id' => $schoolYear->id,
-                'year' => 2025,
+                'year' => $year,
                 'month' => $month,
                 'amount' => 3000.00, // 3,000 pesos mensuales
             ]);
@@ -517,13 +531,15 @@ class ComprehensiveSchoolSeeder extends Seeder
 
     /**
      * Crea transacciones de tuiciones y pagos parciales/atrasados
-     * Lógica: mayoría pagadas
+     * Lógica: mayoría pagadas con PaymentReceipts
      * - 1 padre con 3 meses de retraso
      * - 6 padres con 2 meses de retraso
      * - 2 padres con 1 mes de retraso
      */
     private function createTuitionsAndPayments(array $students, SchoolYear $schoolYear, array $monthlyTuitions): void
     {
+        $adminUser = User::where('role', UserRole::Admin)->first();
+
         // Seleccionar 1 padre con 3 meses de retraso
         $parentWith3MonthsLate = rand(0, count($students) - 1);
 
@@ -577,11 +593,7 @@ class ComprehensiveSchoolSeeder extends Seeder
 
                 // Calcular si hay cuota tardía (solo en los meses sin pagar)
                 $hasLateFee = $monthsLate > 0 && $monthIndex <= $monthsLate;
-                $lateFeeAmount = $hasLateFee ? 300.00 : 0.00;
 
-                // Solo crear la tuición si está pagada O si tiene atraso
-                // Si está pagada: crear sin atraso
-                // Si tiene atraso: crear con atraso
                 $data = [
                     'student_id' => $student->id,
                     'school_year_id' => $schoolYear->id,
@@ -590,7 +602,7 @@ class ComprehensiveSchoolSeeder extends Seeder
                     'month' => $monthlyTuition->month,
                     'monthly_amount' => 3000.00,
                     'discount_percentage' => rand(0, 100) <= 20 ? rand(5, 15) : 0,
-                    'due_date' => '2025-'.str_pad($monthlyTuition->month, 2, '0', STR_PAD_LEFT).'-10',
+                    'due_date' => $monthlyTuition->year.'-'.str_pad($monthlyTuition->month, 2, '0', STR_PAD_LEFT).'-10',
                 ];
 
                 // Solo agregar late_fee_amount si hay atraso
@@ -599,7 +611,38 @@ class ComprehensiveSchoolSeeder extends Seeder
                     $data['notes'] = 'Pago pendiente con interés moratorio';
                 }
 
-                StudentTuition::create($data);
+                $tuition = StudentTuition::create($data);
+
+                // Si el mes está pagado, crear un Payment para marcar como pagado
+                if ($isPaid) {
+                    // Verificar que no exista payment previo para esta tuición
+                    $existingPayment = \App\Models\Payment::where('student_tuition_id', $tuition->id)
+                        ->where('is_paid', true)
+                        ->first();
+
+                    if (! $existingPayment) {
+                        // Calcular la fecha de pago en el mes correspondiente
+                        // Pagar el día 9 de cada mes (un día antes del límite que es día 10)
+                        $paymentDate = sprintf(
+                            '%04d-%02d-09',
+                            $monthlyTuition->year,
+                            $monthlyTuition->month
+                        );
+
+                        \App\Models\Payment::create([
+                            'student_id' => $student->id,
+                            'student_tuition_id' => $tuition->id,
+                            'payment_type' => \App\PaymentType::Tuition,
+                            'description' => 'Pago de colegiatura mes '.($monthIndex),
+                            'amount' => $tuition->final_amount,
+                            'month' => $monthlyTuition->month,
+                            'year' => $monthlyTuition->year,
+                            'due_date' => $tuition->due_date,
+                            'is_paid' => true,
+                            'paid_at' => $paymentDate, // Pagado el 9 del mes correspondiente
+                        ]);
+                    }
+                }
             }
         }
     }
@@ -684,17 +727,25 @@ class ComprehensiveSchoolSeeder extends Seeder
             ['start' => '09:30', 'end' => '10:30'],
             // Receso 10:30 - 11:00
             ['start' => '11:00', 'end' => '12:00'],
-            ['start' => '12:00', 'end' => '01:00'],
-            ['start' => '01:00', 'end' => '02:00'],
+            ['start' => '12:00', 'end' => '13:00'],
+            ['start' => '13:00', 'end' => '14:00'],
         ];
 
-        $subjectPriorities = [
-            ['Español', 'Matemáticas', 'Ciencias Naturales', 'Historia y Geografía', 'Educación Física'],
-            ['Matemáticas', 'Español', 'Historia y Geografía', 'Formación Cívica', 'Inglés'],
-            ['Ciencias Naturales', 'Español', 'Matemáticas', 'Música', 'Artes Plásticas'],
-            ['Español', 'Matemáticas', 'Inglés', 'Ciencias Naturales', 'Educación Física'],
-            ['Matemáticas', 'Historia y Geografía', 'Español', 'Música', 'Formación Cívica'],
-            ['Español', 'Ciencias Naturales', 'Educación Física', 'Artes Plásticas', 'Matemáticas'],
+        // Asignaturas por maestra base (titular)
+        // La maestra base enseña 4 bloques, especialistas 2
+        $subjectsByGrade = [
+            // Grado 1
+            ['base' => ['Español', 'Matemáticas', 'Ciencias Naturales', 'Historia y Geografía'], 'specialized' => ['Educación Física', 'Artes Plásticas']],
+            // Grado 2
+            ['base' => ['Español', 'Matemáticas', 'Ciencias Naturales', 'Formación Cívica'], 'specialized' => ['Educación Física', 'Inglés']],
+            // Grado 3
+            ['base' => ['Español', 'Matemáticas', 'Ciencias Naturales', 'Historia y Geografía'], 'specialized' => ['Música', 'Artes Plásticas']],
+            // Grado 4
+            ['base' => ['Español', 'Matemáticas', 'Ciencias Naturales', 'Formación Cívica'], 'specialized' => ['Educación Física', 'Inglés']],
+            // Grado 5
+            ['base' => ['Español', 'Matemáticas', 'Historia y Geografía', 'Formación Cívica'], 'specialized' => ['Educación Física', 'Música']],
+            // Grado 6
+            ['base' => ['Español', 'Matemáticas', 'Ciencias Naturales', 'Historia y Geografía'], 'specialized' => ['Educación Física', 'Inglés']],
         ];
 
         $days = [
@@ -706,17 +757,35 @@ class ComprehensiveSchoolSeeder extends Seeder
         ];
 
         foreach ($gradeSections as $gradeIndex => $gradeSection) {
-            $subjectIndex = 0;
-            $prioritySubjects = $subjectPriorities[$gradeIndex];
+            $baseSubjects = $subjectsByGrade[$gradeIndex]['base'];
+            $specializedSubjects = $subjectsByGrade[$gradeIndex]['specialized'];
+
+            // Crear horario: 4 bloques para maestra base, 2 para especialistas
+            $blockIndex = 0;
 
             foreach ($days as $dayOfWeek) {
                 foreach ($timeBlocks as $block) {
+                    // Determinar si este bloque es para maestra base (bloques 0,1,2,3 del día)
+                    // O para especialistas (bloques 4,5)
+                    $blockOfDay = $blockIndex % count($timeBlocks);
+
+                    if ($blockOfDay < 4) {
+                        // Maestra base enseña estos bloques
+                        $subjectName = $baseSubjects[$blockOfDay];
+                    } else {
+                        // Especialistas enseñan últimos 2 bloques
+                        $specialIndex = $blockOfDay - 4;
+                        $subjectName = $specializedSubjects[$specialIndex];
+                    }
+
                     $subject = Subject::where('school_year_id', $gradeSection->schoolYear->id)
                         ->where('grade_section_id', $gradeSection->id)
-                        ->where('name', $prioritySubjects[$subjectIndex % count($prioritySubjects)])
+                        ->where('name', $subjectName)
                         ->first();
 
                     if (! $subject) {
+                        $blockIndex++;
+
                         continue;
                     }
 
@@ -741,7 +810,7 @@ class ComprehensiveSchoolSeeder extends Seeder
                         ]);
                     }
 
-                    $subjectIndex++;
+                    $blockIndex++;
                 }
             }
         }

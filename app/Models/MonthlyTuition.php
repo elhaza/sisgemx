@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MonthlyTuition extends Model
 {
+    /** @use HasFactory<\Database\Factories\MonthlyTuitionFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'school_year_id',
         'year',
