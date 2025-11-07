@@ -579,19 +579,27 @@ class ComprehensiveSchoolSeeder extends Seeder
                 $hasLateFee = $monthsLate > 0 && $monthIndex <= $monthsLate;
                 $lateFeeAmount = $hasLateFee ? 300.00 : 0.00;
 
-                StudentTuition::create([
+                // Solo crear la tuición si está pagada O si tiene atraso
+                // Si está pagada: crear sin atraso
+                // Si tiene atraso: crear con atraso
+                $data = [
                     'student_id' => $student->id,
                     'school_year_id' => $schoolYear->id,
                     'monthly_tuition_id' => $monthlyTuition->id,
                     'year' => $monthlyTuition->year,
                     'month' => $monthlyTuition->month,
                     'monthly_amount' => 3000.00,
-                    'discount_percentage' => rand(0, 100) <= 20 ? rand(5, 15) : 0, // 20% con descuento
+                    'discount_percentage' => rand(0, 100) <= 20 ? rand(5, 15) : 0,
                     'due_date' => '2025-'.str_pad($monthlyTuition->month, 2, '0', STR_PAD_LEFT).'-10',
-                    'late_fee_amount' => $lateFeeAmount,
-                    'late_fee_paid' => $isPaid && $hasLateFee ? true : false,
-                    'notes' => $hasLateFee && ! $isPaid ? 'Pago pendiente con interés moratorio' : null,
-                ]);
+                ];
+
+                // Solo agregar late_fee_amount si hay atraso
+                if ($hasLateFee && ! $isPaid) {
+                    $data['late_fee_amount'] = 300.00;
+                    $data['notes'] = 'Pago pendiente con interés moratorio';
+                }
+
+                StudentTuition::create($data);
             }
         }
     }
