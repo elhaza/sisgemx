@@ -369,41 +369,58 @@ class ComprehensiveSchoolSeeder extends Seeder
                 $year = 2015 + $gradeSection->grade_level; // Edad aproximada según grado
                 $curp = $this->generateCURP($firstName, $lastName1, $lastName2, $year, $gender);
 
-                // Crear usuario del estudiante
-                $studentUser = User::create([
-                    'name' => $firstName,
-                    'apellido_paterno' => $lastName1,
-                    'apellido_materno' => $lastName2,
-                    'email' => strtolower(str_replace([' ', 'á', 'é', 'í', 'ó', 'ú'],
-                        ['', 'a', 'e', 'i', 'o', 'u'],
-                        $firstName.'.'.($studentCount).'@estudiantes.escuela.com')),
-                    'password' => Hash::make('password'),
-                    'role' => UserRole::Student,
-                    'parent_id' => $tutor1->id,
-                ]);
+                // Crear usuario del estudiante con email único
+                $studentEmail = strtolower(str_replace([' ', 'á', 'é', 'í', 'ó', 'ú'],
+                    ['', 'a', 'e', 'i', 'o', 'u'],
+                    $firstName.'.'.($studentCount).'.2025@estudiantes.escuela.com'));
 
-                // Número de matrícula único
-                $enrollmentNumber = $gradeSection->grade_level.'-'.str_pad($studentCount, 4, '0', STR_PAD_LEFT);
+                // Verificar si el email ya existe
+                $existing = User::where('email', $studentEmail)->first();
+                if ($existing) {
+                    $studentUser = $existing;
+                } else {
+                    $studentUser = User::create([
+                        'name' => $firstName,
+                        'apellido_paterno' => $lastName1,
+                        'apellido_materno' => $lastName2,
+                        'email' => $studentEmail,
+                        'password' => Hash::make('password'),
+                        'role' => UserRole::Student,
+                        'parent_id' => $tutor1->id,
+                    ]);
+                }
 
-                // Crear registro de estudiante
-                $student = Student::create([
-                    'user_id' => $studentUser->id,
-                    'school_year_id' => $schoolYear->id,
-                    'school_grade_id' => $gradeSection->id,
-                    'enrollment_number' => $enrollmentNumber,
-                    'status' => StudentStatus::Active,
-                    'curp' => $curp,
-                    'date_of_birth' => ($year).'-'.str_pad(rand(1, 12), 2, '0', STR_PAD_LEFT).'-'.str_pad(rand(1, 28), 2, '0', STR_PAD_LEFT),
-                    'gender' => $gender,
-                    'birth_country' => 'México',
-                    'birth_state' => 'Estado de México',
-                    'birth_city' => 'Toluca',
-                    'phone_number' => '722'.str_pad($studentCount, 7, '0', STR_PAD_LEFT),
-                    'address' => 'Calle '.$lastName1.' '.($studentCount).', Toluca',
-                    'parent_email' => $tutor1->email,
-                    'tutor_1_id' => $tutor1->id,
-                    'requires_invoice' => rand(1, 10) <= 2, // 20% requieren factura
-                ]);
+                // Número de matrícula único con timestamp para evitar duplicados
+                $enrollmentNumber = '2025-'.$gradeSection->grade_level.'-'.str_pad($studentCount, 4, '0', STR_PAD_LEFT);
+
+                // Verificar si el estudiante ya existe
+                $existingStudent = Student::where('user_id', $studentUser->id)
+                    ->where('school_year_id', $schoolYear->id)
+                    ->first();
+
+                if ($existingStudent) {
+                    $student = $existingStudent;
+                } else {
+                    // Crear registro de estudiante
+                    $student = Student::create([
+                        'user_id' => $studentUser->id,
+                        'school_year_id' => $schoolYear->id,
+                        'school_grade_id' => $gradeSection->id,
+                        'enrollment_number' => $enrollmentNumber,
+                        'status' => StudentStatus::Active,
+                        'curp' => $curp,
+                        'date_of_birth' => ($year).'-'.str_pad(rand(1, 12), 2, '0', STR_PAD_LEFT).'-'.str_pad(rand(1, 28), 2, '0', STR_PAD_LEFT),
+                        'gender' => $gender,
+                        'birth_country' => 'México',
+                        'birth_state' => 'Estado de México',
+                        'birth_city' => 'Toluca',
+                        'phone_number' => '722'.str_pad($studentCount, 7, '0', STR_PAD_LEFT),
+                        'address' => 'Calle '.$lastName1.' '.($studentCount).', Toluca',
+                        'parent_email' => $tutor1->email,
+                        'tutor_1_id' => $tutor1->id,
+                        'requires_invoice' => rand(1, 10) <= 2, // 20% requieren factura
+                    ]);
+                }
 
                 $students[] = $student;
             }
