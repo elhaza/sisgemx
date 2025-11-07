@@ -568,11 +568,14 @@ class ComprehensiveSchoolSeeder extends Seeder
                 }
 
                 // Determinar si este mes está pagado
-                // Si el padre tiene retraso, solo los meses anteriores al retraso están pagados
+                // Si el padre tiene retraso, solo los primeros meses están sin pagar
                 $monthIndex = $monthKey + 1; // meses van de 1 a 12
-                $isPaid = $monthIndex > $monthsLate; // Pagados los meses después del retraso
 
-                // Calcular si hay cuota tardía
+                // Si no tiene retraso ($monthsLate = 0), TODOS los meses están pagados
+                // Si tiene retraso, solo los meses iniciales (1 a $monthsLate) están sin pagar
+                $isPaid = $monthIndex > $monthsLate;
+
+                // Calcular si hay cuota tardía (solo en los meses sin pagar)
                 $hasLateFee = $monthsLate > 0 && $monthIndex <= $monthsLate;
                 $lateFeeAmount = $hasLateFee ? 300.00 : 0.00;
 
