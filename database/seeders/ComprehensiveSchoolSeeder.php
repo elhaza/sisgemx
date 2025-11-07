@@ -101,12 +101,16 @@ class ComprehensiveSchoolSeeder extends Seeder
             $this->command->info('║     Iniciando Seeder Integral de Escuela 2025-2026     ║');
             $this->command->info('╚════════════════════════════════════════════════════════╝');
 
-            // 1. Respaldar settings actuales
+            // 1. Crear administrador
             $this->command->info('');
+            $this->command->info('→ Creando administrador...');
+            $this->createAdmin();
+
+            // 2. Respaldar settings actuales
             $this->command->info('→ Respaldando configuración actual...');
             $this->backupCurrentSettings();
 
-            // 2. Crear ciclo escolar 2025-2026
+            // 3. Crear ciclo escolar 2025-2026
             $this->command->info('→ Creando ciclo escolar 2025-2026...');
             $schoolYear = $this->createSchoolYear();
 
@@ -151,6 +155,31 @@ class ComprehensiveSchoolSeeder extends Seeder
             // Mostrar resumen
             $this->showSummary($schoolYear, $gradeSections, $headTeachers, $specializedTeachers, $parents, $students);
         });
+    }
+
+    /**
+     * Crea un administrador de la escuela
+     */
+    private function createAdmin(): void
+    {
+        $existing = User::where('email', 'admin@escuela.com')->first();
+
+        if ($existing) {
+            $this->command->info('   ✓ Administrador ya existe');
+
+            return;
+        }
+
+        User::create([
+            'name' => 'Administrador',
+            'apellido_paterno' => 'Sistema',
+            'apellido_materno' => 'Escuela',
+            'email' => 'admin@escuela.com',
+            'password' => Hash::make('password'),
+            'role' => UserRole::Admin,
+        ]);
+
+        $this->command->info('   ✓ Administrador creado: admin@escuela.com');
     }
 
     /**
@@ -781,6 +810,7 @@ class ComprehensiveSchoolSeeder extends Seeder
 
         $this->command->info('');
         $this->command->info('🔐 CREDENCIALES DE PRUEBA (Password: password)');
+        $this->command->info('   • Administrador: admin@escuela.com');
         $this->command->info('   • Maestros: '.collect($headTeachers)->first()->email.' y otros');
         $this->command->info('   • Padres: '.collect($parents)->first()->email.' y otros');
         $this->command->info('   • Alumnos: '.collect($students)->first()->user->email.' y otros');
