@@ -571,6 +571,12 @@ class ComprehensiveSchoolSeeder extends Seeder
                 $monthsLate = 1; // Estos 2 padres tienen 1 mes de retraso
             }
 
+            // Generar descuento una sola vez para todo el año escolar
+            $studentDiscount = 0;
+            if (rand(0, 100) <= 20) { // 20% de probabilidad de descuento
+                $studentDiscount = rand(5, 15); // Descuento de 5-15%
+            }
+
             // Crear tuición para cada mes
             foreach ($monthlyTuitions as $monthKey => $monthlyTuition) {
                 // Verificar si ya existe la tuición
@@ -601,7 +607,7 @@ class ComprehensiveSchoolSeeder extends Seeder
                     'year' => $monthlyTuition->year,
                     'month' => $monthlyTuition->month,
                     'monthly_amount' => 3000.00,
-                    'discount_percentage' => rand(0, 100) <= 20 ? rand(5, 15) : 0,
+                    'discount_percentage' => $studentDiscount,
                     'due_date' => $monthlyTuition->year.'-'.str_pad($monthlyTuition->month, 2, '0', STR_PAD_LEFT).'-10',
                 ];
 
@@ -643,6 +649,11 @@ class ComprehensiveSchoolSeeder extends Seeder
                         ]);
                     }
                 }
+            }
+
+            // Actualizar el descuento global del estudiante
+            if ($studentDiscount > 0) {
+                $student->update(['discount_percentage' => $studentDiscount]);
             }
         }
     }
