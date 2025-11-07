@@ -12,22 +12,30 @@ class SchoolYearSeeder extends Seeder
      */
     public function run(): void
     {
-        // Previous school year (2023-2024)
+        $now = now();
+        // Determine current school year based on date
+        // If we're in Aug-Dec, use current year as start year, else use previous year
+        $currentStartYear = ($now->month >= 8) ? $now->year : $now->year - 1;
+        $currentEndYear = $currentStartYear + 1;
+        $previousStartYear = $currentStartYear - 1;
+        $previousEndYear = $currentStartYear;
+
+        // Previous school year
         SchoolYear::create([
-            'name' => '2023-2024',
-            'start_date' => '2023-08-15',
-            'end_date' => '2024-06-30',
+            'name' => $previousStartYear.'-'.$previousEndYear,
+            'start_date' => $previousStartYear.'-08-15',
+            'end_date' => $previousEndYear.'-06-30',
             'is_active' => false,
         ]);
 
-        // Current school year (2024-2025) - within current dates
+        // Current school year
         SchoolYear::create([
-            'name' => '2024-2025',
-            'start_date' => '2024-08-15',
-            'end_date' => '2025-06-30',
+            'name' => $currentStartYear.'-'.$currentEndYear,
+            'start_date' => $currentStartYear.'-08-15',
+            'end_date' => $currentEndYear.'-06-30',
             'is_active' => true,
         ]);
 
-        $this->command->info('Ciclos escolares creados: 2023-2024 (anterior) y 2024-2025 (activo)');
+        $this->command->info('Ciclos escolares creados: '.$previousStartYear.'-'.$previousEndYear.' (anterior) y '.$currentStartYear.'-'.$currentEndYear.' (activo)');
     }
 }

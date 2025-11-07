@@ -201,8 +201,15 @@ class ComprehensiveSchoolSeeder extends Seeder
         // Desactivar cualquier ciclo anterior
         SchoolYear::where('is_active', true)->update(['is_active' => false]);
 
+        $now = now();
+        // Create school year that includes current date
+        // If we're past July 31, use current year as start year, otherwise use previous year
+        $startYear = ($now->month >= 8) ? $now->year : $now->year - 1;
+        $endYear = $startYear + 1;
+        $schoolYearName = $startYear.'-'.$endYear;
+
         // Verificar si ya existe
-        $existing = SchoolYear::where('name', '2025-2026')->first();
+        $existing = SchoolYear::where('name', $schoolYearName)->first();
         if ($existing) {
             // Activarlo
             $existing->update(['is_active' => true]);
@@ -211,9 +218,9 @@ class ComprehensiveSchoolSeeder extends Seeder
         }
 
         return SchoolYear::create([
-            'name' => '2025-2026',
-            'start_date' => '2025-08-01',
-            'end_date' => '2026-07-31',
+            'name' => $schoolYearName,
+            'start_date' => $startYear.'-08-01',
+            'end_date' => $endYear.'-07-31',
             'is_active' => true, // Activar el ciclo escolar
         ]);
     }
@@ -497,8 +504,12 @@ class ComprehensiveSchoolSeeder extends Seeder
         $months = ['Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio'];
 
         // Crear una cuota por mes del ciclo escolar
-        // Crear cuotas en orden del año escolar: Agosto-Diciembre (2025), luego Enero-Julio (2026)
+        // Crear cuotas en orden del año escolar: Agosto-Diciembre, luego Enero-Julio
         $monthOrder = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7]; // Orden del año escolar
+
+        // Extract start year from school year (e.g., "2025-2026" -> 2025)
+        $startYear = (int) explode('-', $schoolYear->name)[0];
+        $endYear = $startYear + 1;
 
         foreach ($monthOrder as $month) {
             $existing = MonthlyTuition::where('school_year_id', $schoolYear->id)
@@ -512,9 +523,9 @@ class ComprehensiveSchoolSeeder extends Seeder
             }
 
             // Determinar año según el mes
-            // Agosto-Diciembre = 2025 (meses 8-12)
-            // Enero-Julio = 2026 (meses 1-7)
-            $year = ($month >= 8) ? 2025 : 2026;
+            // Agosto-Diciembre = año de inicio (meses 8-12)
+            // Enero-Julio = año siguiente (meses 1-7)
+            $year = ($month >= 8) ? $startYear : $endYear;
 
             $tuition = MonthlyTuition::create([
                 'school_year_id' => $schoolYear->id,
@@ -590,15 +601,23 @@ class ComprehensiveSchoolSeeder extends Seeder
                 }
 
                 // Determinar si este mes está pagado
-                // Si el padre tiene retraso, solo los primeros meses están sin pagar
                 $monthIndex = $monthKey + 1; // meses van de 1 a 12
+                $currentMonth = now()->month;
+                $currentYear = now()->year;
 
-                // Si no tiene retraso ($monthsLate = 0), TODOS los meses están pagados
-                // Si tiene retraso, solo los meses iniciales (1 a $monthsLate) están sin pagar
-                $isPaid = $monthIndex > $monthsLate;
+                // El mes actual y futuros nunca están pagados (realista)
+                // Solo los meses pasados pueden estar pagados
+                if ($monthlyTuition->year > $currentYear ||
+                    ($monthlyTuition->year == $currentYear && $monthlyTuition->month >= $currentMonth)) {
+                    $isPaid = false;
+                } else {
+                    // Para meses pasados: si el padre tiene retraso, solo los meses iniciales están sin pagar
+                    // Si no tiene retraso ($monthsLate = 0), todos los meses pasados están pagados
+                    $isPaid = $monthIndex > $monthsLate;
+                }
 
                 // Calcular si hay cuota tardía (solo en los meses sin pagar)
-                $hasLateFee = $monthsLate > 0 && $monthIndex <= $monthsLate;
+                $hasLateFee = $monthsLate > 0 && $monthIndex <= $monthsLate && $isPaid === false;
 
                 $data = [
                     'student_id' => $student->id,
