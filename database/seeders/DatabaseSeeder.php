@@ -19,6 +19,10 @@ class DatabaseSeeder extends Seeder
             PaymentReceiptSeeder::class,
         ]);
 
+        // Get active school year for message
+        $activeSchoolYear = \App\Models\SchoolYear::where('is_active', true)->first();
+        $previousSchoolYear = \App\Models\SchoolYear::where('is_active', false)->first();
+
         $this->command->info('');
         $this->command->info('=== Base de datos poblada exitosamente! ===');
         $this->command->info('');
@@ -28,7 +32,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('Padres: padre1@correo.com hasta padre30@correo.com');
         $this->command->info('Maestros: maestro1@escuela.com hasta maestro10@escuela.com');
         $this->command->info('');
-        $this->command->info('Ciclos escolares: 2024-2025 (activo) y 2023-2024 (anterior)');
+        $this->command->info('Ciclos escolares: '.$activeSchoolYear->name.' (activo) y '.$previousSchoolYear->name.' (anterior)');
         $this->command->info('Grados: 1° a 6°, secciones A y B (168 estudiantes total)');
         $this->command->info('');
     }
