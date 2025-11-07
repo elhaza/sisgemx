@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Helpers\PaymentHelper;
 use App\Models\Announcement;
 use App\Models\Payment;
+use App\Models\PaymentReceipt;
 use App\Models\SchoolYear;
 use App\Models\Student;
 use App\Models\StudentTuition;
+use App\ReceiptStatus;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -213,11 +215,11 @@ class DashboardController extends Controller
             ->whereYear('paid_at', $currentYear)
             ->sum('amount');
 
-        // Pendientes de pago del mes (unpaid payments)
-        $pendingMonthlyPayments = Payment::where('is_paid', false)
-            ->whereMonth('month', $currentMonth)
-            ->whereYear('year', $currentYear)
-            ->sum('amount');
+        // Recibos pendientes de validacion del mes (pending payment receipts for current month)
+        $pendingMonthlyPayments = PaymentReceipt::where('status', ReceiptStatus::Pending)
+            ->whereMonth('payment_date', $currentMonth)
+            ->whereYear('payment_date', $currentYear)
+            ->sum('amount_paid');
 
         // Cantidad de padres retrazados (parents with overdue tuitions)
         $overdueTuitions = StudentTuition::where('due_date', '<', $now->toDateString())

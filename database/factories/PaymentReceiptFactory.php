@@ -17,7 +17,16 @@ class PaymentReceiptFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'payment_date' => now(),
+            'amount_paid' => 2500.00,
+            'payment_year' => now()->year,
+            'payment_month' => now()->month,
+            'reference' => $this->faker->bothify('###-????'),
+            'account_holder_name' => $this->faker->name(),
+            'issuing_bank' => $this->faker->company(),
+            'payment_method' => $this->faker->randomElement(['cash', 'transfer', 'card', 'check']),
+            'receipt_image' => 'payment-receipts/test.jpg',
+            'status' => 'pending',
         ];
     }
 }
