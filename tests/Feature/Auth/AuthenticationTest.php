@@ -115,3 +115,40 @@ test('parent can login if they have at least one active child', function () {
     $this->assertAuthenticated();
     $response->assertRedirect(route('dashboard', absolute: false));
 });
+
+test('student can login using enrollment number', function () {
+    $schoolYear = SchoolYear::factory()->create();
+    $user = User::factory()->create(['role' => UserRole::Student]);
+    $student = Student::factory()->create([
+        'user_id' => $user->id,
+        'school_year_id' => $schoolYear->id,
+        'status' => StudentStatus::Active,
+        'enrollment_number' => '2024001',
+    ]);
+
+    $response = $this->post('/login', [
+        'email' => $student->enrollment_number,
+        'password' => 'password',
+    ]);
+
+    $this->assertAuthenticated();
+    $response->assertRedirect(route('dashboard', absolute: false));
+});
+
+test('student cannot login with invalid enrollment number', function () {
+    $schoolYear = SchoolYear::factory()->create();
+    $user = User::factory()->create(['role' => UserRole::Student]);
+    Student::factory()->create([
+        'user_id' => $user->id,
+        'school_year_id' => $schoolYear->id,
+        'status' => StudentStatus::Active,
+        'enrollment_number' => '2024001',
+    ]);
+
+    $this->post('/login', [
+        'email' => '9999999',
+        'password' => 'password',
+    ]);
+
+    $this->assertGuest();
+});

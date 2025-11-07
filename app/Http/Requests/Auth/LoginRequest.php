@@ -31,7 +31,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'email' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -45,7 +45,18 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $loginInput = $this->string('email')->toString();
+        $email = $loginInput;
+
+        // Check if input is an enrollment number (numeric) or enrollment format
+        if (is_numeric($loginInput)) {
+            $student = Student::where('enrollment_number', $loginInput)->first();
+            if ($student && $student->user) {
+                $email = $student->user->email;
+            }
+        }
+
+        if (! Auth::attempt(['email' => $email, 'password' => $this->string('password')], $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
