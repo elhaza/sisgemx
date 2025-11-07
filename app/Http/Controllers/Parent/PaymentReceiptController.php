@@ -110,7 +110,9 @@ class PaymentReceiptController extends Controller
             $pendingTuitions = collect();
 
             foreach ($dueTuitions as $tuition) {
-                $amountDue = $tuition->total_amount;
+                // Use calculated_total_amount to include dynamically calculated late fees
+                // This ensures consistency with the dashboard and form display
+                $amountDue = $tuition->calculated_total_amount;
                 if ($remainingAmount >= $amountDue) {
                     $remainingAmount -= $amountDue;
                 } else {
