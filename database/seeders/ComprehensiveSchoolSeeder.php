@@ -494,6 +494,16 @@ class ComprehensiveSchoolSeeder extends Seeder
         foreach ($students as $student) {
             // Crear tuición para cada mes
             foreach ($monthlyTuitions as $monthlyTuition) {
+                // Verificar si ya existe la tuición
+                $existing = StudentTuition::where('student_id', $student->id)
+                    ->where('school_year_id', $schoolYear->id)
+                    ->where('monthly_tuition_id', $monthlyTuition->id)
+                    ->first();
+
+                if ($existing) {
+                    continue;
+                }
+
                 $hasLateFee = rand(1, 100) <= 30; // 30% con atraso
                 $isPaid = rand(1, 100) <= 85; // 85% pagados
 
