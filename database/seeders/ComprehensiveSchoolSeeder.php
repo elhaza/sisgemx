@@ -517,12 +517,46 @@ class ComprehensiveSchoolSeeder extends Seeder
 
     /**
      * Crea transacciones de tuiciones y pagos parciales/atrasados
+     * Lógica: mayoría pagadas
+     * - 1 padre con 3 meses de retraso
+     * - 6 padres con 2 meses de retraso
+     * - 2 padres con 1 mes de retraso
      */
     private function createTuitionsAndPayments(array $students, SchoolYear $schoolYear, array $monthlyTuitions): void
     {
-        foreach ($students as $student) {
+        // Seleccionar 1 padre con 3 meses de retraso
+        $parentWith3MonthsLate = rand(0, count($students) - 1);
+
+        // Seleccionar 6 padres con 2 meses de retraso (asegurarse de que sean diferentes)
+        $parentsWithLateDays = [$parentWith3MonthsLate];
+        while (count($parentsWithLateDays) < 7) {
+            $randomParent = rand(0, count($students) - 1);
+            if (! in_array($randomParent, $parentsWithLateDays)) {
+                $parentsWithLateDays[] = $randomParent;
+            }
+        }
+
+        // Seleccionar 2 padres con 1 mes de retraso (asegurarse de que sean diferentes)
+        while (count($parentsWithLateDays) < 9) {
+            $randomParent = rand(0, count($students) - 1);
+            if (! in_array($randomParent, $parentsWithLateDays)) {
+                $parentsWithLateDays[] = $randomParent;
+            }
+        }
+
+        foreach ($students as $index => $student) {
+            // Determinar tipo de retraso para este estudiante
+            $monthsLate = 0;
+            if ($index === $parentWith3MonthsLate) {
+                $monthsLate = 3; // Este padre tiene 3 meses de retraso
+            } elseif (in_array($index, array_slice($parentsWithLateDays, 1, 6))) {
+                $monthsLate = 2; // Estos 6 padres tienen 2 meses de retraso
+            } elseif (in_array($index, array_slice($parentsWithLateDays, 7, 2))) {
+                $monthsLate = 1; // Estos 2 padres tienen 1 mes de retraso
+            }
+
             // Crear tuición para cada mes
-            foreach ($monthlyTuitions as $monthlyTuition) {
+            foreach ($monthlyTuitions as $monthKey => $monthlyTuition) {
                 // Verificar si ya existe la tuición
                 $existing = StudentTuition::where('student_id', $student->id)
                     ->where('school_year_id', $schoolYear->id)
@@ -533,8 +567,14 @@ class ComprehensiveSchoolSeeder extends Seeder
                     continue;
                 }
 
-                $hasLateFee = rand(1, 100) <= 30; // 30% con atraso
-                $isPaid = rand(1, 100) <= 85; // 85% pagados
+                // Determinar si este mes está pagado
+                // Si el padre tiene retraso, solo los meses anteriores al retraso están pagados
+                $monthIndex = $monthKey + 1; // meses van de 1 a 12
+                $isPaid = $monthIndex > $monthsLate; // Pagados los meses después del retraso
+
+                // Calcular si hay cuota tardía
+                $hasLateFee = $monthsLate > 0 && $monthIndex <= $monthsLate;
+                $lateFeeAmount = $hasLateFee ? 300.00 : 0.00;
 
                 StudentTuition::create([
                     'student_id' => $student->id,
@@ -545,7 +585,7 @@ class ComprehensiveSchoolSeeder extends Seeder
                     'monthly_amount' => 3000.00,
                     'discount_percentage' => rand(0, 100) <= 20 ? rand(5, 15) : 0, // 20% con descuento
                     'due_date' => '2025-'.str_pad($monthlyTuition->month, 2, '0', STR_PAD_LEFT).'-10',
-                    'late_fee_amount' => $hasLateFee ? 300.00 : 0,
+                    'late_fee_amount' => $lateFeeAmount,
                     'late_fee_paid' => $isPaid && $hasLateFee ? true : false,
                     'notes' => $hasLateFee && ! $isPaid ? 'Pago pendiente con interés moratorio' : null,
                 ]);
@@ -793,7 +833,10 @@ class ComprehensiveSchoolSeeder extends Seeder
         $this->command->info('   • Cuota mensual: $3,000 MXN');
         $this->command->info('   • Meses: 12 (Agosto 2025 - Julio 2026)');
         $this->command->info('   • Total transacciones de tuición: '.(count($students) * 12));
-        $this->command->info('   • Estudiantes con pagos atrasados: ~30%');
+        $this->command->info('   • Mayoría de cuotas: ✅ PAGADAS');
+        $this->command->info('   • 1 padre con 3 meses de retraso');
+        $this->command->info('   • 6 padres con 2 meses de retraso');
+        $this->command->info('   • 2 padres con 1 mes de retraso');
         $this->command->info('   • Estudiantes con descuento: ~20%');
 
         $this->command->info('');
