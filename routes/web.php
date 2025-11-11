@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AnnouncementController as PublicAnnouncementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Finance\DashboardController as FinanceDashboardController;
+use App\Http\Controllers\Finance\ExtraChargesController;
 use App\Http\Controllers\Finance\PaymentReceiptController as FinancePaymentReceiptController;
 use App\Http\Controllers\Finance\StudentTuitionController;
 use App\Http\Controllers\MessageController;
@@ -97,6 +98,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('student-tuitions/{studentTuition}/edit', [StudentTuitionController::class, 'edit'])->name('student-tuitions.edit');
         Route::put('student-tuitions/{studentTuition}', [StudentTuitionController::class, 'update'])->name('student-tuitions.update');
         Route::get('student-tuitions/discount-report', [StudentTuitionController::class, 'discountReport'])->name('student-tuitions.discount-report');
+
+        Route::get('extra-charges', [ExtraChargesController::class, 'index'])->name('extra-charges.index');
+        Route::get('extra-charges/create', [ExtraChargesController::class, 'create'])->name('extra-charges.create');
+        Route::post('extra-charges', [ExtraChargesController::class, 'store'])->name('extra-charges.store');
+        Route::get('extra-charges/{chargeTemplate}', [ExtraChargesController::class, 'show'])->name('extra-charges.show');
+        Route::get('extra-charges/{chargeTemplate}/edit', [ExtraChargesController::class, 'edit'])->name('extra-charges.edit');
+        Route::put('extra-charges/{chargeTemplate}', [ExtraChargesController::class, 'update'])->name('extra-charges.update');
+        Route::delete('extra-charges/{chargeTemplate}', [ExtraChargesController::class, 'destroy'])->name('extra-charges.destroy');
+        Route::post('extra-charges/{chargeTemplate}/bulk-assign', [ExtraChargesController::class, 'bulkAssign'])->name('extra-charges.bulk-assign');
+        Route::post('assigned-charges/{assignedCharge}/mark-as-paid', [ExtraChargesController::class, 'markAsPaid'])->name('assigned-charges.mark-as-paid');
     });
 
     // Rutas para Maestros

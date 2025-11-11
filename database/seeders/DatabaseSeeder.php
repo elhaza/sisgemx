@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             MonthlyTuitionSeeder::class,
             StudentTuitionSeeder::class,
             PaymentReceiptSeeder::class,
+            ChargeTemplateSeeder::class,
         ]);
 
         // Get active school year for message
