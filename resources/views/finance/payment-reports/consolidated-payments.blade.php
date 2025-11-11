@@ -89,8 +89,10 @@
                             @foreach($reportData as $student)
                                 <tr class="hover:bg-gray-50 transition">
                                     <!-- Estudiante -->
-                                    <td class="sticky left-0 z-5 border-r border-gray-200 bg-white px-4 py-3 font-semibold text-gray-900 hover:bg-gray-50">
-                                        {{ $student['name'] }}
+                                    <td class="sticky left-0 z-5 border-r border-gray-200 bg-white px-4 py-3 font-semibold hover:bg-gray-50">
+                                        <a href="{{ route('admin.students.edit', $student['id']) }}" class="text-blue-600 hover:text-blue-900 hover:underline">
+                                            {{ $student['name'] }}
+                                        </a>
                                     </td>
 
                                     <!-- Grado -->
