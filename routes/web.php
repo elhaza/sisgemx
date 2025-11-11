@@ -84,6 +84,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('dashboard', [FinanceDashboardController::class, 'index'])->name('dashboard');
 
         Route::get('payment-receipts', [FinancePaymentReceiptController::class, 'index'])->name('payment-receipts.index');
+        Route::get('payment-receipts/export/excel', [FinancePaymentReceiptController::class, 'exportExcel'])->name('payment-receipts.export-excel');
+        Route::get('payment-receipts/export/pdf', [FinancePaymentReceiptController::class, 'exportPdf'])->name('payment-receipts.export-pdf');
         Route::get('payment-receipts/create', [FinancePaymentReceiptController::class, 'create'])->name('payment-receipts.create');
         Route::get('payment-receipts/student/{student}/parents', [FinancePaymentReceiptController::class, 'getStudentParents'])->name('payment-receipts.get-student-parents');
         Route::post('payment-receipts', [FinancePaymentReceiptController::class, 'store'])->name('payment-receipts.store');

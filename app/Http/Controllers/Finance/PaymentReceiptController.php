@@ -13,6 +13,7 @@ use App\ReceiptStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PaymentReceiptController extends Controller
 {
@@ -579,5 +580,85 @@ class PaymentReceiptController extends Controller
         };
 
         return back()->with('success', $message);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $status = $request->query('status');
+        $month = $request->query('month');
+        $year = $request->query('year');
+        $view = $request->query('view', 'month');
+
+        // Build query
+        $query = PaymentReceipt::query()->with(['student.user', 'parent', 'registeredBy']);
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        // Handle month view
+        if ($view === 'month') {
+            $yearToDisplay = $year ?: now()->year;
+            if ($month) {
+                $monthToDisplay = (int) $month;
+                $query->where('payment_month', $monthToDisplay)
+                    ->where('payment_year', $yearToDisplay);
+            } else {
+                $query->where('payment_year', $yearToDisplay);
+            }
+        }
+
+        $receipts = $query->latest()->get();
+
+        $fileName = 'comprobantes-pago-'.now()->format('Y-m-d-His').'.xlsx';
+
+        return Excel::download(
+            new \App\Exports\PaymentReceiptsExport($receipts->toArray()),
+            $fileName
+        );
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $status = $request->query('status');
+        $month = $request->query('month');
+        $year = $request->query('year');
+        $view = $request->query('view', 'month');
+
+        // Build query
+        $query = PaymentReceipt::query()->with(['student.user', 'parent', 'registeredBy']);
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        // Handle month view
+        if ($view === 'month') {
+            $yearToDisplay = $year ?: now()->year;
+            if ($month) {
+                $monthToDisplay = (int) $month;
+                $query->where('payment_month', $monthToDisplay)
+                    ->where('payment_year', $yearToDisplay);
+            } else {
+                $query->where('payment_year', $yearToDisplay);
+            }
+        }
+
+        $receipts = $query->latest()->get();
+
+        $html = view('finance.payment-receipts.pdf', [
+            'receipts' => $receipts,
+            'status' => $status,
+            'month' => $month,
+            'year' => $year,
+        ])->render();
+
+        // Use wkhtmltopdf via shell_exec if available, otherwise return HTML
+        $fileName = 'comprobantes-pago-'.now()->format('Y-m-d-His').'.pdf';
+
+        return response($html, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+        ]);
     }
 }

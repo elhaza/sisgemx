@@ -209,16 +209,30 @@ class DashboardController extends Controller
         $currentMonth = $now->month;
         $currentYear = $now->year;
 
-        // Pagos del mes (paid payments)
-        $monthlyPayments = Payment::where('is_paid', true)
+        // Pagos del mes separados en colegiaturas y recargos
+        $monthlyPaymentsQuery = Payment::where('is_paid', true)
             ->whereMonth('paid_at', $currentMonth)
             ->whereYear('paid_at', $currentYear)
-            ->sum('amount');
+            ->with('studentTuition');
+
+        $monthlyPaymentsList = $monthlyPaymentsQuery->get();
+
+        $tuitionPayments = 0;
+        $lateFeePayments = 0;
+
+        foreach ($monthlyPaymentsList as $payment) {
+            if ($payment->studentTuition) {
+                $tuitionPayments += $payment->studentTuition->final_amount;
+                $lateFeePayments += $payment->studentTuition->late_fee_paid ?? 0;
+            }
+        }
+
+        $monthlyPayments = $tuitionPayments + $lateFeePayments;
 
         // Recibos pendientes de validacion del mes (pending payment receipts for current month)
         $pendingMonthlyPayments = PaymentReceipt::where('status', ReceiptStatus::Pending)
-            ->whereMonth('payment_date', $currentMonth)
-            ->whereYear('payment_date', $currentYear)
+            ->where('payment_month', $currentMonth)
+            ->where('payment_year', $currentYear)
             ->sum('amount_paid');
 
         // Cantidad de padres retrazados (parents with overdue tuitions)
@@ -274,6 +288,8 @@ class DashboardController extends Controller
         });
 
         return [
+            'tuition_payments' => $tuitionPayments,
+            'late_fee_payments' => $lateFeePayments,
             'monthly_payments' => $monthlyPayments,
             'pending_monthly_payments' => $pendingMonthlyPayments,
             'parents_overdue' => $parentsOverdue,

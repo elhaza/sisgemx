@@ -90,22 +90,96 @@
             <!-- Finanzas - Información Importante -->
             <div class="mb-8">
                 <h3 class="mb-4 text-lg font-semibold text-gray-900">💰 Finanzas del Mes</h3>
-                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-                    <!-- Pagos del Mes -->
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+                    <!-- Pagos de Colegiaturas con Tooltip de Desglose -->
+                    <div class="relative group">
+                        <a href="{{ route('finance.payment-receipts.index', ['month' => now()->month, 'year' => now()->year, 'status' => 'validated']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md cursor-help">
+                            <div class="p-6">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-10.747S17.5 6.253 12 6.253z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt class="truncate text-sm font-medium text-gray-500">Colegiaturas Pagadas</dt>
+                                            <dd class="text-xl font-semibold text-gray-900">${{ number_format($financialStats['tuition_payments'], 2) }}</dd>
+                                            <p class="text-xs text-gray-500 mt-1">Mes Actual</p>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+
+                        <!-- Tooltip de Desglose -->
+                        <div class="absolute left-0 top-full mt-2 w-64 bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-4 hidden group-hover:block z-50">
+                            <div class="space-y-2">
+                                <h4 class="text-sm font-semibold text-white mb-3">Desglose de Pagos</h4>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-medium text-green-100">Colegiaturas</span>
+                                    <span class="text-sm font-semibold text-white">${{ number_format($financialStats['tuition_payments'], 2) }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-medium text-green-100">Recargos</span>
+                                    <span class="text-sm font-semibold text-white">${{ number_format($financialStats['late_fee_payments'], 2) }}</span>
+                                </div>
+                                <div class="border-t border-green-400 pt-2 mt-2 flex justify-between items-center">
+                                    <span class="text-xs font-bold text-white">TOTAL</span>
+                                    <span class="text-sm font-bold text-white">${{ number_format($financialStats['monthly_payments'], 2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pagos de Recargos -->
                     <a href="{{ route('finance.payment-receipts.index', ['month' => now()->month, 'year' => now()->year, 'status' => 'validated']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
                         <div class="p-6">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
-                                    <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    <svg class="h-8 w-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4v2m0 5v2M7.08 6.47A9.969 9.969 0 0112 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12c0-1.333.263-2.613.744-3.78.281-.89 1.331-1.387 2.224-1.105.893.281 1.387 1.331 1.105 2.224C5.539 11.372 5 12.167 5 13c0 4.418 3.582 8 8 8s8-3.582 8-8-3.582-8-8-8c-1.334 0-2.595.32-3.708.887"></path>
                                     </svg>
                                 </div>
                                 <div class="ml-5 w-0 flex-1">
                                     <dl>
-                                        <dt class="truncate text-sm font-medium text-gray-500">Pagos del Mes</dt>
-                                        <dd class="text-2xl font-semibold text-gray-900">${{ number_format($financialStats['monthly_payments'], 2) }}</dd>
-                                        <p class="text-xs text-gray-500 mt-1">Recaudado</p>
+                                        <dt class="truncate text-sm font-medium text-gray-500">Recargos Pagados</dt>
+                                        <dd class="text-xl font-semibold text-gray-900">${{ number_format($financialStats['late_fee_payments'], 2) }}</dd>
+                                        <p class="text-xs text-gray-500 mt-1">Mes Actual</p>
                                     </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Total de Pagos con Desglose -->
+                    <a href="{{ route('finance.payment-receipts.index', ['month' => now()->month, 'year' => now()->year, 'status' => 'validated']) }}" class="block overflow-hidden rounded-lg bg-gradient-to-br from-green-500 to-green-600 shadow-sm transition hover:shadow-md col-span-2 lg:col-span-2">
+                        <div class="p-6">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-medium text-green-100 mb-3">Pagos del Mes - Desglose</h4>
+
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs font-medium text-green-100">Colegiaturas</span>
+                                            <span class="text-sm font-semibold text-white">${{ number_format($financialStats['tuition_payments'], 2) }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs font-medium text-green-100">Recargos</span>
+                                            <span class="text-sm font-semibold text-white">${{ number_format($financialStats['late_fee_payments'], 2) }}</span>
+                                        </div>
+                                        <div class="border-t border-green-400 pt-2 mt-2 flex justify-between items-center">
+                                            <span class="text-xs font-bold text-white">TOTAL</span>
+                                            <span class="text-lg font-bold text-white">${{ number_format($financialStats['monthly_payments'], 2) }}</span>
+                                        </div>
+                                    </div>
+
+                                    <p class="text-xs text-green-100 mt-3">Recaudado este mes</p>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <svg class="h-10 w-10 text-white opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
                                 </div>
                             </div>
                         </div>
