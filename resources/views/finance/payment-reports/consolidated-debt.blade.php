@@ -119,8 +119,13 @@
                                     @endforeach
 
                                     <!-- Total Deuda del Estudiante -->
-                                    <td class="bg-red-100 px-4 py-3 text-center text-sm font-bold text-red-900">
-                                        ${{ number_format($student['total_debt'], 2) }}
+                                    <td class="bg-red-100 px-4 py-3 text-center font-bold text-red-900">
+                                        <div class="text-sm">
+                                            ${{ number_format($student['total_debt_due'], 2) }}
+                                        </div>
+                                        <div class="text-xs text-red-700 mt-1">
+                                            Total: ${{ number_format($student['total_debt'], 2) }}
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -181,7 +186,12 @@
                                 @endforeach
 
                                 <td class="bg-red-200 px-4 py-3 text-center font-bold text-red-900">
-                                    ${{ number_format($totalDebt, 2) }}
+                                    <div class="text-sm">
+                                        ${{ number_format($totalDebtDue, 2) }}
+                                    </div>
+                                    <div class="text-xs text-red-800 mt-1">
+                                        Total: ${{ number_format($totalDebt, 2) }}
+                                    </div>
                                 </td>
                             </tr>
                         </tfoot>

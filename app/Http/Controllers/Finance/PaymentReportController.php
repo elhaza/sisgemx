@@ -178,13 +178,15 @@ class PaymentReportController extends Controller
             ->values();
 
         // Build report data - only include students with debt
-        $reportData = $students->map(function (Student $student) use ($months) {
+        $currentDate = now();
+        $reportData = $students->map(function (Student $student) use ($months, $currentDate) {
             $studentData = [
                 'id' => $student->id,
                 'name' => $student->user->full_name,
                 'grade' => $student->schoolGrade->grade_level.'° - '.$student->schoolGrade->name,
                 'monthly_debts' => [],
                 'total_debt' => 0,
+                'total_debt_due' => 0,
             ];
 
             // Get unpaid monthly tuitions
@@ -207,6 +209,12 @@ class PaymentReportController extends Controller
                         'total' => $totalAmount,
                     ];
                     $studentData['total_debt'] += $totalAmount;
+
+                    // Only count towards due debt if month has already passed
+                    $isMonthFuture = ($month['year'] > $currentDate->year) || ($month['year'] == $currentDate->year && $month['number'] > $currentDate->month);
+                    if (! $isMonthFuture) {
+                        $studentData['total_debt_due'] += $totalAmount;
+                    }
                 }
             }
 
@@ -215,6 +223,7 @@ class PaymentReportController extends Controller
 
         // Calculate total debt across all students
         $totalDebt = $reportData->sum('total_debt');
+        $totalDebtDue = $reportData->sum('total_debt_due');
 
         return view('finance.payment-reports.consolidated-debt', [
             'students' => $students,
@@ -222,6 +231,7 @@ class PaymentReportController extends Controller
             'reportData' => $reportData,
             'activeSchoolYear' => $activeSchoolYear,
             'totalDebt' => $totalDebt,
+            'totalDebtDue' => $totalDebtDue,
             'currentDate' => now(),
         ]);
     }
