@@ -10,7 +10,7 @@ use App\Models\StudentAssignedCharge;
 use App\Models\StudentTuition;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class PaymentReportController extends Controller
 {
@@ -242,7 +242,7 @@ class PaymentReportController extends Controller
     /**
      * Export debt report to PDF
      */
-    public function exportDebtToPdf(): StreamedResponse
+    public function exportDebtToPdf(): Response
     {
         $activeSchoolYear = SchoolYear::where('is_active', true)->first();
 
@@ -333,7 +333,7 @@ class PaymentReportController extends Controller
     /**
      * Export debt report to Excel
      */
-    public function exportDebtToExcel(): StreamedResponse
+    public function exportDebtToExcel(): Response
     {
         return Excel::download(
             new \App\Exports\DebtReportExport,
