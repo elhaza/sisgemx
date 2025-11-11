@@ -90,22 +90,22 @@
             <!-- Finanzas - Información Importante -->
             <div class="mb-8">
                 <h3 class="mb-4 text-lg font-semibold text-gray-900">💰 Finanzas del Mes</h3>
-                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
-                    <!-- Pagos de Colegiaturas con Tooltip de Desglose -->
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                    <!-- Pagos del Mes (Colegiaturas + Recargos) con Tooltip de Desglose -->
                     <div class="relative group">
                         <a href="{{ route('finance.payment-receipts.index', ['month' => now()->month, 'year' => now()->year, 'status' => 'validated']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md cursor-help">
                             <div class="p-6">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0">
-                                        <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-10.747S17.5 6.253 12 6.253z"></path>
                                         </svg>
                                     </div>
                                     <div class="ml-5 w-0 flex-1">
                                         <dl>
-                                            <dt class="truncate text-sm font-medium text-gray-500">Colegiaturas Pagadas</dt>
-                                            <dd class="text-xl font-semibold text-gray-900">${{ number_format($financialStats['tuition_payments'], 2) }}</dd>
-                                            <p class="text-xs text-gray-500 mt-1">Mes Actual</p>
+                                            <dt class="truncate text-sm font-medium text-gray-500">Pagos del Mes</dt>
+                                            <dd class="text-xl font-semibold text-gray-900">${{ number_format($financialStats['monthly_payments'], 2) }}</dd>
+                                            <p class="text-xs text-gray-500 mt-1">Colegiaturas + Recargos</p>
                                         </dl>
                                     </div>
                                 </div>
@@ -131,26 +131,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Pagos de Recargos -->
-                    <a href="{{ route('finance.payment-receipts.index', ['month' => now()->month, 'year' => now()->year, 'status' => 'validated']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
-                        <div class="p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-8 w-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4v2m0 5v2M7.08 6.47A9.969 9.969 0 0112 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12c0-1.333.263-2.613.744-3.78.281-.89 1.331-1.387 2.224-1.105.893.281 1.387 1.331 1.105 2.224C5.539 11.372 5 12.167 5 13c0 4.418 3.582 8 8 8s8-3.582 8-8-3.582-8-8-8c-1.334 0-2.595.32-3.708.887"></path>
-                                    </svg>
-                                </div>
-                                <div class="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt class="truncate text-sm font-medium text-gray-500">Recargos Pagados</dt>
-                                        <dd class="text-xl font-semibold text-gray-900">${{ number_format($financialStats['late_fee_payments'], 2) }}</dd>
-                                        <p class="text-xs text-gray-500 mt-1">Mes Actual</p>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
 
                     <!-- Pendientes de Pago del Mes -->
                     <a href="{{ route('finance.payment-receipts.index', ['month' => now()->month, 'year' => now()->year, 'status' => 'pending']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
