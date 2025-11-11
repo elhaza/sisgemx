@@ -152,39 +152,6 @@
                         </div>
                     </a>
 
-                    <!-- Total de Pagos con Desglose -->
-                    <a href="{{ route('finance.payment-receipts.index', ['month' => now()->month, 'year' => now()->year, 'status' => 'validated']) }}" class="block overflow-hidden rounded-lg bg-gradient-to-br from-green-500 to-green-600 shadow-sm transition hover:shadow-md col-span-2 lg:col-span-2">
-                        <div class="p-6">
-                            <div class="flex items-start justify-between">
-                                <div class="flex-1">
-                                    <h4 class="text-sm font-medium text-green-100 mb-3">Pagos del Mes - Desglose</h4>
-
-                                    <div class="space-y-2">
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-xs font-medium text-green-100">Colegiaturas</span>
-                                            <span class="text-sm font-semibold text-white">${{ number_format($financialStats['tuition_payments'], 2) }}</span>
-                                        </div>
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-xs font-medium text-green-100">Recargos</span>
-                                            <span class="text-sm font-semibold text-white">${{ number_format($financialStats['late_fee_payments'], 2) }}</span>
-                                        </div>
-                                        <div class="border-t border-green-400 pt-2 mt-2 flex justify-between items-center">
-                                            <span class="text-xs font-bold text-white">TOTAL</span>
-                                            <span class="text-lg font-bold text-white">${{ number_format($financialStats['monthly_payments'], 2) }}</span>
-                                        </div>
-                                    </div>
-
-                                    <p class="text-xs text-green-100 mt-3">Recaudado este mes</p>
-                                </div>
-                                <div class="flex-shrink-0">
-                                    <svg class="h-10 w-10 text-white opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-
                     <!-- Pendientes de Pago del Mes -->
                     <a href="{{ route('finance.payment-receipts.index', ['month' => now()->month, 'year' => now()->year, 'status' => 'pending']) }}" class="block overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
                         <div class="p-6">
