@@ -493,4 +493,48 @@ class PaymentReceiptController extends Controller
         return redirect()->route('finance.payment-receipts.show', $paymentReceipt)
             ->with('success', 'Estado del comprobante actualizado exitosamente.');
     }
+
+    public function bulkUpdateStatus(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,validated,rejected',
+            'receipt_ids' => 'required|string',
+        ]);
+
+        $receiptIds = array_filter(explode(',', $validated['receipt_ids']));
+
+        if (empty($receiptIds)) {
+            return back()->with('error', 'No se seleccionaron comprobantes.');
+        }
+
+        $receipts = PaymentReceipt::whereIn('id', $receiptIds)->get();
+
+        foreach ($receipts as $receipt) {
+            $previousStatus = $receipt->status;
+
+            $receipt->update([
+                'status' => $validated['status'],
+                'validated_by' => $validated['status'] === 'validated' ? auth()->id() : $receipt->validated_by,
+                'validated_at' => $validated['status'] === 'validated' ? now() : $receipt->validated_at,
+                'rejection_reason' => $validated['status'] === 'rejected' ? 'Rechazado en acción masiva' : null,
+            ]);
+
+            // Log the status change
+            PaymentReceiptStatusLog::create([
+                'payment_receipt_id' => $receipt->id,
+                'changed_by_id' => auth()->id(),
+                'previous_status' => $previousStatus,
+                'new_status' => $validated['status'],
+                'notes' => 'Actualización masiva por '.auth()->user()->name,
+            ]);
+        }
+
+        $message = match ($validated['status']) {
+            'validated' => 'Se validaron '.count($receipts).' comprobante(s) exitosamente.',
+            'rejected' => 'Se rechazaron '.count($receipts).' comprobante(s) exitosamente.',
+            'pending' => 'Se marcaron '.count($receipts).' comprobante(s) como pendientes.',
+        };
+
+        return back()->with('success', $message);
+    }
 }

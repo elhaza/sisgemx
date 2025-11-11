@@ -158,11 +158,34 @@
                 </div>
             </div>
 
+            <!-- Bulk Actions Bar -->
+            <div id="bulkActionsBar" class="mb-4 hidden rounded-lg bg-blue-50 border border-blue-200 p-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <span id="selectedCount" class="text-sm font-medium text-gray-700">0 seleccionados</span>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="bulkChangeStatus('validated')" class="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+                                ✓ Validar
+                            </button>
+                            <button type="button" onclick="bulkChangeStatus('rejected')" class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
+                                ✕ Rechazar
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" onclick="clearSelection()" class="text-gray-600 hover:text-gray-900">
+                        Limpiar selección
+                    </button>
+                </div>
+            </div>
+
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th class="px-4 py-3 text-left">
+                                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" class="rounded border-gray-300">
+                                </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fecha</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Estudiante</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Padre/Tutor</th>
@@ -175,7 +198,12 @@
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
                             @forelse($receipts as $receipt)
-                                <tr class="{{ isset($receipt->type) && $receipt->type === 'admin_payment' ? 'bg-blue-50' : '' }}">
+                                <tr class="{{ isset($receipt->type) && $receipt->type === 'admin_payment' ? 'bg-blue-50' : '' }}" data-receipt-id="{{ $receipt->id ?? '' }}">
+                                    <td class="px-4 py-4">
+                                        @if(!isset($receipt->type) || $receipt->type !== 'admin_payment')
+                                            <input type="checkbox" class="receipt-checkbox rounded border-gray-300" onchange="updateBulkActionsBar()" data-receipt-id="{{ $receipt->id }}">
+                                        @endif
+                                    </td>
                                     <td class="whitespace-nowrap px-6 py-4">{{ $receipt->payment_date?->format('d/m/Y') ?? 'N/A' }}</td>
                                     <td class="whitespace-nowrap px-6 py-4">{{ $receipt->student->user->full_name }}</td>
                                     <td class="whitespace-nowrap px-6 py-4">{{ $receipt->parent?->name ?? 'N/A' }}</td>
@@ -201,8 +229,8 @@
                                             <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Validado</span>
                                         @elseif($receipt->status->value === 'pending')
                                             <span class="rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">Pendiente</span>
-                                        @elseif($receipt->status->value === 'approved')
-                                            <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Aprobado</span>
+                                        @elseif($receipt->status->value === 'validated')
+                                            <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Validado</span>
                                         @else
                                             <span class="rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">Rechazado</span>
                                         @endif
@@ -211,13 +239,20 @@
                                         @if(isset($receipt->type) && $receipt->type === 'admin_payment')
                                             <span class="text-gray-500 text-sm">-</span>
                                         @else
-                                            <a href="{{ route('finance.payment-receipts.show', $receipt) }}" class="text-blue-600 hover:text-blue-900">Ver Detalle</a>
+                                            <div class="flex gap-2">
+                                                <button type="button" onclick="openStatusModal({{ $receipt->id }}, '{{ $receipt->student->user->full_name }}')" class="rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700">
+                                                    Cambiar
+                                                </button>
+                                                <a href="{{ route('finance.payment-receipts.show', $receipt) }}" class="rounded-md bg-gray-600 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700">
+                                                    Ver
+                                                </a>
+                                            </div>
                                         @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">No hay comprobantes registrados.</td>
+                                    <td colspan="9" class="px-6 py-4 text-center text-gray-500">No hay comprobantes registrados.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -419,6 +454,188 @@
             url.searchParams.set('year', '{{ request('year', now()->year) }}');
             // Don't set month parameter - this shows all pending
             window.location.href = url.toString();
+        }
+
+        // Individual Status Change Modal
+        function openStatusModal(receiptId, studentName) {
+            document.getElementById('statusModalReceiptId').value = receiptId;
+            document.getElementById('statusModalStudentName').textContent = studentName;
+            document.getElementById('statusModal').classList.remove('hidden');
+        }
+
+        function closeStatusModal() {
+            document.getElementById('statusModal').classList.add('hidden');
+        }
+
+        document.getElementById('statusModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeStatusModal();
+            }
+        });
+
+        function submitStatusChange() {
+            const receiptId = document.getElementById('statusModalReceiptId').value;
+            const status = document.getElementById('statusModalStatus').value;
+            const rejectionReason = document.getElementById('statusModalRejectionReason').value;
+            const notes = document.getElementById('statusModalNotes').value;
+
+            if (!status) {
+                alert('Selecciona un estado');
+                return;
+            }
+
+            if (status === 'rejected' && !rejectionReason) {
+                alert('Debes proporcionar un motivo para rechazar');
+                return;
+            }
+
+            // Submit via form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/finance/payment-receipts/${receiptId}/update-status`;
+
+            form.innerHTML = `
+                @csrf
+                <input type="hidden" name="status" value="${status}">
+                <input type="hidden" name="rejection_reason" value="${rejectionReason}">
+                <input type="hidden" name="notes" value="${notes}">
+            `;
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // Bulk Selection Functions
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.receipt-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+            updateBulkActionsBar();
+        }
+
+        function updateBulkActionsBar() {
+            const checkboxes = document.querySelectorAll('.receipt-checkbox:checked');
+            const count = checkboxes.length;
+            const bulkActionsBar = document.getElementById('bulkActionsBar');
+            const selectedCount = document.getElementById('selectedCount');
+
+            if (count > 0) {
+                bulkActionsBar.classList.remove('hidden');
+                selectedCount.textContent = `${count} seleccionado${count !== 1 ? 's' : ''}`;
+            } else {
+                bulkActionsBar.classList.add('hidden');
+                document.getElementById('selectAll').checked = false;
+            }
+        }
+
+        function clearSelection() {
+            document.querySelectorAll('.receipt-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            document.getElementById('selectAll').checked = false;
+            updateBulkActionsBar();
+        }
+
+        function bulkChangeStatus(status) {
+            const checkboxes = document.querySelectorAll('.receipt-checkbox:checked');
+            const receiptIds = Array.from(checkboxes).map(cb => cb.dataset.receiptId);
+
+            if (receiptIds.length === 0) {
+                alert('Selecciona al menos un comprobante');
+                return;
+            }
+
+            const message = status === 'validated'
+                ? `¿Validar ${receiptIds.length} comprobante${receiptIds.length !== 1 ? 's' : ''}?`
+                : `¿Rechazar ${receiptIds.length} comprobante${receiptIds.length !== 1 ? 's' : ''}?`;
+
+            if (confirm(message)) {
+                // Create and submit form
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/finance/payment-receipts/bulk/update-status';
+
+                form.innerHTML = `
+                    @csrf
+                    <input type="hidden" name="status" value="${status}">
+                    <input type="hidden" name="receipt_ids" value="${receiptIds.join(',')}">
+                `;
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+
+    <!-- Individual Status Change Modal -->
+    <div id="statusModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div class="flex items-center justify-between border-b border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900">Cambiar Estado del Comprobante</h3>
+                <button type="button" onclick="closeStatusModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-sm text-gray-600">
+                    <strong>Estudiante:</strong> <span id="statusModalStudentName"></span>
+                </p>
+
+                <div>
+                    <label for="statusModalStatus" class="block text-sm font-medium text-gray-700 mb-2">
+                        Nuevo Estado
+                    </label>
+                    <select id="statusModalStatus" onchange="updateRejectionField()" class="w-full rounded-md border-gray-300 px-3 py-2 border focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Seleccionar estado...</option>
+                        <option value="validated">✓ Validar</option>
+                        <option value="rejected">✕ Rechazar</option>
+                        <option value="pending">⏳ Pendiente</option>
+                    </select>
+                </div>
+
+                <div id="rejectionReasonField" class="hidden">
+                    <label for="statusModalRejectionReason" class="block text-sm font-medium text-gray-700 mb-2">
+                        Motivo de Rechazo *
+                    </label>
+                    <textarea id="statusModalRejectionReason" class="w-full rounded-md border-gray-300 px-3 py-2 border focus:border-blue-500 focus:ring-blue-500" rows="3" placeholder="Especifica el motivo del rechazo..."></textarea>
+                </div>
+
+                <div>
+                    <label for="statusModalNotes" class="block text-sm font-medium text-gray-700 mb-2">
+                        Notas (opcional)
+                    </label>
+                    <textarea id="statusModalNotes" class="w-full rounded-md border-gray-300 px-3 py-2 border focus:border-blue-500 focus:ring-blue-500" rows="2" placeholder="Notas adicionales..."></textarea>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-3 border-t border-gray-200 p-6">
+                <button type="button" onclick="closeStatusModal()" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    Cancelar
+                </button>
+                <button type="button" onclick="submitStatusChange()" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                    Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" id="statusModalReceiptId">
+
+    <script>
+        function updateRejectionField() {
+            const status = document.getElementById('statusModalStatus').value;
+            const field = document.getElementById('rejectionReasonField');
+            if (status === 'rejected') {
+                field.classList.remove('hidden');
+                document.getElementById('statusModalRejectionReason').required = true;
+            } else {
+                field.classList.add('hidden');
+                document.getElementById('statusModalRejectionReason').required = false;
+                document.getElementById('statusModalRejectionReason').value = '';
+            }
         }
     </script>
 </x-app-layout>

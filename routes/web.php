@@ -87,6 +87,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('payment-receipts/create', [FinancePaymentReceiptController::class, 'create'])->name('payment-receipts.create');
         Route::get('payment-receipts/student/{student}/parents', [FinancePaymentReceiptController::class, 'getStudentParents'])->name('payment-receipts.get-student-parents');
         Route::post('payment-receipts', [FinancePaymentReceiptController::class, 'store'])->name('payment-receipts.store');
+        Route::post('payment-receipts/bulk/update-status', [FinancePaymentReceiptController::class, 'bulkUpdateStatus'])->name('payment-receipts.bulk-update-status');
         Route::get('payment-receipts/{paymentReceipt}', [FinancePaymentReceiptController::class, 'show'])->name('payment-receipts.show');
         Route::post('payment-receipts/{paymentReceipt}/update-status', [FinancePaymentReceiptController::class, 'updateStatus'])->name('payment-receipts.update-status');
 
