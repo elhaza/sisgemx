@@ -104,13 +104,22 @@
                                     @foreach($months as $month)
                                         @php
                                             $monthKey = $month['number'].'-'.$month['year'];
-                                            $monthPayment = $student['monthly_payments'][$monthKey] ?? 0;
+                                            $monthPayment = $student['monthly_payments'][$monthKey] ?? ['tuition' => 0, 'late_fee' => 0, 'total' => 0];
                                         @endphp
-                                        <td class="border-r border-gray-200 px-3 py-3 text-center text-sm font-medium">
-                                            @if($monthPayment > 0)
-                                                <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-800">
-                                                    ${{ number_format($monthPayment, 2) }}
-                                                </span>
+                                        <td class="border-r border-gray-200 px-3 py-3 text-center text-sm">
+                                            @if($monthPayment['total'] > 0)
+                                                <div class="space-y-1">
+                                                    @if($monthPayment['tuition'] > 0)
+                                                        <div class="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-bold text-green-800">
+                                                            ${{ number_format($monthPayment['tuition'], 2) }}
+                                                        </div>
+                                                    @endif
+                                                    @if($monthPayment['late_fee'] > 0)
+                                                        <div class="inline-flex items-center rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-800">
+                                                            +${{ number_format($monthPayment['late_fee'], 2) }}
+                                                        </div>
+                                                    @endif
+                                                </div>
                                             @else
                                                 <span class="text-gray-400">-</span>
                                             @endif
@@ -150,22 +159,40 @@
                                     $monthlyTotals = [];
                                     foreach($months as $month) {
                                         $monthKey = $month['number'].'-'.$month['year'];
-                                        $total = 0;
+                                        $tuitionTotal = 0;
+                                        $lateFeeTotal = 0;
                                         foreach($reportData as $student) {
-                                            $total += $student['monthly_payments'][$monthKey] ?? 0;
+                                            $payment = $student['monthly_payments'][$monthKey] ?? ['tuition' => 0, 'late_fee' => 0, 'total' => 0];
+                                            $tuitionTotal += $payment['tuition'] ?? 0;
+                                            $lateFeeTotal += $payment['late_fee'] ?? 0;
                                         }
-                                        $monthlyTotals[$monthKey] = $total;
+                                        $monthlyTotals[$monthKey] = [
+                                            'tuition' => $tuitionTotal,
+                                            'late_fee' => $lateFeeTotal,
+                                            'total' => $tuitionTotal + $lateFeeTotal,
+                                        ];
                                     }
                                 @endphp
 
                                 @foreach($months as $month)
                                     @php
                                         $monthKey = $month['number'].'-'.$month['year'];
-                                        $monthlyTotal = $monthlyTotals[$monthKey] ?? 0;
+                                        $monthlyTotal = $monthlyTotals[$monthKey] ?? ['tuition' => 0, 'late_fee' => 0, 'total' => 0];
                                     @endphp
-                                    <td class="border-r border-gray-300 bg-blue-100 px-3 py-3 text-center">
-                                        @if($monthlyTotal > 0)
-                                            ${{ number_format($monthlyTotal, 2) }}
+                                    <td class="border-r border-gray-300 px-3 py-3 text-center text-sm">
+                                        @if($monthlyTotal['total'] > 0)
+                                            <div class="space-y-1">
+                                                @if($monthlyTotal['tuition'] > 0)
+                                                    <div class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">
+                                                        ${{ number_format($monthlyTotal['tuition'], 2) }}
+                                                    </div>
+                                                @endif
+                                                @if($monthlyTotal['late_fee'] > 0)
+                                                    <div class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-bold">
+                                                        +${{ number_format($monthlyTotal['late_fee'], 2) }}
+                                                    </div>
+                                                @endif
+                                            </div>
                                         @else
                                             -
                                         @endif

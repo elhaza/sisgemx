@@ -84,10 +84,26 @@ class PaymentReportController extends Controller
                     ->where('year', $month['year'])
                     ->first();
 
-                $paid = $tuition && $tuition->isPaid() ? (float) $tuition->final_amount : 0;
                 $monthKey = $month['number'].'-'.$month['year'];
-                $studentData['monthly_payments'][$monthKey] = $paid;
-                $studentData['monthly_total'] += $paid;
+
+                if ($tuition && $tuition->isPaid()) {
+                    $tuitionAmount = (float) $tuition->final_amount;
+                    $lateFeeAmount = (float) ($tuition->late_fee_amount ?? 0);
+                    $totalAmount = $tuitionAmount + $lateFeeAmount;
+
+                    $studentData['monthly_payments'][$monthKey] = [
+                        'tuition' => $tuitionAmount,
+                        'late_fee' => $lateFeeAmount,
+                        'total' => $totalAmount,
+                    ];
+                    $studentData['monthly_total'] += $totalAmount;
+                } else {
+                    $studentData['monthly_payments'][$monthKey] = [
+                        'tuition' => 0,
+                        'late_fee' => 0,
+                        'total' => 0,
+                    ];
+                }
             }
 
             // Get extra charges (inscription, materials, etc.)
