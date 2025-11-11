@@ -16,6 +16,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Finance\DashboardController as FinanceDashboardController;
 use App\Http\Controllers\Finance\ExtraChargesController;
 use App\Http\Controllers\Finance\PaymentReceiptController as FinancePaymentReceiptController;
+use App\Http\Controllers\Finance\PaymentReportController;
 use App\Http\Controllers\Finance\StudentTuitionController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\Parent\DashboardController as ParentDashboardController;
@@ -108,6 +109,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('extra-charges/{chargeTemplate}', [ExtraChargesController::class, 'destroy'])->name('extra-charges.destroy');
         Route::post('extra-charges/{chargeTemplate}/bulk-assign', [ExtraChargesController::class, 'bulkAssign'])->name('extra-charges.bulk-assign');
         Route::post('assigned-charges/{assignedCharge}/mark-as-paid', [ExtraChargesController::class, 'markAsPaid'])->name('assigned-charges.mark-as-paid');
+
+        Route::get('payment-reports/consolidated', [PaymentReportController::class, 'consolidatedPayments'])->name('payment-reports.consolidated');
     });
 
     // Rutas para Maestros
