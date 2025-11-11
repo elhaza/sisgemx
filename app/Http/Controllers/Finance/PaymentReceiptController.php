@@ -60,19 +60,28 @@ class PaymentReceiptController extends Controller
 
         // Handle month view
         if ($view === 'month') {
-            $monthToDisplay = $month ?? now()->month;
-            $yearToDisplay = $year ?? now()->year;
-            $query->whereMonth('payment_date', $monthToDisplay)
-                ->whereYear('payment_date', $yearToDisplay);
-
             $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-            $monthLabel = $monthNames[(int) $monthToDisplay].' '.$yearToDisplay;
+
+            // If month is provided, filter by specific month; otherwise show all pending
+            if ($month) {
+                $monthToDisplay = (int) $month;
+                $yearToDisplay = $year ?? now()->year;
+                $query->where('payment_month', $monthToDisplay)
+                    ->where('payment_year', $yearToDisplay);
+                $monthLabel = $monthNames[$monthToDisplay].' '.$yearToDisplay;
+            } else {
+                // No specific month provided - show all for the year (or all if filtering by status like pending)
+                $yearToDisplay = $year ?? now()->year;
+                $query->where('payment_year', $yearToDisplay);
+                $monthLabel = 'Todos los meses de '.$yearToDisplay;
+            }
         } elseif ($activeSchoolYear && $view === 'school_year') {
             // Filter by school year months
-            $query->whereBetween('payment_date', [
-                $activeSchoolYear->start_date,
-                $activeSchoolYear->end_date,
-            ]);
+            $query->where(function ($q) use ($activeSchoolYear) {
+                // Include receipts with payment_month/year in school year range
+                $q->whereYear('payment_date', '>=', $activeSchoolYear->start_date->year)
+                    ->whereYear('payment_date', '<=', $activeSchoolYear->end_date->year);
+            });
         }
 
         $receipts = $query->latest()->paginate(15)->withQueryString();
@@ -83,10 +92,16 @@ class PaymentReceiptController extends Controller
             ->where('is_paid', true);
 
         if ($view === 'month') {
-            $monthToDisplay = $month ?: now()->month;
             $yearToDisplay = $year ?: now()->year;
-            $paymentQuery->where('month', $monthToDisplay)
-                ->where('year', $yearToDisplay);
+            if ($month) {
+                // Specific month selected
+                $monthToDisplay = (int) $month;
+                $paymentQuery->where('month', $monthToDisplay)
+                    ->where('year', $yearToDisplay);
+            } else {
+                // No specific month - show all for the year
+                $paymentQuery->where('year', $yearToDisplay);
+            }
         } elseif ($activeSchoolYear && $view === 'school_year') {
             // Get all payments in school year months
             $paymentQuery->whereIn(DB::raw('CONCAT(year, "-", LPAD(month, 2, "0"))'),
@@ -156,7 +171,6 @@ class PaymentReceiptController extends Controller
         $validatedReceiptsCount = PaymentReceipt::where('status', ReceiptStatus::Validated)->count() + $adminPayments->count();
 
         // Calculate income based on view
-        $monthToCalculate = $month ?? now()->month;
         $yearToCalculate = $year ?? now()->year;
 
         $incomeCurrentMonth = 0;
@@ -166,103 +180,128 @@ class PaymentReceiptController extends Controller
         $incomeLabel = 'Ingresos';
 
         if ($view === 'month') {
-            // Calculate income for the selected month
-            $incomeCurrentMonth = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                ->whereMonth('payment_date', $monthToCalculate)
-                ->whereYear('payment_date', $yearToCalculate)
-                ->sum('amount_paid');
+            if ($month) {
+                // Specific month selected - show income for that month
+                $monthToCalculate = (int) $month;
 
-            // Add admin payments for current month
-            $incomeCurrentMonth += Payment::where('is_paid', true)
-                ->where('month', $monthToCalculate)
-                ->where('year', $yearToCalculate)
-                ->sum('amount');
+                // Calculate income for the selected month
+                $incomeCurrentMonth = PaymentReceipt::where('status', ReceiptStatus::Validated)
+                    ->where('payment_month', $monthToCalculate)
+                    ->where('payment_year', $yearToCalculate)
+                    ->sum('amount_paid');
 
-            // Calculate accumulated income from January to current month
-            $incomeAccumulated = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                ->whereYear('payment_date', $yearToCalculate)
-                ->whereBetween('payment_date', [
-                    now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
-                    now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
-                ])
-                ->sum('amount_paid');
+                // Add admin payments for current month
+                $incomeCurrentMonth += Payment::where('is_paid', true)
+                    ->where('month', $monthToCalculate)
+                    ->where('year', $yearToCalculate)
+                    ->sum('amount');
 
-            // Add admin payments accumulated (including advance payments made in current month)
-            // Use paid_at to include payments made in the current month, regardless of what month they're for
-            $incomeAccumulated += Payment::where('is_paid', true)
-                ->whereBetween('paid_at', [
-                    now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
-                    now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
-                ])
-                ->sum('amount');
+                // Calculate accumulated income from January to current month
+                $incomeAccumulated = PaymentReceipt::where('status', ReceiptStatus::Validated)
+                    ->where('payment_year', $yearToCalculate)
+                    ->whereBetween('payment_month', [1, $monthToCalculate])
+                    ->sum('amount_paid');
 
-            // Get monthly breakdown for details
-            $incomeMonthlyDetails = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                ->whereYear('payment_date', $yearToCalculate)
-                ->whereBetween('payment_date', [
-                    now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
-                    now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
-                ])
-                ->selectRaw('MONTH(payment_date) as month, SUM(amount_paid) as total')
-                ->groupByRaw('MONTH(payment_date)')
-                ->get();
+                // Add admin payments accumulated (including advance payments made in current month)
+                // Use paid_at to include payments made in the current month, regardless of what month they're for
+                $incomeAccumulated += Payment::where('is_paid', true)
+                    ->whereBetween('paid_at', [
+                        now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
+                        now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
+                    ])
+                    ->sum('amount');
 
-            // Add admin payments breakdown
-            $adminMonthlyDetails = Payment::where('is_paid', true)
-                ->where('year', $yearToCalculate)
-                ->whereBetween(DB::raw('CONCAT(year, "-", LPAD(month, 2, "0"))'), [
-                    sprintf('%04d-01', $yearToCalculate),
-                    sprintf('%04d-%02d', $yearToCalculate, $monthToCalculate),
-                ])
-                ->selectRaw('month, SUM(amount) as total')
-                ->groupByRaw('month')
-                ->get();
+                // Get monthly breakdown for details
+                $incomeMonthlyDetails = PaymentReceipt::where('status', ReceiptStatus::Validated)
+                    ->where('payment_year', $yearToCalculate)
+                    ->whereBetween('payment_month', [1, $monthToCalculate])
+                    ->selectRaw('payment_month as month, SUM(amount_paid) as total')
+                    ->groupByRaw('payment_month')
+                    ->get();
+            } else {
+                // No specific month - show total for all months in year
+                $incomeCurrentMonth = PaymentReceipt::where('status', ReceiptStatus::Validated)
+                    ->where('payment_year', $yearToCalculate)
+                    ->sum('amount_paid');
 
-            // Merge the two collections
-            foreach ($adminMonthlyDetails as $adminDetail) {
-                $existing = $incomeMonthlyDetails->firstWhere('month', $adminDetail->month);
-                if ($existing) {
-                    $existing->total += $adminDetail->total;
-                } else {
-                    $incomeMonthlyDetails->push($adminDetail);
-                }
+                // Add admin payments for entire year
+                $incomeCurrentMonth += Payment::where('is_paid', true)
+                    ->where('year', $yearToCalculate)
+                    ->sum('amount');
+
+                // Get monthly breakdown for all months
+                $incomeMonthlyDetails = PaymentReceipt::where('status', ReceiptStatus::Validated)
+                    ->where('payment_year', $yearToCalculate)
+                    ->selectRaw('payment_month as month, SUM(amount_paid) as total')
+                    ->groupByRaw('payment_month')
+                    ->get();
             }
 
-            $incomeMonthlyDetails = $incomeMonthlyDetails->sortBy('month');
+            // Only show admin details and advance payments if a specific month is selected
+            if ($month) {
+                // Add admin payments breakdown
+                $adminMonthlyDetails = Payment::where('is_paid', true)
+                    ->where('year', $yearToCalculate)
+                    ->whereBetween(DB::raw('CONCAT(year, "-", LPAD(month, 2, "0"))'), [
+                        sprintf('%04d-01', $yearToCalculate),
+                        sprintf('%04d-%02d', $yearToCalculate, $monthToCalculate),
+                    ])
+                    ->selectRaw('month, SUM(amount) as total')
+                    ->groupByRaw('month')
+                    ->get();
 
-            // Get advance payments made in current month for future months
-            $advancePayments = Payment::where('is_paid', true)
-                ->whereBetween('paid_at', [
-                    now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->startOfMonth(),
-                    now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
-                ])
-                ->where(DB::raw('CONCAT(year, "-", LPAD(month, 2, "0"))'), '>', sprintf('%04d-%02d', $yearToCalculate, $monthToCalculate))
-                ->selectRaw('month, year, SUM(amount) as total')
-                ->groupByRaw('month, year')
-                ->get();
+                // Merge the two collections
+                foreach ($adminMonthlyDetails as $adminDetail) {
+                    $existing = $incomeMonthlyDetails->firstWhere('month', $adminDetail->month);
+                    if ($existing) {
+                        $existing->total += $adminDetail->total;
+                    } else {
+                        $incomeMonthlyDetails->push($adminDetail);
+                    }
+                }
 
-            // Create a label for advance payments
-            $advancePaymentsDetails = collect();
-            if ($advancePayments->count() > 0) {
+                $incomeMonthlyDetails = $incomeMonthlyDetails->sortBy('month');
+
+                // Get advance payments made in current month for future months
+                $advancePayments = Payment::where('is_paid', true)
+                    ->whereBetween('paid_at', [
+                        now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->startOfMonth(),
+                        now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
+                    ])
+                    ->where(DB::raw('CONCAT(year, "-", LPAD(month, 2, "0"))'), '>', sprintf('%04d-%02d', $yearToCalculate, $monthToCalculate))
+                    ->selectRaw('month, year, SUM(amount) as total')
+                    ->groupByRaw('month, year')
+                    ->get();
+
+                // Create a label for advance payments
+                $advancePaymentsDetails = collect();
+                if ($advancePayments->count() > 0) {
+                    $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                    foreach ($advancePayments as $advance) {
+                        $advancePaymentsDetails->push((object) [
+                            'label' => 'Adelanto para '.$monthNames[(int) $advance->month].' '.$advance->year,
+                            'total' => $advance->total,
+                        ]);
+                    }
+                }
+
+                // Build label
                 $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                foreach ($advancePayments as $advance) {
-                    $advancePaymentsDetails->push((object) [
-                        'label' => 'Adelanto para '.$monthNames[(int) $advance->month].' '.$advance->year,
-                        'total' => $advance->total,
-                    ]);
-                }
+                $incomeLabel = 'Ingresos de '.$monthNames[(int) $monthToCalculate].' '.$yearToCalculate;
+            } else {
+                // When no specific month, show all month breakdown without admin details (already included above)
+                $incomeMonthlyDetails = $incomeMonthlyDetails->sortBy('month');
+                $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                $incomeLabel = 'Ingresos de '.$yearToCalculate;
             }
-
-            // Build label
-            $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-            $incomeLabel = 'Ingresos de '.$monthNames[(int) $monthToCalculate].' '.$yearToCalculate;
         } else {
             // School year view - calculate total for entire school year
             $incomeCurrentMonth = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                ->whereBetween('payment_date', [
-                    $activeSchoolYear->start_date,
-                    $activeSchoolYear->end_date,
-                ])
+                ->whereIn(DB::raw('CONCAT(payment_year, "-", LPAD(payment_month, 2, "0"))'),
+                    $schoolYearMonths->map(function ($m) {
+                        return sprintf('%04d-%02d', $m['year'], $m['month']);
+                    })->toArray()
+                )
                 ->sum('amount_paid');
 
             // Add admin payments for school year
@@ -285,16 +324,24 @@ class PaymentReceiptController extends Controller
             ->with(['student.user', 'parent', 'registeredBy']);
 
         if ($view === 'month') {
-            $monthToDisplay = $month ?? now()->month;
             $yearToDisplay = $year ?? now()->year;
-            $validatedReceiptsList = $validatedReceiptsList
-                ->whereMonth('payment_date', $monthToDisplay)
-                ->whereYear('payment_date', $yearToDisplay);
+            if ($month) {
+                // Specific month selected
+                $monthToDisplay = (int) $month;
+                $validatedReceiptsList = $validatedReceiptsList
+                    ->where('payment_month', $monthToDisplay)
+                    ->where('payment_year', $yearToDisplay);
+            } else {
+                // No specific month - show all for the year
+                $validatedReceiptsList = $validatedReceiptsList
+                    ->where('payment_year', $yearToDisplay);
+            }
         } elseif ($activeSchoolYear && $view === 'school_year') {
-            $validatedReceiptsList = $validatedReceiptsList->whereBetween('payment_date', [
-                $activeSchoolYear->start_date,
-                $activeSchoolYear->end_date,
-            ]);
+            $validatedReceiptsList = $validatedReceiptsList->whereIn(DB::raw('CONCAT(payment_year, "-", LPAD(payment_month, 2, "0"))'),
+                $schoolYearMonths->map(function ($m) {
+                    return sprintf('%04d-%02d', $m['year'], $m['month']);
+                })->toArray()
+            );
         }
 
         $validatedReceiptsList = $validatedReceiptsList->get()->map(function ($receipt) {
@@ -384,6 +431,11 @@ class PaymentReceiptController extends Controller
 
         $validated['receipt_image'] = $imagePath;
         $validated['registered_by_id'] = auth()->id();
+
+        // Extract payment_month and payment_year from payment_date
+        $paymentDate = \Carbon\Carbon::parse($validated['payment_date']);
+        $validated['payment_month'] = $paymentDate->month;
+        $validated['payment_year'] = $paymentDate->year;
 
         if ($validated['status'] === 'validated') {
             $validated['validated_by'] = auth()->id();

@@ -31,7 +31,7 @@
 
             <!-- Estadísticas -->
             <div class="mb-6 grid gap-6 md:grid-cols-4">
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+                <div class="overflow-hidden rounded-lg bg-white shadow-sm cursor-pointer hover:shadow-md transition-shadow" onclick="filterPending()">
                     <div class="p-6">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
@@ -410,5 +410,15 @@
                 closeValidatedReceiptsModal();
             }
         });
+
+        function filterPending() {
+            // Filter by pending status without month restriction to show all 38 pending receipts
+            const url = new URL('{{ route('finance.payment-receipts.index') }}');
+            url.searchParams.set('view', '{{ request('view', 'month') }}');
+            url.searchParams.set('status', 'pending');
+            url.searchParams.set('year', '{{ request('year', now()->year) }}');
+            // Don't set month parameter - this shows all pending
+            window.location.href = url.toString();
+        }
     </script>
 </x-app-layout>
