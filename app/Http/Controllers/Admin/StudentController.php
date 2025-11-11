@@ -441,7 +441,8 @@ class StudentController extends Controller
                 ->with('error', 'No se puede liquidar esta mensualidad. Debe liquidar primero las mensualidades anteriores.');
         }
 
-        $totalAmount = $studentTuition->final_amount + $studentTuition->late_fee_amount;
+        $calculatedLateFee = $studentTuition->calculated_late_fee_amount;
+        $totalAmount = $studentTuition->final_amount + $calculatedLateFee;
 
         // Create a payment record for this tuition
         Payment::create([
@@ -457,9 +458,10 @@ class StudentController extends Controller
             'paid_at' => now(),
         ]);
 
-        // Update late_fee_paid to track that fees were paid
+        // Update late_fee_amount and late_fee_paid to track calculated fees
         $studentTuition->update([
-            'late_fee_paid' => $studentTuition->late_fee_amount,
+            'late_fee_amount' => $calculatedLateFee,
+            'late_fee_paid' => $calculatedLateFee,
         ]);
 
         return redirect()->route('admin.students.show', $student)
