@@ -222,6 +222,7 @@ class PaymentReportController extends Controller
             'reportData' => $reportData,
             'activeSchoolYear' => $activeSchoolYear,
             'totalDebt' => $totalDebt,
+            'currentDate' => now(),
         ]);
     }
 

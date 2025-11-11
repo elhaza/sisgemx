@@ -62,7 +62,11 @@
                                 <th class="border-r border-gray-200 bg-gray-50"></th>
 
                                 @foreach($months as $month)
-                                    <th class="border-r border-gray-200 bg-red-50 px-3 py-2 text-center text-xs font-medium text-red-700 min-w-max">
+                                    @php
+                                        $isMonthFuture = ($month['year'] > $currentDate->year) || ($month['year'] == $currentDate->year && $month['number'] > $currentDate->month);
+                                        $headerClass = $isMonthFuture ? 'bg-gray-100 text-gray-500' : 'bg-red-50 text-red-700';
+                                    @endphp
+                                    <th class="border-r border-gray-200 {{ $headerClass }} px-3 py-2 text-center text-xs font-medium min-w-max">
                                         {{ substr($month['name'], 0, 3) }} {{ $month['year'] }}
                                     </th>
                                 @endforeach
@@ -91,8 +95,10 @@
                                         @php
                                             $monthKey = $month['number'].'-'.$month['year'];
                                             $monthDebt = $student['monthly_debts'][$monthKey] ?? ['tuition' => 0, 'late_fee' => 0, 'total' => 0];
+                                            $isMonthFuture = ($month['year'] > $currentDate->year) || ($month['year'] == $currentDate->year && $month['number'] > $currentDate->month);
+                                            $cellClass = $isMonthFuture ? 'bg-gray-100' : '';
                                         @endphp
-                                        <td class="border-r border-gray-200 px-3 py-3 text-center text-sm">
+                                        <td class="border-r border-gray-200 px-3 py-3 text-center text-sm {{ $cellClass }}">
                                             @if($monthDebt['total'] > 0)
                                                 <div class="space-y-1">
                                                     @if($monthDebt['tuition'] > 0)
@@ -151,8 +157,10 @@
                                     @php
                                         $monthKey = $month['number'].'-'.$month['year'];
                                         $monthlyTotal = $monthlyTotals[$monthKey] ?? ['tuition' => 0, 'late_fee' => 0, 'total' => 0];
+                                        $isMonthFuture = ($month['year'] > $currentDate->year) || ($month['year'] == $currentDate->year && $month['number'] > $currentDate->month);
+                                        $cellClass = $isMonthFuture ? 'bg-gray-200' : '';
                                     @endphp
-                                    <td class="border-r border-gray-300 px-3 py-3 text-center text-sm">
+                                    <td class="border-r border-gray-300 px-3 py-3 text-center text-sm {{ $cellClass }}">
                                         @if($monthlyTotal['total'] > 0)
                                             <div class="space-y-1">
                                                 @if($monthlyTotal['tuition'] > 0)
