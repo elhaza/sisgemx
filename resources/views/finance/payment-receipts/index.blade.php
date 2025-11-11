@@ -319,7 +319,22 @@
                             </div>
                         @endif
                     @else
-                        <p class="text-center text-gray-500">Desglose de ingresos por ciclo escolar no disponible</p>
+                        <!-- School Year View -->
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Ingresos por Mes del Ciclo Escolar</h4>
+                            @forelse($incomeMonthlyDetails as $detail)
+                                @php
+                                    $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                                    $monthName = $monthNames[$detail->month] ?? 'Mes desconocido';
+                                @endphp
+                                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                    <span class="text-gray-700">{{ $monthName }} {{ $detail->year }}</span>
+                                    <span class="font-semibold text-gray-900">${{ number_format($detail->total, 2) }}</span>
+                                </div>
+                            @empty
+                                <p class="text-center text-gray-500 text-sm">No hay ingresos registrados en este ciclo escolar</p>
+                            @endforelse
+                        </div>
                     @endif
                 </div>
             </div>

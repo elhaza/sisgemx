@@ -313,8 +313,51 @@ class PaymentReceiptController extends Controller
                 )
                 ->sum('amount');
 
+            // Get monthly breakdown for school year
+            $incomeMonthlyDetails = PaymentReceipt::where('status', ReceiptStatus::Validated)
+                ->whereIn(DB::raw('CONCAT(payment_year, "-", LPAD(payment_month, 2, "0"))'),
+                    $schoolYearMonths->map(function ($m) {
+                        return sprintf('%04d-%02d', $m['year'], $m['month']);
+                    })->toArray()
+                )
+                ->selectRaw('payment_year as year, payment_month as month, SUM(amount_paid) as total')
+                ->groupByRaw('payment_year, payment_month')
+                ->get();
+
+            // Add admin payments breakdown for school year
+            $adminMonthlyDetails = Payment::where('is_paid', true)
+                ->whereIn(DB::raw('CONCAT(year, "-", LPAD(month, 2, "0"))'),
+                    $schoolYearMonths->map(function ($m) {
+                        return sprintf('%04d-%02d', $m['year'], $m['month']);
+                    })->toArray()
+                )
+                ->selectRaw('year, month, SUM(amount) as total')
+                ->groupByRaw('year, month')
+                ->get();
+
+            // Merge the two collections
+            foreach ($adminMonthlyDetails as $adminDetail) {
+                $existing = $incomeMonthlyDetails->first(function ($item) use ($adminDetail) {
+                    return $item->month == $adminDetail->month && $item->year == $adminDetail->year;
+                });
+                if ($existing) {
+                    $existing->total += $adminDetail->total;
+                } else {
+                    $incomeMonthlyDetails->push((object) [
+                        'year' => $adminDetail->year,
+                        'month' => $adminDetail->month,
+                        'total' => $adminDetail->total,
+                    ]);
+                }
+            }
+
+            // Sort by year then month
+            $incomeMonthlyDetails = $incomeMonthlyDetails->sortBy(function ($item) {
+                return $item->year * 100 + $item->month;
+            });
+
             $incomeAccumulated = 0;
-            $incomeLabel = 'Ingresos';
+            $incomeLabel = 'Ingresos del ciclo escolar';
         }
 
         $rejectedReceiptsCount = PaymentReceipt::where('status', ReceiptStatus::Rejected)->count();
