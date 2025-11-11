@@ -179,6 +179,22 @@
                                     Estudiantes con Descuento
                                 </a>
                             </li>
+                            <li>
+                                <a href="{{ route('finance.payment-reports.consolidated') }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    Reporte de Pagos Concentrado
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('finance.payment-reports.debt') }}" class="flex items-center text-red-600 hover:text-red-800">
+                                    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4v2m0 5v2m0-16v2M9 7h6a2 2 0 012 2v10a2 2 0 01-2 2H9a2 2 0 01-2-2V9a2 2 0 012-2z"></path>
+                                    </svg>
+                                    Reporte de Deudas
+                                </a>
+                            </li>
                             <li class="text-sm text-gray-600">
                                 Pendientes de pago: <span class="font-semibold text-gray-900">${{ number_format($totalPendingPayments, 2) }}</span>
                             </li>

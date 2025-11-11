@@ -111,6 +111,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('assigned-charges/{assignedCharge}/mark-as-paid', [ExtraChargesController::class, 'markAsPaid'])->name('assigned-charges.mark-as-paid');
 
         Route::get('payment-reports/consolidated', [PaymentReportController::class, 'consolidatedPayments'])->name('payment-reports.consolidated');
+        Route::get('payment-reports/debt', [PaymentReportController::class, 'debtReport'])->name('payment-reports.debt');
     });
 
     // Rutas para Maestros
