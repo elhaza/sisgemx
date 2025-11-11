@@ -325,7 +325,7 @@ class PaymentReportController extends Controller
             'totalDebt' => $totalDebt,
             'totalDebtDue' => $totalDebtDue,
             'currentDate' => $currentDate,
-        ]);
+        ])->setPaper('A4', 'landscape');
 
         return $pdf->download('reporte-deudas-'.now()->format('Y-m-d').'.pdf');
     }

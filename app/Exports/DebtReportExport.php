@@ -66,12 +66,7 @@ class DebtReportExport implements FromArray, WithHeadings, WithStyles
                     $lateFeeAmount = (float) ($tuition->late_fee_amount ?? 0);
                     $total = $tuitionAmount + $lateFeeAmount;
 
-                    // Format as "tuition + late_fee"
-                    if ($lateFeeAmount > 0) {
-                        $studentData[$columnHeader] = $tuitionAmount.' + '.$lateFeeAmount;
-                    } else {
-                        $studentData[$columnHeader] = $tuitionAmount;
-                    }
+                    $studentData[$columnHeader] = $total;
                 } else {
                     $studentData[$columnHeader] = '';
                 }
@@ -130,11 +125,8 @@ class DebtReportExport implements FromArray, WithHeadings, WithStyles
                 }
             }
 
-            if ($lateFeeTotal > 0) {
-                $totalsRow[$columnHeader] = $tuitionTotal.' + '.$lateFeeTotal;
-            } else {
-                $totalsRow[$columnHeader] = $tuitionTotal > 0 ? $tuitionTotal : '';
-            }
+            $columnTotal = $tuitionTotal + $lateFeeTotal;
+            $totalsRow[$columnHeader] = $columnTotal > 0 ? $columnTotal : '';
         }
 
         // Calculate total column values
