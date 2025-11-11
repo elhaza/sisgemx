@@ -70,7 +70,7 @@
 
                                 @foreach($months as $month)
                                     <th class="border-r border-gray-200 bg-blue-50 px-3 py-2 text-center text-xs font-medium text-blue-700 min-w-max">
-                                        {{ substr($month['name'], 0, 3) }}
+                                        {{ substr($month['name'], 0, 3) }} {{ $month['year'] }}
                                     </th>
                                 @endforeach
 
@@ -100,10 +100,14 @@
 
                                     <!-- Pagos Mensuales -->
                                     @foreach($months as $month)
+                                        @php
+                                            $monthKey = $month['number'].'-'.$month['year'];
+                                            $monthPayment = $student['monthly_payments'][$monthKey] ?? 0;
+                                        @endphp
                                         <td class="border-r border-gray-200 px-3 py-3 text-center text-sm font-medium">
-                                            @if($student['monthly_payments'][$month['number']] > 0)
+                                            @if($monthPayment > 0)
                                                 <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-800">
-                                                    ${{ number_format($student['monthly_payments'][$month['number']], 2) }}
+                                                    ${{ number_format($monthPayment, 2) }}
                                                 </span>
                                             @else
                                                 <span class="text-gray-400">-</span>
@@ -143,18 +147,23 @@
                                 @php
                                     $monthlyTotals = [];
                                     foreach($months as $month) {
+                                        $monthKey = $month['number'].'-'.$month['year'];
                                         $total = 0;
                                         foreach($reportData as $student) {
-                                            $total += $student['monthly_payments'][$month['number']];
+                                            $total += $student['monthly_payments'][$monthKey] ?? 0;
                                         }
-                                        $monthlyTotals[$month['number']] = $total;
+                                        $monthlyTotals[$monthKey] = $total;
                                     }
                                 @endphp
 
                                 @foreach($months as $month)
+                                    @php
+                                        $monthKey = $month['number'].'-'.$month['year'];
+                                        $monthlyTotal = $monthlyTotals[$monthKey] ?? 0;
+                                    @endphp
                                     <td class="border-r border-gray-300 bg-blue-100 px-3 py-3 text-center">
-                                        @if($monthlyTotals[$month['number']] > 0)
-                                            ${{ number_format($monthlyTotals[$month['number']], 2) }}
+                                        @if($monthlyTotal > 0)
+                                            ${{ number_format($monthlyTotal, 2) }}
                                         @else
                                             -
                                         @endif

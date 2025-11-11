@@ -35,13 +35,21 @@ class PaymentReportController extends Controller
             ->orderBy('id')
             ->get();
 
-        // Get all months (1-12)
-        $months = collect(range(1, 12))->map(function ($month) {
-            return [
-                'number' => $month,
-                'name' => $this->getMonthName($month),
-            ];
-        });
+        // Get all months from this school year's tuitions (school year can span multiple years)
+        $months = StudentTuition::where('school_year_id', $activeSchoolYear->id)
+            ->distinct()
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get(['month', 'year'])
+            ->map(function ($tuition) {
+                return [
+                    'number' => $tuition->month,
+                    'year' => $tuition->year,
+                    'name' => $this->getMonthName($tuition->month),
+                ];
+            })
+            ->unique(fn ($m) => $m['number'].'-'.$m['year'])
+            ->values();
 
         // Get all active charge types from templates
         $chargeTypes = ChargeTemplate::where('school_year_id', $activeSchoolYear->id)
@@ -57,7 +65,7 @@ class PaymentReportController extends Controller
             ->groupBy('charge_type');
 
         // Build report data
-        $reportData = $students->map(function (Student $student) use ($months, $chargeTemplates, $activeSchoolYear) {
+        $reportData = $students->map(function (Student $student) use ($months, $chargeTemplates) {
             $studentData = [
                 'id' => $student->id,
                 'name' => $student->user->full_name,
@@ -73,11 +81,12 @@ class PaymentReportController extends Controller
             foreach ($months as $month) {
                 $tuition = StudentTuition::where('student_id', $student->id)
                     ->where('month', $month['number'])
-                    ->where('year', $activeSchoolYear->year)
+                    ->where('year', $month['year'])
                     ->first();
 
                 $paid = $tuition && $tuition->isPaid() ? (float) $tuition->final_amount : 0;
-                $studentData['monthly_payments'][$month['number']] = $paid;
+                $monthKey = $month['number'].'-'.$month['year'];
+                $studentData['monthly_payments'][$monthKey] = $paid;
                 $studentData['monthly_total'] += $paid;
             }
 
