@@ -112,6 +112,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('payment-reports/consolidated', [PaymentReportController::class, 'consolidatedPayments'])->name('payment-reports.consolidated');
         Route::get('payment-reports/debt', [PaymentReportController::class, 'debtReport'])->name('payment-reports.debt');
+        Route::get('payment-reports/debt/export/pdf', [PaymentReportController::class, 'exportDebtToPdf'])->name('payment-reports.debt.export-pdf');
+        Route::get('payment-reports/debt/export/excel', [PaymentReportController::class, 'exportDebtToExcel'])->name('payment-reports.debt.export-excel');
     });
 
     // Rutas para Maestros

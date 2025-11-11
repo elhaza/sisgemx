@@ -8,6 +8,9 @@ use App\Models\SchoolYear;
 use App\Models\Student;
 use App\Models\StudentAssignedCharge;
 use App\Models\StudentTuition;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PaymentReportController extends Controller
 {
@@ -234,6 +237,108 @@ class PaymentReportController extends Controller
             'totalDebtDue' => $totalDebtDue,
             'currentDate' => now(),
         ]);
+    }
+
+    /**
+     * Export debt report to PDF
+     */
+    public function exportDebtToPdf(): StreamedResponse
+    {
+        $activeSchoolYear = SchoolYear::where('is_active', true)->first();
+
+        if (! $activeSchoolYear) {
+            return redirect()->route('finance.payment-reports.debt')->with('error', 'No active school year');
+        }
+
+        // Get all active students
+        $students = Student::where('school_year_id', $activeSchoolYear->id)
+            ->where('status', 'active')
+            ->with(['user', 'schoolGrade'])
+            ->orderBy('id')
+            ->get();
+
+        // Get all months from this school year's tuitions
+        $months = StudentTuition::where('school_year_id', $activeSchoolYear->id)
+            ->distinct()
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get(['month', 'year'])
+            ->map(function ($tuition) {
+                return [
+                    'number' => $tuition->month,
+                    'year' => $tuition->year,
+                    'name' => $this->getMonthName($tuition->month),
+                ];
+            })
+            ->unique(fn ($m) => $m['number'].'-'.$m['year'])
+            ->values();
+
+        // Build report data - only include students with debt
+        $currentDate = now();
+        $reportData = $students->map(function (Student $student) use ($months, $currentDate) {
+            $studentData = [
+                'id' => $student->id,
+                'name' => $student->user->full_name,
+                'grade' => $student->schoolGrade->grade_level.'° - '.$student->schoolGrade->name,
+                'monthly_debts' => [],
+                'total_debt' => 0,
+                'total_debt_due' => 0,
+            ];
+
+            foreach ($months as $month) {
+                $tuition = StudentTuition::where('student_id', $student->id)
+                    ->where('month', $month['number'])
+                    ->where('year', $month['year'])
+                    ->first();
+
+                $monthKey = $month['number'].'-'.$month['year'];
+
+                if ($tuition && ! $tuition->isPaid()) {
+                    $tuitionAmount = (float) $tuition->final_amount;
+                    $lateFeeAmount = (float) ($tuition->late_fee_amount ?? 0);
+                    $totalAmount = $tuitionAmount + $lateFeeAmount;
+
+                    $studentData['monthly_debts'][$monthKey] = [
+                        'tuition' => $tuitionAmount,
+                        'late_fee' => $lateFeeAmount,
+                        'total' => $totalAmount,
+                    ];
+                    $studentData['total_debt'] += $totalAmount;
+
+                    $isMonthFuture = ($month['year'] > $currentDate->year) || ($month['year'] == $currentDate->year && $month['number'] > $currentDate->month);
+                    if (! $isMonthFuture) {
+                        $studentData['total_debt_due'] += $totalAmount;
+                    }
+                }
+            }
+
+            return $studentData;
+        })->filter(fn ($student) => $student['total_debt'] > 0);
+
+        $totalDebt = $reportData->sum('total_debt');
+        $totalDebtDue = $reportData->sum('total_debt_due');
+
+        $pdf = Pdf::loadView('finance.payment-reports.consolidated-debt-pdf', [
+            'activeSchoolYear' => $activeSchoolYear,
+            'months' => $months,
+            'reportData' => $reportData,
+            'totalDebt' => $totalDebt,
+            'totalDebtDue' => $totalDebtDue,
+            'currentDate' => $currentDate,
+        ]);
+
+        return $pdf->download('reporte-deudas-'.now()->format('Y-m-d').'.pdf');
+    }
+
+    /**
+     * Export debt report to Excel
+     */
+    public function exportDebtToExcel(): StreamedResponse
+    {
+        return Excel::download(
+            new \App\Exports\DebtReportExport,
+            'reporte-deudas-'.now()->format('Y-m-d').'.xlsx'
+        );
     }
 
     /**
