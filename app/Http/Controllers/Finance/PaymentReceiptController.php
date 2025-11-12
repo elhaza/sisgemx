@@ -185,10 +185,10 @@ class PaymentReceiptController extends Controller
                 // Specific month selected - show income for that month
                 $monthToCalculate = (int) $month;
 
-                // Calculate income for the selected month (based on paid_at date)
+                // Calculate income for the selected month (based on payment_date)
                 $incomeCurrentMonth = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                    ->whereMonth('paid_at', $monthToCalculate)
-                    ->whereYear('paid_at', $yearToCalculate)
+                    ->whereMonth('payment_date', $monthToCalculate)
+                    ->whereYear('payment_date', $yearToCalculate)
                     ->sum('amount_paid');
 
                 // Add admin payments for current month (based on paid_at date)
@@ -197,9 +197,9 @@ class PaymentReceiptController extends Controller
                     ->whereYear('paid_at', $yearToCalculate)
                     ->sum('amount');
 
-                // Calculate accumulated income from January to current month (based on paid_at date)
+                // Calculate accumulated income from January to current month (based on payment_date)
                 $incomeAccumulated = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                    ->whereBetween('paid_at', [
+                    ->whereBetween('payment_date', [
                         now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
                         now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
                     ])
@@ -213,19 +213,19 @@ class PaymentReceiptController extends Controller
                     ])
                     ->sum('amount');
 
-                // Get monthly breakdown for details (based on paid_at date)
+                // Get monthly breakdown for details (based on payment_date)
                 $incomeMonthlyDetails = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                    ->whereBetween('paid_at', [
+                    ->whereBetween('payment_date', [
                         now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
                         now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
                     ])
-                    ->selectRaw('MONTH(paid_at) as month, SUM(amount_paid) as total')
-                    ->groupByRaw('MONTH(paid_at)')
+                    ->selectRaw('MONTH(payment_date) as month, SUM(amount_paid) as total')
+                    ->groupByRaw('MONTH(payment_date)')
                     ->get();
             } else {
-                // No specific month - show total for all months in year (based on paid_at date)
+                // No specific month - show total for all months in year (based on payment_date)
                 $incomeCurrentMonth = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                    ->whereYear('paid_at', $yearToCalculate)
+                    ->whereYear('payment_date', $yearToCalculate)
                     ->sum('amount_paid');
 
                 // Add admin payments for entire year (based on paid_at date)
@@ -233,11 +233,11 @@ class PaymentReceiptController extends Controller
                     ->whereYear('paid_at', $yearToCalculate)
                     ->sum('amount');
 
-                // Get monthly breakdown for all months (based on paid_at date)
+                // Get monthly breakdown for all months (based on payment_date)
                 $incomeMonthlyDetails = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                    ->whereYear('paid_at', $yearToCalculate)
-                    ->selectRaw('MONTH(paid_at) as month, SUM(amount_paid) as total')
-                    ->groupByRaw('MONTH(paid_at)')
+                    ->whereYear('payment_date', $yearToCalculate)
+                    ->selectRaw('MONTH(payment_date) as month, SUM(amount_paid) as total')
+                    ->groupByRaw('MONTH(payment_date)')
                     ->get();
             }
 
@@ -313,7 +313,7 @@ class PaymentReceiptController extends Controller
             $endDate = now()->setYear($lastMonth['year'])->setMonth($lastMonth['month'])->endOfMonth();
 
             $incomeCurrentMonth = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                ->whereBetween('paid_at', [$startDate, $endDate])
+                ->whereBetween('payment_date', [$startDate, $endDate])
                 ->sum('amount_paid');
 
             // Add admin payments for school year (based on paid_at date)
@@ -321,11 +321,11 @@ class PaymentReceiptController extends Controller
                 ->whereBetween('paid_at', [$startDate, $endDate])
                 ->sum('amount');
 
-            // Get monthly breakdown for school year (based on paid_at date)
+            // Get monthly breakdown for school year (based on payment_date)
             $incomeMonthlyDetails = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                ->whereBetween('paid_at', [$startDate, $endDate])
-                ->selectRaw('YEAR(paid_at) as year, MONTH(paid_at) as month, SUM(amount_paid) as total')
-                ->groupByRaw('YEAR(paid_at), MONTH(paid_at)')
+                ->whereBetween('payment_date', [$startDate, $endDate])
+                ->selectRaw('YEAR(payment_date) as year, MONTH(payment_date) as month, SUM(amount_paid) as total')
+                ->groupByRaw('YEAR(payment_date), MONTH(payment_date)')
                 ->get();
 
             // Add admin payments breakdown for school year (based on paid_at date)
