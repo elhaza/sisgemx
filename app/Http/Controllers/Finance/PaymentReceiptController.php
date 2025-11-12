@@ -185,84 +185,104 @@ class PaymentReceiptController extends Controller
                 // Specific month selected - show income for that month
                 $monthToCalculate = (int) $month;
 
-                // Calculate income for the selected month (based on payment_date)
-                $incomeCurrentMonth = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                    ->whereMonth('payment_date', $monthToCalculate)
-                    ->whereYear('payment_date', $yearToCalculate)
-                    ->sum('amount_paid');
-
-                // Add admin payments for current month (based on paid_at date)
-                $incomeCurrentMonth += Payment::where('is_paid', true)
+                // Calculate income for the selected month (based on Payment records - paid_at date)
+                // Get all Payment records for the month with their StudentTuition data
+                $monthlyPaymentsQuery = Payment::where('is_paid', true)
                     ->whereMonth('paid_at', $monthToCalculate)
                     ->whereYear('paid_at', $yearToCalculate)
-                    ->sum('amount');
+                    ->with('studentTuition');
 
-                // Calculate accumulated income from January to current month (based on payment_date)
-                $incomeAccumulated = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                    ->whereBetween('payment_date', [
-                        now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
-                        now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
-                    ])
-                    ->sum('amount_paid');
+                $monthlyPaymentsList = $monthlyPaymentsQuery->get();
 
-                // Add admin payments accumulated (based on paid_at date)
-                $incomeAccumulated += Payment::where('is_paid', true)
-                    ->whereBetween('paid_at', [
-                        now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
-                        now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
-                    ])
-                    ->sum('amount');
-
-                // Get monthly breakdown for details (based on payment_date)
-                $incomeMonthlyDetails = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                    ->whereBetween('payment_date', [
-                        now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
-                        now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
-                    ])
-                    ->selectRaw('MONTH(payment_date) as month, SUM(amount_paid) as total')
-                    ->groupByRaw('MONTH(payment_date)')
-                    ->get();
-            } else {
-                // No specific month - show total for all months in year (based on payment_date)
-                $incomeCurrentMonth = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                    ->whereYear('payment_date', $yearToCalculate)
-                    ->sum('amount_paid');
-
-                // Add admin payments for entire year (based on paid_at date)
-                $incomeCurrentMonth += Payment::where('is_paid', true)
-                    ->whereYear('paid_at', $yearToCalculate)
-                    ->sum('amount');
-
-                // Get monthly breakdown for all months (based on payment_date)
-                $incomeMonthlyDetails = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                    ->whereYear('payment_date', $yearToCalculate)
-                    ->selectRaw('MONTH(payment_date) as month, SUM(amount_paid) as total')
-                    ->groupByRaw('MONTH(payment_date)')
-                    ->get();
-            }
-
-            // Only show admin details and advance payments if a specific month is selected
-            if ($month) {
-                // Add admin payments breakdown (based on paid_at date)
-                $adminMonthlyDetails = Payment::where('is_paid', true)
-                    ->whereBetween('paid_at', [
-                        now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
-                        now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
-                    ])
-                    ->selectRaw('MONTH(paid_at) as month, SUM(amount) as total')
-                    ->groupByRaw('MONTH(paid_at)')
-                    ->get();
-
-                // Merge the two collections
-                foreach ($adminMonthlyDetails as $adminDetail) {
-                    $existing = $incomeMonthlyDetails->firstWhere('month', $adminDetail->month);
-                    if ($existing) {
-                        $existing->total += $adminDetail->total;
-                    } else {
-                        $incomeMonthlyDetails->push($adminDetail);
+                $incomeCurrentMonth = 0;
+                foreach ($monthlyPaymentsList as $payment) {
+                    if ($payment->studentTuition) {
+                        $incomeCurrentMonth += $payment->studentTuition->final_amount;
+                        $incomeCurrentMonth += $payment->studentTuition->late_fee_paid ?? 0;
                     }
                 }
 
+                // Calculate accumulated income from January to current month (based on Payment records)
+                $accumulatedPaymentsQuery = Payment::where('is_paid', true)
+                    ->whereBetween('paid_at', [
+                        now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
+                        now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
+                    ])
+                    ->with('studentTuition');
+
+                $accumulatedPaymentsList = $accumulatedPaymentsQuery->get();
+
+                $incomeAccumulated = 0;
+                foreach ($accumulatedPaymentsList as $payment) {
+                    if ($payment->studentTuition) {
+                        $incomeAccumulated += $payment->studentTuition->final_amount;
+                        $incomeAccumulated += $payment->studentTuition->late_fee_paid ?? 0;
+                    }
+                }
+
+                // Get monthly breakdown for details (based on Payment records with StudentTuition data)
+                $monthlyDetailsPayments = Payment::where('is_paid', true)
+                    ->whereBetween('paid_at', [
+                        now()->setYear($yearToCalculate)->setMonth(1)->startOfMonth(),
+                        now()->setYear($yearToCalculate)->setMonth($monthToCalculate)->endOfMonth(),
+                    ])
+                    ->with('studentTuition')
+                    ->get();
+
+                // Group by month and sum
+                $incomeMonthlyDetails = collect();
+                for ($m = 1; $m <= $monthToCalculate; $m++) {
+                    $monthlyTotal = 0;
+                    foreach ($monthlyDetailsPayments as $payment) {
+                        if ($payment->studentTuition && $payment->paid_at->month == $m && $payment->paid_at->year == $yearToCalculate) {
+                            $monthlyTotal += $payment->studentTuition->final_amount;
+                            $monthlyTotal += $payment->studentTuition->late_fee_paid ?? 0;
+                        }
+                    }
+                    if ($monthlyTotal > 0) {
+                        $incomeMonthlyDetails->push((object) [
+                            'month' => $m,
+                            'total' => $monthlyTotal,
+                        ]);
+                    }
+                }
+            } else {
+                // No specific month - show total for all months in year (based on Payment records)
+                $yearPaymentsQuery = Payment::where('is_paid', true)
+                    ->whereYear('paid_at', $yearToCalculate)
+                    ->with('studentTuition');
+
+                $yearPaymentsList = $yearPaymentsQuery->get();
+
+                $incomeCurrentMonth = 0;
+                foreach ($yearPaymentsList as $payment) {
+                    if ($payment->studentTuition) {
+                        $incomeCurrentMonth += $payment->studentTuition->final_amount;
+                        $incomeCurrentMonth += $payment->studentTuition->late_fee_paid ?? 0;
+                    }
+                }
+
+                // Get monthly breakdown for all months (based on Payment records)
+                $incomeMonthlyDetails = collect();
+                for ($m = 1; $m <= 12; $m++) {
+                    $monthlyTotal = 0;
+                    foreach ($yearPaymentsList as $payment) {
+                        if ($payment->studentTuition && $payment->paid_at->month == $m && $payment->paid_at->year == $yearToCalculate) {
+                            $monthlyTotal += $payment->studentTuition->final_amount;
+                            $monthlyTotal += $payment->studentTuition->late_fee_paid ?? 0;
+                        }
+                    }
+                    if ($monthlyTotal > 0) {
+                        $incomeMonthlyDetails->push((object) [
+                            'month' => $m,
+                            'total' => $monthlyTotal,
+                        ]);
+                    }
+                }
+            }
+
+            // Only show advance payments if a specific month is selected
+            if ($month) {
                 $incomeMonthlyDetails = $incomeMonthlyDetails->sortBy('month');
 
                 // Get advance payments made in current month for future months
@@ -312,42 +332,42 @@ class PaymentReceiptController extends Controller
             $startDate = now()->setYear($firstMonth['year'])->setMonth($firstMonth['month'])->startOfMonth();
             $endDate = now()->setYear($lastMonth['year'])->setMonth($lastMonth['month'])->endOfMonth();
 
-            $incomeCurrentMonth = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                ->whereBetween('payment_date', [$startDate, $endDate])
-                ->sum('amount_paid');
-
-            // Add admin payments for school year (based on paid_at date)
-            $incomeCurrentMonth += Payment::where('is_paid', true)
+            $schoolYearPaymentsQuery = Payment::where('is_paid', true)
                 ->whereBetween('paid_at', [$startDate, $endDate])
-                ->sum('amount');
+                ->with('studentTuition');
 
-            // Get monthly breakdown for school year (based on payment_date)
-            $incomeMonthlyDetails = PaymentReceipt::where('status', ReceiptStatus::Validated)
-                ->whereBetween('payment_date', [$startDate, $endDate])
-                ->selectRaw('YEAR(payment_date) as year, MONTH(payment_date) as month, SUM(amount_paid) as total')
-                ->groupByRaw('YEAR(payment_date), MONTH(payment_date)')
-                ->get();
+            $schoolYearPaymentsList = $schoolYearPaymentsQuery->get();
 
-            // Add admin payments breakdown for school year (based on paid_at date)
-            $adminMonthlyDetails = Payment::where('is_paid', true)
-                ->whereBetween('paid_at', [$startDate, $endDate])
-                ->selectRaw('YEAR(paid_at) as year, MONTH(paid_at) as month, SUM(amount) as total')
-                ->groupByRaw('YEAR(paid_at), MONTH(paid_at)')
-                ->get();
+            $incomeCurrentMonth = 0;
+            foreach ($schoolYearPaymentsList as $payment) {
+                if ($payment->studentTuition) {
+                    $incomeCurrentMonth += $payment->studentTuition->final_amount;
+                    $incomeCurrentMonth += $payment->studentTuition->late_fee_paid ?? 0;
+                }
+            }
 
-            // Merge the two collections
-            foreach ($adminMonthlyDetails as $adminDetail) {
-                $existing = $incomeMonthlyDetails->first(function ($item) use ($adminDetail) {
-                    return $item->month == $adminDetail->month && $item->year == $adminDetail->year;
-                });
-                if ($existing) {
-                    $existing->total += $adminDetail->total;
-                } else {
-                    $incomeMonthlyDetails->push((object) [
-                        'year' => $adminDetail->year,
-                        'month' => $adminDetail->month,
-                        'total' => $adminDetail->total,
-                    ]);
+            // Get monthly breakdown for school year (based on Payment records)
+            $incomeMonthlyDetails = collect();
+            foreach ($schoolYearPaymentsList as $payment) {
+                if ($payment->studentTuition && $payment->paid_at) {
+                    $year = $payment->paid_at->year;
+                    $month = $payment->paid_at->month;
+
+                    $existing = $incomeMonthlyDetails->first(function ($item) use ($year, $month) {
+                        return $item->year == $year && $item->month == $month;
+                    });
+
+                    $amount = $payment->studentTuition->final_amount + ($payment->studentTuition->late_fee_paid ?? 0);
+
+                    if ($existing) {
+                        $existing->total += $amount;
+                    } else {
+                        $incomeMonthlyDetails->push((object) [
+                            'year' => $year,
+                            'month' => $month,
+                            'total' => $amount,
+                        ]);
+                    }
                 }
             }
 
