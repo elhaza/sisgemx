@@ -260,8 +260,11 @@ class DashboardController extends Controller
             ->count('user_id');
 
         // Colegiaturas pendientes de pago del mes
+        // Get active school year and its students
+        $activeSchoolYear = SchoolYear::where('is_active', true)->first();
+
         $monthTuitions = StudentTuition::where('month', $currentMonth)
-            ->where('year', $currentYear)
+            ->where('school_year_id', $activeSchoolYear?->id)
             ->whereHas('student', function ($query) {
                 $query->where('status', 'active');
             })
